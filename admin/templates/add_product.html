@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Add Product{% endblock %}
+
+{% block style %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #1e1e1e;
+        color: #ffffff;
+        margin: 0;
+        padding: 0;
+    }
+    .header {
+        background-color: #000000;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        width: 100%;
+        z-index: 1000;
+    }
+    .sidebar {
+        background-color: #1e1e1e;
+        height: calc(100vh - 50px);
+        width: 250px;
+        position: fixed;
+        top: 50px;
+        left: 0;
+        padding-top: 10px;
+        overflow-y: auto;
+    }
+    .sidebar .nav-link {
+        color: #ffffff;
+        padding: 10px 15px;
+        margin: 2px 10px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+    .sidebar .nav-link i {
+        margin-right: 15px;
+        width: 20px;
+        font-size: 18px;
+    }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background-color: #2c2c2c;
+    }
+    .main-content {
+        margin-left: 250px;
+        padding: 70px 20px 20px;
+    }
+    .form-container {
+        background-color: #2c2c2c;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-control, .form-select {
+        background-color: #1e1e1e;
+        border-color: #444;
+        color: white;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: #1e1e1e;
+        border-color: #666;
+        color: white;
+        box-shadow: none;
+    }
+    .form-label {
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+    .dropzone {
+        background-color: #1e1e1e;
+        border: 2px dashed #444;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    .dropzone i {
+        font-size: 48px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    .btn-add {
+        background-color: #00c853;
+        border-color: #00c853;
+        color: white;
+    }
+    .btn-add:hover {
+        background-color: #00a844;
+        border-color: #00a844;
+        color: white;
+    }
+    .btn-cancel {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    .btn-cancel:hover {
+        background-color: #bb2d3b;
+        border-color: #bb2d3b;
+        color: white;
+    }
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+    .image-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .image-preview img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <header class="header">
+        <h1 class="m-0">StrideKicks</h1>
+        <div class="d-flex align-items-center">
+            <span class="me-3">Welcome {{ first_name }}</span>
+            <i class="fas fa-user-circle fa-lg"></i>
+        </div>
+    </header>
+
+    <nav class="sidebar">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'orders' %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+            </li>        
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-image"></i>
+                    <span>Banner Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-tags"></i>
+                    <span>Category</span>
+                </a>
+            </li>
+        </ul>
+        <ul class="nav flex-column mt-auto" style="position: absolute; bottom: 20px; width: 100%;">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'settings' %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <form action="{% url 'admin_logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="container-fluid">
+            <div class="form-container">
+                <h2 class="mb-4">Add New Product</h2>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form id="addProductForm" method="POST" enctype="multipart/form-data" action="">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">Product Name:</label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" required>
+                        <div class="error-message" id="product_name_error"></div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">Category:</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="error-message" id="category_error"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="brand" class="form-label">Brand:</label>
+                            <select class="form-select" id="brand" name="brand" required>
+                                <option value="">Select Brand</option>
+                                {% for brand in brands %}
+                                    <option value="{{ brand.id }}">{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="error-message" id="brand_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description:</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        <div class="error-message" id="description_error"></div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="product_price" class="form-label">Product Price:</label>
+                            <input type="number" class="form-control" id="product_price" name="product_price" step="0.01" required>
+                            <div class="error-message" id="product_price_error"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sale_price" class="form-label">Sale Price:</label>
+                            <input type="number" class="form-control" id="sale_price" name="sale_price" step="0.01" required>
+                            <div class="error-message" id="sale_price_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">Quantity:</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" required>
+                            <div class="error-message" id="quantity_error"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="color" class="form-label">Color:</label>
+                            <input type="text" class="form-control" id="color" name="color" required>
+                            <div class="error-message" id="color_error"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="size" class="form-label">Size:</label>
+                            <input type="number" class="form-control" id="size" name="size" required>
+                            <div class="error-message" id="size_error"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Upload Images:</label>
+                        <div class="dropzone" id="imageDropzone">
+                            <input type="file" id="image" name="images" accept="image/*" style="display: none" multiple required>
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p class="mb-0">Drop images here to upload</p>
+                            <p class="text-muted">or click to select (3-10 images)</p>
+                        </div>
+                        <div class="image-preview" id="imagePreview"></div>
+                        <div class="error-message" id="image_error"></div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'products' %}" class="btn btn-add">Save Product</a>
+                        <a href="" class="btn btn-cancel">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const navLinks = document.querySelectorAll('.sidebar .nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        const form = document.getElementById('addProductForm');
+        const productName = document.getElementById('product_name');
+        const category = document.getElementById('category');
+        const brand = document.getElementById('brand');
+        const description = document.getElementById('description');
+        const quantity = document.getElementById('quantity');
+        const color = document.getElementById('color');
+        const size = document.getElementById('size');
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.getElementById('imagePreview');
+        const dropzone = document.getElementById('imageDropzone');
+
+        function showError(element, message) {
+            const errorElement = document.getElementById(element.id + '_error');
+            errorElement.textContent = message;
+        }
+
+        function clearError(element) {
+            const errorElement = document.getElementById(element.id + '_error');
+            errorElement.textContent = '';
+        }
+
+        function validateProductName() {
+            const value = productName.value.trim();
+            if (value === '' || /[^a-zA-Z0-9\s]/.test(value)) {
+                showError(productName, 'Product name should contain only text and numbers.');
+                return false;
+            }
+            clearError(productName);
+            return true;
+        }
+
+        function validateCategory() {
+            if (category.value === '') {
+                showError(category, 'Please select a category.');
+                return false;
+            }
+            clearError(category);
+            return true;
+        }
+
+        function validateBrand() {
+            if (brand.value === '') {
+                showError(brand, 
+                'Please select a brand.');
+                return false;
+            }
+            clearError(brand);
+            return true;
+        }
+
+        function validateDescription() {
+            const value = description.value.trim();
+            if (value.length < 20) {
+                showError(description, `${20 - value.length} more characters needed.`);
+                return false;
+            }
+            clearError(description);
+            return true;
+        }
+
+        function validateQuantity() {
+            const value = parseInt(quantity.value);
+            if (isNaN(value) || value <= 0 || value > 1000) {
+                showError(quantity, 'Quantity should be between 1 and 1000.');
+                return false;
+            }
+            clearError(quantity);
+            return true;
+        }
+
+        function validateColor() {
+            const value = color.value.trim();
+            if (value === '' || /[^a-zA-Z\s]/.test(value)) {
+                showError(color, 'Color should contain only text.');
+                return false;
+            }
+            clearError(color);
+            return true;
+        }
+
+        function validateSize() {
+            const value = parseInt(size.value);
+            if (isNaN(value) || value <= 0) {
+                showError(size, 'Size should be a positive integer.');
+                return false;
+            }
+            clearError(size);
+            return true;
+        }
+
+        function validateImages() {
+            const files = imageInput.files;
+            if (files.length < 3 || files.length > 10) {
+                showError(imageInput, 'Please select 3 to 10 images.');
+                return false;
+            }
+            clearError(imageInput);
+            return true;
+        }
+
+        productName.addEventListener('input', validateProductName);
+        category.addEventListener('change', validateCategory);
+        brand.addEventListener('change', validateBrand);
+        description.addEventListener('input', validateDescription);
+        quantity.addEventListener('input', validateQuantity);
+        color.addEventListener('input', validateColor);
+        size.addEventListener('input', validateSize);
+
+        description.addEventListener('input', function() {
+            const remainingChars = 20 - this.value.length;
+            if (remainingChars > 0) {
+                showError(description, `${remainingChars} more characters needed.`);
+            } else {
+                clearError(description);
+            }
+        });
+
+        dropzone.addEventListener('click', () => imageInput.click());
+
+        imageInput.addEventListener('change', function(e) {
+            imagePreview.innerHTML = '';
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const scaleFactor = Math.min(500 / img.width, 500 / img.height);
+                        canvas.width = 500;
+                        canvas.height = 500;
+                        ctx.drawImage(img, 0, 0, img.width * scaleFactor, img.height * scaleFactor);
+                        const croppedImg = document.createElement('img');
+                        croppedImg.src = canvas.toDataURL();
+                        imagePreview.appendChild(croppedImg);
+                    }
+                }
+                reader.readAsDataURL(file);
+            });
+            validateImages();
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const isValid = validateProductName() &&
+                            validateCategory() &&
+                            validateBrand() &&
+                            validateDescription() &&
+                            validateQuantity() &&
+                            validateColor() &&
+                            validateSize() &&
+                            validateImages();
+
+            if (isValid) {
+                this.submit();
+            }
+        });
+    });
+    </script>
+{% endblock %}
