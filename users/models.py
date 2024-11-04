@@ -17,6 +17,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     status = models.CharField(max_length=10, choices=STATUS_CHOICE, default='Active')
     created_at = models.DateField(auto_now_add=True)
     is_superuser = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'  #specify the unique identifier for login
 

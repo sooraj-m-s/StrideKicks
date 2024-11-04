@@ -127,6 +127,17 @@ body {
     object-fit: cover;
     border-radius: 4px;
 }
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 50px);
+}
+.sidebar .nav {
+    flex-grow: 1;
+}
+.sidebar .bottom-nav {
+    margin-top: auto;
+}
 </style>
 {% endblock %}
 
@@ -185,12 +196,18 @@ body {
         </li>
         <li class="nav-item">
             <a class="nav-link" href="#">
+                <i class="fas fa-briefcase"></i>
+                <span>Brand</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
                 <i class="fas fa-tags"></i>
                 <span>Category</span>
             </a>
         </li>
     </ul>
-    <ul class="nav flex-column mt-auto" style="position: absolute; bottom: 20px; width: 100%;">
+    <ul class="nav flex-column bottom-nav">
         <li class="nav-item">
             <a class="nav-link" href="{% url 'settings' %}">
                 <i class="fas fa-cog"></i>
@@ -214,7 +231,7 @@ body {
 <main class="main-content">
     <div class="container-fluid">
         <div class="form-container">
-            <h2 class="mb-4">Add New Product</h2>
+            <h2 class="mb-4">Edit Product</h2>
 
             {% if messages %}
                 {% for message in messages %}
@@ -224,12 +241,12 @@ body {
                 {% endfor %}
             {% endif %}
 
-            <form id="addProductForm" method="POST" enctype="multipart/form-data" action="{% url 'add_product' %}">
+            <form id="editProductForm" method="POST" enctype="multipart/form-data" action="{% url 'edit_product' product.id %}">
                 {% csrf_token %}
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Product Name:</label>
-                    <input type="text" class="form-control" id="name" name="name" required value="{{ form_data.name|default:'' }}">
+                    <input type="text" class="form-control" id="name" name="name" required value="{{ product.name }}">
                     <div class="error-message" id="name_error"></div>
                 </div>
 
@@ -239,7 +256,7 @@ body {
                         <select class="form-select" id="category" name="category" required>
                             <option value="">Select Category</option>
                             {% for category in categories %}
-                                <option value="{{ category.id }}" {% if form_data.category == category.id|stringformat:"i" %}selected{% endif %}>{{ category.name }}</option>
+                                <option value="{{ category.id }}" {% if product.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
                             {% endfor %}
                         </select>
                         <div class="error-message" id="category_error"></div>
@@ -249,7 +266,7 @@ body {
                         <select class="form-select" id="brand" name="brand" required>
                             <option value="">Select Brand</option>
                             {% for brand in brands %}
-                                <option value="{{ brand.id }}" {% if form_data.brand == brand.id|stringformat:"i" %}selected{% endif %}>{{ brand.name }}</option>
+                                <option value="{{ brand.id }}" {% if product.brand.id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
                             {% endfor %}
                         </select>
                         <div class="error-message" id="brand_error"></div>
@@ -258,33 +275,39 @@ body {
 
                 <div class="mb-3">
                     <label for="description" class="form-label">Description:</label>
-                    <textarea class="form-control" id="description" name="description" rows="3" required>{{ form_data.description|default:'' }}</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3" required>{{ product.description }}</textarea>
                     <div class="error-message" id="description_error"></div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="actual_price" class="form-label">Product Price:</label>
-                        <input type="number" class="form-control" id="actual_price" name="actual_price" step="0.01" required value="{{ form_data.actual_price|default:'' }}">
+                        <input type="number" class="form-control" id="actual_price" name="actual_price" step="0.01" required value="{{ product.actual_price }}">
                         <div class="error-message" id="actual_price_error"></div>
                     </div>
                     <div class="col-md-6">
                         <label for="sale_price" class="form-label">Sale Price:</label>
-                        <input type="number" class="form-control" id="sale_price" name="sale_price" step="0.01" value="{{ form_data.sale_price|default:'' }}">
+                        <input type="number" class="form-control" id="sale_price" name="sale_price" step="0.01" value="{{ product.sale_price }}">
                         <div class="error-message" id="sale_price_error"></div>
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="quantity" class="form-label">Quantity:</label>
-                    <input type="number" class="form-control" id="quantity" name="quantity" required value="{{ form_data.quantity|default:'' }}">
+                    <input type="number" class="form-control" id="quantity" name="quantity" required value="{{ product.quantity }}">
                     <div class="error-message" id="quantity_error"></div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label">Upload Images:</label>
+                    <label class="form-label">Current Images:</label>
+                    <div class="image-preview" id="currentImagePreview">
+                        {% for image in product.images.all %}
+                            <img src="{{ image.image.url }}" alt="Product Image" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% endfor %}
+                    </div>
+                    <label class="form-label mt-3">Upload New Images:</label>
                     <div class="dropzone" id="imageDropzone">
-                        <input type="file" id="image" name="images" accept="image/*" style="display: none" multiple required>
+                        <input type="file" id="image" name="images" accept="image/*" style="display: none" multiple>
                         <i class="fas fa-cloud-upload-alt"></i>
                         <p class="mb-0">Drop images here to upload</p>
                         <p class="text-muted">or click to select (3-10 images)</p>
@@ -294,8 +317,8 @@ body {
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-add">Add Product</button>
-                    <a href="{% url 'cancel_add_product' %}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-add">Update Product</button>
+                    <a href="{% url 'products' %}" class="btn btn-cancel">Cancel</a>
                 </div>
             </form>
         </div>

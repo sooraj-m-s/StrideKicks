@@ -1,23 +1,20 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib import messages
-from .models import Users
-from .forms import CustomAuthenticationForm
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
-import random, json
 from datetime import timedelta
 from django.utils import timezone
-from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.conf import settings
-import re
+import re, random, json
+from .models import Users
+from .forms import CustomAuthenticationForm
 
 
 # Create your views here.
@@ -61,7 +58,7 @@ def signup_view(request):
             'retype_password': retype_password,
             'otp': otp,
             'otp_expiry': otp_expiry
-            }
+        }
         send_mail(
             'Verify your email - expires in 5 minutes',
             f'Your verification code is: {otp}',
@@ -125,7 +122,9 @@ def verify_email(request):
         new_user.save()
 
         # Clear the session data after verification and user creation
-        del request.session['user_data']
+        if 'user_data' in request.session:
+                del request.session['user_data']
+                request.session.modified = True
         return JsonResponse({'success': True, 'message': 'Verification successful. Account created!'})
 
     context = {

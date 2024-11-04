@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'wallet',
     'coupon',
     'product',
+    'category',
+    'brand',
 ]
 
 MIDDLEWARE = [
@@ -150,7 +152,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 1800  #session expires after 30 minutes (1800 seconds)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  #expire the session when the browser closes
 
@@ -160,11 +162,10 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://127.0.0.1:8000/complete/google-oauth2/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
-
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/users/account_overview/'
 SOCIAL_AUTH_LOGIN_ERROR_URL = '/users/login_to_account/'
 
-LOGIN_URL = '/users/account_overview/'
+LOGIN_URL = '/users/login_to_account/'
 LOGIN_REDIRECT_URL = '/users/account_overview/'
 
 SOCIAL_AUTH_PIPELINE = (

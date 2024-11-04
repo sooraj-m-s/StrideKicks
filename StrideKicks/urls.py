@@ -21,6 +21,8 @@ urlpatterns = [
     path('', include('social_django.urls', namespace='social')),
     path('users/', include('users.urls')),
     path('admin/', include('admin.urls')),
+    path('category/', include('category.urls')),
+    path('brand/', include('brand.urls')),
     # path('wallet/', include('wallet.urls')),
     # path('coupon/', include('coupon.urls')),
     # path('product/', include('product.urls')),

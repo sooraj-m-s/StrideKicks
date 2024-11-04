@@ -11,6 +11,9 @@ from product.models import Product, Category, Brand, ProductImage
 from PIL import Image
 import re, io
 from django.core.files.base import ContentFile
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.utils import timezone
 
 
 # Create your views here.
@@ -54,31 +57,42 @@ def dashboard_view(request):
 def products_view(request):
     first_name = request.user.first_name.title()
     products = Product.objects.filter(is_deleted=False)
-    product = {
+    data = {
         'products': products,
         'first_name': first_name,
     }
-    return render(request, 'admin_product.html', product)
+    return render(request, 'admin_product.html', data)
+
+
+@login_required(login_url='admin_login')
+@require_POST
+def delete_product(request, product_id):
+    try:
+        product = get_object_or_404(Product, id=product_id)
+        product.is_deleted = True
+        product.deleted_at = timezone.now()
+        product.save()
+        return JsonResponse({'success': True, 'message': 'Product deleted successfully'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @login_required
 def add_product(request):
     if request.method == 'POST':
-        product_name = request.POST.get('product_name', '').strip()
+        name = request.POST.get('name', '').strip()
         category_id = request.POST.get('category')
         brand_id = request.POST.get('brand')
         description = request.POST.get('description', '').strip()
-        product_price = request.POST.get('product_price')
+        actual_price = request.POST.get('actual_price')
         sale_price = request.POST.get('sale_price')
         quantity = request.POST.get('quantity')
-        color = request.POST.get('color', '').strip()
-        size = request.POST.get('size')
         images = request.FILES.getlist('images')
 
         errors = {}
 
-        if not product_name or re.search(r'[^a-zA-Z0-9\s]', product_name):
-            errors['product_name'] = 'Product name should contain only text and numbers.'
+        if not name or re.search(r'[^a-zA-Z0-9\s]', name):
+            errors['name'] = 'Product name should contain only text and numbers.'
 
         if not category_id:
             errors['category'] = 'Please select a category.'
@@ -96,24 +110,25 @@ def add_product(request):
         except ValueError:
             errors['quantity'] = 'Quantity should be a valid number.'
 
-        if not color or re.search(r'[^a-zA-Z\s]', color):
-            errors['color'] = 'Color should contain only text.'
-
         try:
-            size = int(size)
-            if size <= 0:
-                errors['size'] = 'Size should be a positive integer.'
+            actual_price = float(actual_price)
+            if actual_price <= 0:
+                errors['actual_price'] = 'Product price must be a positive number.'
         except ValueError:
-            errors['size'] = 'Size should be a valid number.'
+            errors['actual_price'] = 'Please enter a valid price.'
+
+        if sale_price:
+            try:
+                sale_price = float(sale_price)
+                if sale_price <= 0:
+                    errors['sale_price'] = 'Sale price must be a positive number.'
+                if sale_price >= actual_price:
+                    errors['sale_price'] = 'Sale price must be less than actual price.'
+            except ValueError:
+                errors['sale_price'] = 'Please enter a valid price.'
 
         if len(images) < 3 or len(images) > 10:
             errors['images'] = 'Please select 3 to 10 images.'
-
-        if not product_price or float(product_price) <= 0:
-            errors['product_price'] = 'Product price must be a positive number.'
-
-        if not sale_price or float(sale_price) <= 0:
-            errors['sale_price'] = 'Sale price must be a positive number.'
 
         if errors:
             for field, error in errors.items():
@@ -121,25 +136,34 @@ def add_product(request):
             return render(request, 'add_product.html', {
                 'categories': Category.objects.all(),
                 'brands': Brand.objects.all(),
-                'first_name': request.user.first_name,
                 'form_data': request.POST
             })
 
         try:
             product = Product(
-                product_name=product_name,
+                name=name,
                 category_id=category_id,
                 brand_id=brand_id,
                 description=description,
-                product_price=product_price,
+                actual_price=actual_price,
                 sale_price=sale_price,
                 quantity=quantity,
-                color=color,
-                size=size
+                is_deleted=False
             )
             product.save()
-
-            for image in images:
+            if images:
+                main_image = images[0]
+                img = Image.open(main_image)
+                img = img.convert('RGB')
+                img.thumbnail((500, 500))
+                thumb_io = io.BytesIO()
+                img.save(thumb_io, 'JPEG', quality=85)
+                product.image.save(
+                    f'main_{product.id}_{main_image.name}',
+                    ContentFile(thumb_io.getvalue()),
+                    save=True
+                )
+            for image in images[1:]:
                 img = Image.open(image)
                 img = img.convert('RGB')
                 img.thumbnail((500, 500))
@@ -150,28 +174,85 @@ def add_product(request):
                 product_image.image.save(
                     f'{product.id}_{image.name}',
                     ContentFile(thumb_io.getvalue()),
-                    save=False
+                    save=True
                 )
-                product_image.save()
 
             messages.success(request, 'Product added successfully!')
-            return redirect('product_list')
+            return redirect('products')
         except Exception as e:
             messages.error(request, f'Error adding product: {str(e)}')
 
     categories = Category.objects.all()
     brands = Brand.objects.all()
-    data = {
+    context = {
         'categories': categories,
-        'brands': brands,
-        'first_name': request.user.first_name
+        'brands': brands
     }
-    return render(request, 'add_product.html', data)
+    return render(request, 'add_product.html', context)
 
 
 @login_required(login_url='admin_login')
 def admin_orders(request):
     return render(request, 'admin_orders.html')
+
+
+def cancel_add_product(request):
+    messages.info(request, 'Cancelled')
+    return redirect('products')
+
+
+@login_required
+def edit_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    categories = Category.objects.all()
+    brands = Brand.objects.all()
+
+    if request.method == 'POST':
+        # Extract form data
+        name = request.POST.get('name', '').strip()
+        category_id = request.POST.get('category')
+        brand_id = request.POST.get('brand')
+        description = request.POST.get('description', '').strip()
+        actual_price = request.POST.get('actual_price')
+        sale_price = request.POST.get('sale_price')
+        quantity = request.POST.get('quantity')
+        new_images = request.FILES.getlist('images')
+
+        # Update product
+        product.name = name
+        product.category_id = category_id
+        product.brand_id = brand_id
+        product.description = description
+        product.actual_price = actual_price
+        product.sale_price = sale_price
+        product.quantity = quantity
+        product.save()
+
+        # Handle new images
+        if new_images:
+            for image in new_images:
+                img = Image.open(image)
+                img = img.convert('RGB')
+                img.thumbnail((500, 500))
+                thumb_io = io.BytesIO()
+                img.save(thumb_io, 'JPEG', quality=85)
+                
+                product_image = ProductImage(product=product)
+                product_image.image.save(
+                    f'{product.id}_{image.name}',
+                    ContentFile(thumb_io.getvalue()),
+                    save=True
+                )
+
+        messages.success(request, 'Product updated successfully!')
+        return redirect('products')
+
+    data = {
+        'product': product,
+        'categories': categories,
+        'brands': brands,
+    }
+    return render(request, 'edit_product.html', data)
 
 
 @login_required(login_url='admin_login')
