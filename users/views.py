@@ -66,7 +66,7 @@ def signup_view(request):
             [email],
             fail_silently=False,
         )
-        
+
         messages.info(request, 'Please check your email for the verification code.')
         return redirect('verify_email')
 

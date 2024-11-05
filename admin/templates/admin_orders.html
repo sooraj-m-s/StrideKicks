@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Orders{% endblock %}
 
 {% block style %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -33,6 +33,8 @@ body {
     left: 0;
     padding-top: 10px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 .sidebar .nav-link {
     color: #ffffff;
@@ -55,19 +57,32 @@ body {
     margin-left: 250px;
     padding: 70px 20px 20px;
 }
+.sidebar-main-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.sidebar-footer-menu {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #2c2c2c;
+}
+.sidebar .nav-item {
+    margin-bottom: 5px;
+}
 </style>
 {% endblock %}
 
 {% block body %}
-    <header class="header">
-        <h1 class="m-0">StrideKicks</h1>
-        <div class="d-flex align-items-center">
-            <span class="me-3">Welcome {{ first_name }}</span>
-            <i class="fas fa-user-circle fa-lg"></i>
-        </div>
-    </header>
+<header class="header">
+    <h1 class="m-0">StrideKicks</h1>
+    <div class="d-flex align-items-center">
+        <span class="me-3">Welcome {{ first_name }}</span>
+        <i class="fas fa-user-circle fa-lg"></i>
+    </div>
+</header>
 
-    <nav class="sidebar">
+<nav class="sidebar">
+    <div class="sidebar-main-menu">
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'admin_dashboard' %}">
@@ -76,7 +91,7 @@ body {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'customers' %}">
                     <i class="fas fa-users"></i>
                     <span>Customers</span>
                 </a>
@@ -88,7 +103,7 @@ body {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" href="#">
+                <a class="nav-link active" href="{% url 'orders' %}">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Orders</span>
                 </a>
@@ -112,13 +127,21 @@ body {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'brand' %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Brand</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'category' %}">
                     <i class="fas fa-tags"></i>
                     <span>Category</span>
                 </a>
             </li>
         </ul>
-        <ul class="nav flex-column mt-auto" style="position: absolute; bottom: 20px; width: 100%;">
+    </div>
+    <div class="sidebar-footer-menu">
+        <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'settings' %}">
                     <i class="fas fa-cog"></i>
@@ -137,23 +160,24 @@ body {
                 </a>
             </li>
         </ul>
-    </nav>
+    </div>
+</nav>
 
-    <main class="main-content">
-        {% block content %}
-        {% endblock %}
-    </main>
+<main class="main-content">
+    {% block content %}
+    {% endblock %}
+</main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const navLinks = document.querySelectorAll('.sidebar .nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-            });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
         });
     });
-    </script>
+});
+</script>
 {% endblock %}

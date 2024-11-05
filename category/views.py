@@ -13,8 +13,13 @@ import json
 
 @login_required
 def category_list(request):
+    first_name = request.user.first_name.title()
     categories = Category.objects.filter(is_deleted=False)
-    return render(request, 'category.html', {'categories': categories})
+    data = {
+        'first_name': first_name,
+        'categories': categories,
+    }
+    return render(request, 'category.html', data)
 
 @login_required
 def add_category(request):
@@ -89,7 +94,9 @@ def delete_category(request, category_id):
     if request.method == 'POST':
         try:
             category = get_object_or_404(Category, id=category_id, is_deleted=False)
-            category.soft_delete()
+            category.is_deleted = True
+            category.deleted_at = timezone.now()
+            category.save()
             return JsonResponse({
                 'success': True,
                 'message': 'Category deleted successfully'

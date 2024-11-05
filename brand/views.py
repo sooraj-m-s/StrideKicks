@@ -10,8 +10,13 @@ import json
 
 @login_required
 def brand_list(request):
+    first_name = request.user.first_name.title()
     brands = Brand.objects.filter(is_deleted=False)
-    return render(request, 'brand.html', {'brands': brands})
+    brand = {
+        'first_name': first_name,
+        'brands': brands,
+    }
+    return render(request, 'brand.html', brand)
 
 @login_required
 def add_brand(request):
