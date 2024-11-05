@@ -1,19 +1,8 @@
 from django.db import models
+from brand.models import Brand
+from category.models import Category
 
 # Create your models here.
-
-class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return self.name
-
-
-class Brand(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Product(models.Model):
