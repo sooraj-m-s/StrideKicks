@@ -2,19 +2,27 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from PIL import Image
-import re, io, os
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.views.decorators.cache import cache_control
+from django.conf import settings
+import cloudinary
+import cloudinary.uploader
+from PIL import Image
+import re, io, os
 from .models import Product, ProductImage
 from brand.models import Brand
 from category.models import Category
+from utils.decorators import admin_required
+
 
 # Create your views here.
 
-@login_required(login_url='admin_login')
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def products_view(request):
     first_name = request.user.first_name.title()
     products = Product.objects.filter(is_deleted=False)
@@ -51,7 +59,8 @@ def delete_product(request, product_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
-@login_required
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_product(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -126,25 +135,25 @@ def add_product(request):
             )
             product.save()
 
-            for index, image in enumerate(images):
-                img = Image.open(image)
-                img = img.convert('RGB')
-                img.thumbnail((500, 500))
-                thumb_io = io.BytesIO()
-                img.save(thumb_io, 'WEBP', quality=85)
-                
-                image_name = f'{product.id:03d}_{index+1:03d}.webp'
-                image_path = os.path.join('product_images', image_name)
-                
-                if index == 0:
-                    product.image.save(image_path, ContentFile(thumb_io.getvalue()), save=True)
-                else:
-                    product_image = ProductImage(product=product)
-                    product_image.image.save(image_path, ContentFile(thumb_io.getvalue()), save=True)
 
+            for index, image in enumerate(images):
+                print(f"{product.id:03d}_{index+1:03d}")
+                # Upload image to Cloudinary
+                cloudinary_response = cloudinary.uploader.upload(image, 
+                    folder=f"product_images/{product.id}",
+                    public_id=f"{product.id:03d}_{index+1:03d}",
+                    overwrite=True,
+                    format="webp",
+                    quality=85
+                )
+                cloudinary_url = cloudinary_response['secure_url']
+                product_image = ProductImage(image=cloudinary_url,product_id=product)
+                product_image.save()
+                
             messages.success(request, 'Product added successfully!')
             return redirect('products')
         except Exception as e:
+            Product.objects.filter(id=product.id).delete()
             messages.error(request, f'Error adding product: {str(e)}')
 
     first_name = request.user.first_name.title()
@@ -163,7 +172,8 @@ def cancel_add_product(request):
     return redirect('products')
 
 
-@login_required
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     categories = Category.objects.all()
@@ -190,18 +200,17 @@ def edit_product(request, product_id):
 
         if new_images:
             for image in new_images:
-                img = Image.open(image)
-                img = img.convert('RGB')
-                img.thumbnail((500, 500))
-                thumb_io = io.BytesIO()
-                img.save(thumb_io, 'JPEG', quality=85)
-                
-                product_image = ProductImage(product=product)
-                product_image.image.save(
-                    f'{product.id}_{image.name}',
-                    ContentFile(thumb_io.getvalue()),
-                    save=True
+                # Upload image to Cloudinary
+                cloudinary_response = cloudinary.uploader.upload(image, 
+                    folder=f"product_images/{product.id}",
+                    public_id=f"{product.id}_{image.name}",
+                    overwrite=True,
+                    format="webp",
+                    quality=85
                 )
+                
+                cloudinary_url = cloudinary_response['secure_url']
+                ProductImage.objects.create(product=product, image=cloudinary_url)
 
         messages.success(request, 'Product updated successfully!')
         return redirect('products')

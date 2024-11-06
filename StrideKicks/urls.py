@@ -16,12 +16,10 @@ Including another URLconf
 """
 
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
 
 urlpatterns = [
-    path('', include('social_django.urls', namespace='social')),
-    path('users/', include('users.urls')),
+    path('auth/', include('social_django.urls', namespace='social')),
+    path('', include('users.urls')),
     path('admin/', include('admin.urls')),
     path('category/', include('category.urls')),
     path('brand/', include('brand.urls')),
@@ -29,6 +27,3 @@ urlpatterns = [
     # path('wallet/', include('wallet.urls')),
     # path('coupon/', include('coupon.urls')),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

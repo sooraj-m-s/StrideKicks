@@ -2,13 +2,17 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from .models import Brand
+from django.views.decorators.cache import cache_control
 import json
+from .models import Brand
+from utils.decorators import admin_required
+
 
 # Create your views here.
 
 
-@login_required
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def brand_list(request):
     first_name = request.user.first_name.title()
     brands = Brand.objects.filter(is_deleted=False)
@@ -18,7 +22,9 @@ def brand_list(request):
     }
     return render(request, 'brand.html', brand)
 
-@login_required
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_brand(request):
     if request.method == 'POST':
         try:
@@ -49,7 +55,9 @@ def add_brand(request):
                 'message': str(e)
             }, status=500)
 
-@login_required
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_brand(request, brand_id):
     brand = get_object_or_404(Brand, id=brand_id, is_deleted=False)
     
@@ -84,6 +92,7 @@ def edit_brand(request, brand_id):
                 'message': str(e)
             }, status=500)
 
+
 @login_required
 def delete_brand(request, brand_id):
     if request.method == 'POST':
@@ -100,7 +109,9 @@ def delete_brand(request, brand_id):
                 'message': str(e)
             }, status=500)
 
-@login_required
+
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def toggle_brand_status(request, brand_id):
     if request.method == 'POST':
         try:

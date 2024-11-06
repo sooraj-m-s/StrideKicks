@@ -1,17 +1,16 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from .models import Category
 from django.utils import timezone
 import json
+from .models import Category
+from utils.decorators import admin_required
 
 
 # Create your views here.
 
 
-@login_required
+@admin_required
 def category_list(request):
     first_name = request.user.first_name.title()
     categories = Category.objects.filter(is_deleted=False)
@@ -21,7 +20,8 @@ def category_list(request):
     }
     return render(request, 'category.html', data)
 
-@login_required
+
+@admin_required
 def add_category(request):
     if request.method == 'POST':
         try:
@@ -54,7 +54,8 @@ def add_category(request):
                 'message': str(e)
             }, status=500)
 
-@login_required
+
+@admin_required
 def edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_deleted=False)
     
@@ -89,7 +90,8 @@ def edit_category(request, category_id):
                 'message': str(e)
             }, status=500)
 
-@login_required
+
+@admin_required
 def delete_category(request, category_id):
     if request.method == 'POST':
         try:
@@ -107,7 +109,8 @@ def delete_category(request, category_id):
                 'message': str(e)
             }, status=500)
 
-@login_required
+
+@admin_required
 def toggle_category_status(request, category_id):
     if request.method == 'POST':
         try:

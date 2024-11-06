@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-import os
 from decouple import config
+import os, cloudinary, cloudinary.uploader, cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,14 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary',
+    'cloudinary_storage',
     'social_django',
     'users',
     'admin',
-    'wallet',
-    'coupon',
     'product',
     'category',
     'brand',
+    'wallet',
+    'coupon',
 ]
 
 MIDDLEWARE = [
@@ -56,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'StrideKicks.urls'
@@ -98,6 +101,11 @@ AUTHENTICATION_BACKENDS = [
     'users.backends.EmailBackend',
     'social_core.backends.google.GoogleOAuth2',  # Google OAuth2 backend
     ]
+
+
+CSRF_COOKIE_HTTPONLY = True  # Makes the CSRF cookie inaccessible to JavaScript
+CSRF_COOKIE_SECURE = False   # Set to True if using HTTPS
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 
 # Password validation
@@ -158,7 +166,7 @@ MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 1800  #session expires after 30 minutes (1800 seconds)
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  #expire the session when the browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  #expire the session when the browser closes
 
 
 #google auth
@@ -167,19 +175,30 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://127.0.0.1:8000/complete/google-oauth2/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/users/account_overview/'
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/users/login_to_account/'
 
-LOGIN_URL = '/users/login_to_account/'
-LOGIN_REDIRECT_URL = '/users/account_overview/'
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 
+LOGIN_URL = '/login_to_account/'
+LOGIN_REDIRECT_URL = '/'
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.auth_allowed',
     'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.social_auth.associate_by_email',
     'social_core.pipeline.user.get_username',
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
     'users.pipeline.create_user',
 )
+
+# Cloudinary configuration
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUD_NAME'),
+    'API_KEY': config('API_KEY'),
+    'API_SECRET': config('API_SECRET'),
+    'SECURE': True
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

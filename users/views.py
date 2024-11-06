@@ -19,6 +19,7 @@ from .forms import CustomAuthenticationForm
 
 # Create your views here.
 
+
 def signup_view(request):
     if request.method == 'POST':
         first_name = request.POST.get('first_name')
@@ -72,6 +73,7 @@ def signup_view(request):
 
     google_auth_url = reverse('social:begin', args=['google-oauth2'])
     return render(request, 'sign_up.html', {'google_auth_url': google_auth_url})
+
 
 @csrf_exempt
 def verify_email(request):
@@ -136,6 +138,7 @@ def verify_email(request):
     }
     return render(request, 'verify_email.html', context)
 
+
 def resend_otp(request):
     if request.method == 'POST':
         user_data = request.session.get('user_data')
@@ -163,6 +166,7 @@ def resend_otp(request):
         )
         return JsonResponse({'success': True, 'message': 'A new verification code has been sent to your email.'})
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def login_to_account(request):
@@ -192,6 +196,8 @@ def logout_account(request):
         messages.success(request, 'You have been logged out.')
         return redirect('login_to_account')
 
+
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def account_overview(request):
     return render(request, 'account_overview.html')

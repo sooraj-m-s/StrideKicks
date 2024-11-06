@@ -1,12 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import cache_control
-from users.forms import CustomAuthenticationForm
+from django.views.decorators.cache import cache_control, never_cache
 from django.contrib.auth import login, logout
 from django.contrib import messages
-from django.views.decorators.cache import never_cache
 from django.db.models import Q
+from users.forms import CustomAuthenticationForm
 from users.models import Users
+from utils.decorators import admin_required
 
 
 # Create your views here.
@@ -36,7 +35,7 @@ def login_to_account(request):
         return render(request, 'admin_login.html', {'form': form})
 
 
-@login_required(login_url='admin_login')
+@admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def dashboard_view(request):
     first_name = request.user.first_name.title()
@@ -46,7 +45,8 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', user)
 
 
-@login_required(login_url='admin_login')
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_orders(request):
     first_name = request.user.first_name.title()
     user = {
@@ -55,7 +55,8 @@ def admin_orders(request):
     return render(request, 'admin_orders.html', user)
 
 
-@login_required(login_url='admin_login')
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customers_view(request):
     users = Users.objects.filter(is_superuser=False)
     search_query = request.GET.get('search')
@@ -79,7 +80,8 @@ def customers_view(request):
     return render(request, 'customers.html', context)
 
 
-@login_required(login_url='admin_login')
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customer_status(request, email):
     if request.method == 'POST':
         user = get_object_or_404(Users, email=email)
@@ -88,7 +90,8 @@ def customer_status(request, email):
     return redirect('customers')
 
 
-@login_required(login_url='admin_login')
+@admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def settings_view(request):
     first_name = request.user.first_name.title()
     user = {
