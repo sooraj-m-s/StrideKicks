@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'brand',
     'wallet',
     'coupon',
+    'reviews',
 ]
 
 MIDDLEWARE = [
@@ -194,11 +195,11 @@ SOCIAL_AUTH_PIPELINE = (
 )
 
 # Cloudinary configuration
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUD_NAME'),
-    'API_KEY': config('API_KEY'),
-    'API_SECRET': config('API_SECRET'),
-    'SECURE': True
-}
+cloudinary.config (
+    cloud_name= config('cloud_name'),
+    api_key= config('api_key'),
+    api_secret= config('api_secret'),
+    secure= True
+)
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

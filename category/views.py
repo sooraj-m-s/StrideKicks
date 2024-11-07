@@ -28,10 +28,12 @@ def add_category(request):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             is_listed = data.get('is_listed', True)
+
+            if Category.objects.filter(name__exact=name, is_deleted=False).exists():
+                raise ValidationError("A category with this exact name already exists.")
             
-            # Create new category
             category = Category(name=name, is_listed=is_listed)
-            category.full_clean()  # This will run our custom validator
+            category.full_clean()
             category.save()
             
             return JsonResponse({
@@ -64,10 +66,13 @@ def edit_category(request, category_id):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             is_listed = data.get('is_listed', True)
+
+            if Category.objects.filter(name__exact=name, is_deleted=False).exists():
+                raise ValidationError("A category with this exact name already exists.")
             
             category.name = name
             category.is_listed = is_listed
-            category.full_clean()  # This will run our custom validator
+            category.full_clean()
             category.save()
             
             return JsonResponse({

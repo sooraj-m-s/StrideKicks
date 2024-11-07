@@ -266,7 +266,6 @@ body {
                         <th>S.No</th>
                         <th>Product Name</th>
                         <th>Category</th>
-                        <th>Description</th>
                         <th>Sale Price</th>
                         <th>Qty</th>
                         <th>Image</th>
@@ -279,8 +278,7 @@ body {
                         <td>{{ forloop.counter }}</td>
                         <td>{{ product.name }}</td>
                         <td>{{ product.category.name }}</td>
-                        <td>{{ product.description|truncatechars:30 }}</td>
-                        <td>₹{{ product.sale_price }}</td>
+                        <td>₹{{ varients.sale_price }}</td>
                         <td>{{ product.quantity }}</td>
                         <td>
                             <img src="{{ product.image.url }}" alt="" class="product-image">

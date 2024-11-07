@@ -31,6 +31,10 @@ def add_brand(request):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             is_listed = data.get('is_listed', True)
+
+            if Brand.objects.filter(name__exact=name, is_deleted=False).exists():
+                raise ValidationError("A brand with this exact name already exists.")
+
             brand = Brand(name=name, is_listed=is_listed)
             brand.full_clean()
             brand.save()
@@ -66,6 +70,9 @@ def edit_brand(request, brand_id):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             is_listed = data.get('is_listed', True)
+
+            if Brand.objects.filter(name__exact=name, is_deleted=False).exists():
+                raise ValidationError("A brand with this exact name already exists.")
             
             brand.name = name
             brand.is_listed = is_listed
