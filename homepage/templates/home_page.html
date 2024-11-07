@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}StrideKicks - Home{% endblock %}
+
+{% block style %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+<style>
+.hero-section {
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/placeholder-Ld7Hy5iqXVXZXZXZXZXZXZXZXZXZXZ.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 50vh;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
+
+.product-card {
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+.product-image {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.price {
+    font-weight: bold;
+    color: #333;
+}
+
+.sale-price {
+    color: #dc3545;
+    margin-left: 0.5rem;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.nav-link {
+    color: #333;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: #000;
+}
+
+.footer {
+    background-color: #f8f9fa;
+    padding: 3rem 0;
+    margin-top: 3rem;
+}
+
+.footer h5 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.footer ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer ul li {
+    margin-bottom: 0.5rem;
+}
+
+.footer ul li a {
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.footer ul li a:hover {
+    color: #333;
+}
+
+@media (max-width: 767px) {
+    .product-image {
+        height: 150px;
+    }
+    .section-header h2 {
+        font-size: 1.25rem;
+    }
+}
+/* banner */
+.hero-section {
+    background-image: url("{% static 'images/banner.webp' %}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 100px 0;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <h1 class="h3 mb-0">StrideKicks</h1>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Brand</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Category</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Sale</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center mt-3 mt-lg-0">
+                <a href="#" class="btn btn-outline-dark me-2">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+                <a href="#" class="btn btn-outline-dark me-2">
+                    <i class="fas fa-user"></i>
+                </a>
+                <a href="{% url 'logout_account' %}" class="btn btn-outline-dark">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section mb-5">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold">Step into Style</h1>
+        <p class="lead">Discover the latest trends in footwear</p>
+        <a href="#" class="btn btn-light btn-lg mt-3">Shop Now</a>
+    </div>
+</section>
+
+<!-- Latest Products Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="h3 mb-0">Latest Products</h2>
+            <a href="#" class="text-decoration-none text-dark">View All</a>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+            {% for product in latest_products %}
+            <div class="col">
+                <div class="card product-card h-100 border-0 shadow-sm">
+                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title h6">{{ product.name }}</h5>
+                        {% with variant=product.variants.first %}
+                        <div class="d-flex align-items-center">
+                            <span class="original-price">₹{{ variant.actual_price }}</span>
+                            {% if variant.sale_price %}
+                            <span class="sale-price">₹{{ variant.sale_price }}</span>
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="h3 mb-0">Featured Products</h2>
+            <a href="#" class="text-decoration-none text-dark">View All</a>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+            {% for product in featured_products %}
+            <div class="col">
+                <div class="card product-card h-100 border-0 shadow-sm">
+                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title h6">{{ product.name }}</h5>
+                        {% with variant=product.variants.first %}
+                        <div class="d-flex align-items-center">
+                            <span class="original-price">₹{{ variant.actual_price }}</span>
+                            <span class="sale-price">₹{{ variant.sale_price }}</span>
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Trending Products Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="h3 mb-0">Trending Now</h2>
+            <a href="#" class="text-decoration-none text-dark">View All</a>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+            {% for product in trending_products %}
+            <div class="col">
+                <div class="card product-card h-100 border-0 shadow-sm">
+                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title h6">{{ product.name }}</h5>
+                        {% with variant=product.variants.first %}
+                        <div class="d-flex align-items-center">
+                            <!-- <span class="price">₹{{ variant.actual_price }}</span> -->
+                            <span class="original-price">₹{{ variant.actual_price }}</span>
+                            {% if variant.sale_price %}
+                            <span class="sale-price">₹{{ variant.sale_price }}</span>
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+            <div class="col">
+                <h5>Info</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#">Track Your Order</a></li>
+                    <li><a href="#">Our Blog</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Shipping</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="col">
+                <h5>About</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#">History</a></li>
+                    <li><a href="#">Our Team</a></li>
+                    <li><a href="#">Brand Guidelines</a></li>
+                    <li><a href="#">Terms & Condition</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div class="col">
+                <h5>Services</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#">How to Order</a></li>
+                    <li><a href="#">Our Product</a></li>
+                    <li><a href="#">Order Status</a></li>
+                    <li><a href="#">Promo</a></li>
+                    <li><a href="#">Payment Method</a></li>
+                </ul>
+            </div>
+            <div class="col">
+                <h5>Get In Touch</h5>
+                <address>
+                    <p>2918 Maple Street, Los Angeles</p>
+                    <p>Phone: +91 944 **** 969</p>
+                    <p>Email: support@stridekicks.com</p>
+                </address>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Add minimal JavaScript for any required interactivity
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+{% endblock %}

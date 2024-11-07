@@ -12,6 +12,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.conf import settings
+from django.utils.html import strip_tags
 import re, random, json
 from .models import Users
 from .forms import CustomAuthenticationForm
@@ -60,12 +61,26 @@ def signup_view(request):
             'otp': otp,
             'otp_expiry': otp_expiry
         }
+        html_message = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; color: #333;">
+                    <h2 style="color: #4CAF50;">Email Verification</h2>
+                    <p>Dear user,</p>
+                    <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
+                    <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{otp}</p>
+                    <p>If you didn’t request this, please ignore this email.</p>
+                    <p>Best regards,<br>StrideKicks</p>
+                </body>
+            </html>
+            """
+        plain_message = strip_tags(html_message)
         send_mail(
-            'Verify your email - expires in 5 minutes',
-            f'Your verification code is: {otp}',
+            'Thanks for registering StrideKicks, Verify your email',
+            plain_message,
             settings.EMAIL_HOST_USER,
             [email],
             fail_silently=False,
+            html_message=html_message,
         )
 
         messages.info(request, 'Please check your email for the verification code.')
@@ -129,14 +144,14 @@ def verify_email(request):
                 request.session.modified = True
         return JsonResponse({'success': True, 'message': 'Verification successful. Account created!'})
 
-    context = {
+    data = {
         'first_name': first_name,
         'expiration_time': expiration_time,
         'expiration_seconds': expiration_seconds,
         'resend_countdown': resend_countdown,
         'can_resend': can_resend,
     }
-    return render(request, 'verify_email.html', context)
+    return render(request, 'verify_email.html', data)
 
 
 def resend_otp(request):
@@ -156,13 +171,27 @@ def resend_otp(request):
         user_data['otp_expiry'] = new_expiry_time.isoformat()
         user_data['resend_time'] = new_resend_time.isoformat()
         request.session['user_data'] = user_data  #save updated data back to the session
-
+        
+        html_message = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; color: #333;">
+                    <h2 style="color: #4CAF50;">Email Verification</h2>
+                    <p>Dear user,</p>
+                    <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
+                    <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{new_otp}</p>
+                    <p>If you didn’t request this, please ignore this email.</p>
+                    <p>Best regards,<br>StrideKicks</p>
+                </body>
+            </html>
+            """
+        plain_message = strip_tags(html_message)
         send_mail(
-            'Verify your email - expires in 5 minutes',
-            f'Your verification code is: {new_otp}',
+            'Verify your email',
+            plain_message,
             settings.EMAIL_HOST_USER,
             [user_data['email']],
             fail_silently=False,
+            html_message=html_message,
         )
         return JsonResponse({'success': True, 'message': 'A new verification code has been sent to your email.'})
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
@@ -171,7 +200,7 @@ def resend_otp(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def login_to_account(request):
     if request.user.is_authenticated:
-        return redirect('account_overview')
+        return redirect('home')
     
     if request.method == 'POST':
         form = CustomAuthenticationForm(data=request.POST)
@@ -179,7 +208,7 @@ def login_to_account(request):
             user = form.get_user()
             login(request, user)
             messages.success(request, 'Login Successful.')
-            return redirect('account_overview')
+            return redirect('home')
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
@@ -191,13 +220,6 @@ def login_to_account(request):
 
 
 def logout_account(request):
-    if request.method == 'POST':
-        logout(request)
-        messages.success(request, 'You have been logged out.')
-        return redirect('login_to_account')
-
-
-@login_required
-@cache_control(no_cache=True, must_revalidate=True, no_store=True)
-def account_overview(request):
-    return render(request, 'account_overview.html')
+    logout(request)
+    messages.success(request, 'You have been logged out.')
+    return redirect('login_to_account')

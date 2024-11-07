@@ -5,57 +5,57 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-    .form-container {
-        max-width: 500px;
-        margin: 2rem auto;
-        padding: 2rem;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
-    }
-    .logo {
-        font-family: cursive;
-        font-size: 2rem;
-        text-decoration: none;
-        color: #000;
-    }
-    .form-label {
-        font-weight: 500;
-    }
-    .btn-verify {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        padding: 0.8rem;
-    }
-    .btn-verify:hover {
-        background-color: #bb2d3b;
-        border-color: #bb2d3b;
-    }
-    .btn-resend {
-        background-color: #6c757d;
-        border-color: #6c757d;
-    }
-    .btn-resend:hover:not(:disabled) {
-        background-color: #5a6268;
-        border-color: #545b62;
-    }
-    .timer {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
-    .message-info {
-        background-color: #cce5ff;
-        border: 1px solid #b8daff;
-        color: #004085;
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 4px;
-        text-align: center;
-    }
-    .btn-back {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-    }
+.form-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+.logo {
+    font-family: cursive;
+    font-size: 2rem;
+    text-decoration: none;
+    color: #000;
+}
+.form-label {
+    font-weight: 500;
+}
+.btn-verify {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    padding: 0.8rem;
+}
+.btn-verify:hover {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+}
+.btn-resend {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+.btn-resend:hover:not(:disabled) {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+.timer {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+.message-info {
+    background-color: #cce5ff;
+    border: 1px solid #b8daff;
+    color: #004085;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    text-align: center;
+}
+.btn-back {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
 </style>
 {% endblock %}
 
@@ -103,116 +103,116 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const verificationForm = document.getElementById('verificationForm');
-        const resendBtn = document.getElementById('resendBtn');
-        const resendTimer = document.getElementById('resendTimer');
-        const countdownEl = document.getElementById('countdown');
-        const expirationTimer = document.getElementById('expirationTimer');
-        
-        let resendCount = {{ resend_countdown }};
-        let expirationCount = {{ expiration_seconds }};
+document.addEventListener('DOMContentLoaded', function() {
+    const verificationForm = document.getElementById('verificationForm');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendTimer = document.getElementById('resendTimer');
+    const countdownEl = document.getElementById('countdown');
+    const expirationTimer = document.getElementById('expirationTimer');
+    
+    let resendCount = {{ resend_countdown }};
+    let expirationCount = {{ expiration_seconds }};
 
-        function updateResendTimer() {
-            resendCount--;
-            if (resendCount >= 0) {
-                countdownEl.textContent = resendCount;
-            } else {
-                resendTimer.style.display = 'none';
-                resendBtn.style.display = 'block';
-            }
+    function updateResendTimer() {
+        resendCount--;
+        if (resendCount >= 0) {
+            countdownEl.textContent = resendCount;
+        } else {
+            resendTimer.style.display = 'none';
+            resendBtn.style.display = 'block';
         }
+    }
 
-        function updateExpirationTimer() {
-            expirationCount--;
-            if (expirationCount >= 0) {
-                const minutes = Math.floor(expirationCount / 60);
-                const seconds = expirationCount % 60;
-                expirationTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            } else {
+    function updateExpirationTimer() {
+        expirationCount--;
+        if (expirationCount >= 0) {
+            const minutes = Math.floor(expirationCount / 60);
+            const seconds = expirationCount % 60;
+            expirationTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            Swal.fire({
+                title: 'OTP Expired',
+                text: 'Please request a new one.',
+                icon: 'warning',
+                confirmButtonText: 'Resend OTP'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    resendOTP();
+                }
+            });
+        }
+    }
+
+    setInterval(updateResendTimer, 1000);
+    setInterval(updateExpirationTimer, 1000);
+
+    verificationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const code = document.getElementById('verification-code').value;
+
+        fetch("{% url 'verify_email' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'code': code })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
                 Swal.fire({
-                    title: 'OTP Expired',
-                    text: 'Please request a new one.',
-                    icon: 'warning',
-                    confirmButtonText: 'Resend OTP'
+                    title: 'Success!',
+                    text: 'Verification successful!',
+                    icon: 'success',
+                    confirmButtonText: 'Continue'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        resendOTP();
+                        window.location.href = '{% url "home" %}';
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: data.error || 'Invalid verification code.',
+                    icon: 'error',
+                    confirmButtonText: 'Try Again'
+                });
+            }
+        });
+    });
+
+    resendBtn.addEventListener('click', resendOTP);
+
+    function resendOTP() {
+        fetch("{% url 'resend_otp' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'OTP Resent',
+                    text: 'Please check your email for the new verification code.',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                });
+                location.reload();
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Unable to resend code.',
+                    icon: 'error',
+                    confirmButtonText: 'Try Again'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{% url "signup" %}';
                     }
                 });
             }
-        }
-
-        setInterval(updateResendTimer, 1000);
-        setInterval(updateExpirationTimer, 1000);
-
-        verificationForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const code = document.getElementById('verification-code').value;
-
-            fetch("{% url 'verify_email' %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 'code': code })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Verification successful!',
-                        icon: 'success',
-                        confirmButtonText: 'Continue'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '{% url "account_overview" %}';
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: data.error || 'Invalid verification code.',
-                        icon: 'error',
-                        confirmButtonText: 'Try Again'
-                    });
-                }
-            });
         });
-
-        resendBtn.addEventListener('click', resendOTP);
-
-        function resendOTP() {
-            fetch("{% url 'resend_otp' %}", {
-                method: 'POST',
-                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: 'OTP Resent',
-                        text: 'Please check your email for the new verification code.',
-                        icon: 'success',
-                        confirmButtonText: 'OK',
-                    });
-                    location.reload();
-                } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Unable to resend code.',
-                        icon: 'error',
-                        confirmButtonText: 'Try Again'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '{% url "signup" %}';
-                        }
-                    });
-                }
-            });
-        }
-    });
+    }
+});
 </script>
 {% endblock %}

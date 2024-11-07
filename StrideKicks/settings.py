@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'social_django',
     'users',
     'admin',
+    'homepage',
     'product',
     'category',
     'brand',
@@ -166,7 +167,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 1800  #session expires after 30 minutes (1800 seconds)
+SESSION_COOKIE_AGE = 3600  #session expires after 1hr (3600sec)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  #expire the session when the browser closes
 
 
@@ -180,7 +181,8 @@ SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/users/account_overview/'
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 
 LOGIN_URL = '/login_to_account/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login_to_account'
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
