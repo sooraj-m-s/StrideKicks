@@ -7,7 +7,6 @@ from django.conf import settings
 from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
@@ -32,6 +31,10 @@ def signup_view(request):
 
         if not re.match(r"^[A-Za-z\._\-0-9]+@[A-Za-z]+\.[a-z]{2,4}$", email):
             messages.error(request, 'Invalid email, please enter a valid emali.')
+            return redirect('signup')
+        
+        if len(mobile_no) != 10:
+            messages.error(request, 'Invalid mobile number, please enter a valid input.')
             return redirect('signup')
 
         if len(password) < 8 or password.isspace():

@@ -11,18 +11,15 @@ from product.models import Product, ProductVarient, ProductImage
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def home(request):
-    # Get latest products (newest first)
     latest_products = Product.objects.filter(
         is_deleted=False
     ).order_by('-created_at')[:5]
     
-    # Get featured products (products with variants that have sale prices)
     featured_products = Product.objects.filter(
         is_deleted=False,
         variants__sale_price__isnull=False
     ).distinct()[:5]
     
-    # Get trending products (most quantity)
     trending_products = Product.objects.filter(
         is_deleted=False
     ).order_by('-quantity')[:5]

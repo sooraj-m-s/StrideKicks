@@ -14,6 +14,7 @@ from .models import Product, ProductVarient, ProductImage
 from brand.models import Brand
 from category.models import Category
 from utils.decorators import admin_required
+from django.db.models import Min
 
 
 # Create your views here.
@@ -23,17 +24,18 @@ from utils.decorators import admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def products_view(request):
     first_name = request.user.first_name.title()
-    products = Product.objects.filter(is_deleted=False)
+    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images')
     varients = ProductVarient.objects.filter(is_deleted=False)
     categories = Category.objects.filter(is_deleted=False)
+
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     if search_query:
-        products = products.filter(
-            Q(name__icontains=search_query)
-        )
+        products = products.filter(Q(name__icontains=search_query))
     if category_id:
-        products = products.filter(id=category_id)
+        products = products.filter(category_id=category_id)
+    products = products.annotate(min_sale_price=Min('variants__sale_price'))
+
     data = {
         'first_name': first_name,
         'products': products,
@@ -117,11 +119,6 @@ def add_product(request):
                         errors['sale_price'] = 'Sale price must be less than actual price.'
                 except ValueError:
                     errors['sale_price'] = 'Please enter a valid price.'
-
-            # Validate images for each variant
-            variant_images = request.FILES.getlist(f'variant_image{variants.index(variant) + 1}[]')
-            if len(variant_images) < 3:
-                errors['images'] = f'Please select at least 3 images for variant {variants.index(variant) + 1}'
 
         if errors:
             return JsonResponse({'success': False, 'errors': errors})

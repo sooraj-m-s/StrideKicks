@@ -278,7 +278,13 @@ body {
                         <td>{{ forloop.counter }}</td>
                         <td>{{ product.name }}</td>
                         <td>{{ product.category.name }}</td>
-                        <td>₹{{ varients.sale_price }}</td>
+                        <td>
+                            {% if product.min_sale_price %}
+                                ₹{{ product.min_sale_price }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                         <td>{{ product.quantity }}</td>
                         <td>
                             <img src="{{ product.image.url }}" alt="" class="product-image">
