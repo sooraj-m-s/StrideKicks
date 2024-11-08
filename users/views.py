@@ -53,7 +53,6 @@ def signup_view(request):
         #create a new user
         otp = random.randint(100000, 999999)
         otp_expiry = (timezone.now() + timedelta(minutes=5)).isoformat()
-        print(otp)
         request.session['user_data'] = {
             'first_name': first_name,
             'last_name': last_name,

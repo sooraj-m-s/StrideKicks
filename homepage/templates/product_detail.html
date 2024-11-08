@@ -31,10 +31,28 @@
     width: 100%;
     height: 100%;
     background-repeat: no-repeat;
-    background-position: center;
-    background-size: 200%;
+    background-size: 1000%;
     display: none;
+    z-index: 1000;
+    border: 1px solid #ddd;
 }
+.image-zoom-container {
+    overflow: hidden;
+    /* width: 400px;
+    height: 400px; */
+    position: relative;
+    cursor: zoom-in;
+    border: 1px solid #ddd;
+}
+.zoom-image {
+    width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+.image-zoom-container:hover .zoom-image {
+    transform: scale(1.5);
+}
+/* ------ */
 .image-nav-button {
     position: absolute;
     top: 50%;
@@ -165,8 +183,14 @@
         <!-- Product Gallery -->
         <div class="col-md-6">
             <div class="product-gallery">
-                <div class="product-image-container">
+                <!-- <div class="product-image-container">
                     <img src="{{ product.images.first.image }}" class="product-image" id="mainImage" alt="{{ product.name }}">
+                    <div class="image-zoom-result" id="imageZoomResult"></div>
+                    <button class="image-nav-button prev" onclick="changeImage(-1)">&#10094;</button>
+                    <button class="image-nav-button next" onclick="changeImage(1)">&#10095;</button>
+                </div> -->
+                <div class="product-image-container image-zoom-container">
+                    <img src="{{ product.images.first.image }}" class="product-image zoom-image" id="mainImage" alt="{{ product.name }}">
                     <div class="image-zoom-result" id="imageZoomResult"></div>
                     <button class="image-nav-button prev" onclick="changeImage(-1)">&#10094;</button>
                     <button class="image-nav-button next" onclick="changeImage(1)">&#10095;</button>
@@ -213,11 +237,21 @@
 
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
+                    {% if product.quantity > 0 %}
                     <button class="btn btn-primary btn-lg me-2 flex-grow-1">Buy Now</button>
                     <button class="btn btn-dark btn-lg me-2 flex-grow-1">Add to Cart</button>
                     <button class="wishlist-btn" onclick="toggleWishlist(this)">
                         <i class="fas fa-heart"></i>
                     </button>
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg me-2 flex-grow-1" disabled>Sold Out</button>
+                        <button class="wishlist-btn" onclick="toggleWishlist(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <input type="text" placeholder="Enter Coupon to get discount" style="width: 98%;">
                 </div>
 
                 <!-- Description -->
@@ -236,7 +270,7 @@
             {% for related_product in related_products %}
             <div class="col">
                 <div class="card h-100">
-                    <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                    <a href="{% url 'product_detail' related_product.id %}" class="text-decoration-none">
                         <img src="{{ related_product.images.first.image }}" class="card-img-top" alt="{{ related_product.name }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ related_product.name }}</h5>
@@ -352,7 +386,7 @@
 let currentImageIndex = 0;
 const images = [
     {% for image in product.images.all %}
-    "{{ image.image.url }}",
+    "{{ image.image }}",
     {% endfor %}
 ];
 
@@ -382,7 +416,6 @@ function toggleWishlist(button) {
     button.classList.toggle('active');
 }
 
-// Image zoom functionality
 const mainImage = document.getElementById('mainImage');
 const zoomResult = document.getElementById('imageZoomResult');
 
@@ -402,17 +435,57 @@ mainImage.addEventListener('mouseleave', function() {
     zoomResult.style.display = 'none';
 });
 
-// Sticky functionality for product gallery
+let lastScrollTop = 0;
+const gallery = document.querySelector('.product-gallery');
+const description = document.querySelector('.description');
+
 window.addEventListener('scroll', function() {
-    var gallery = document.querySelector('.product-gallery');
-    var galleryBottom = gallery.getBoundingClientRect().bottom;
-    var descriptionBottom = document.querySelector('.description').getBoundingClientRect().bottom;
-    
-    if (galleryBottom > descriptionBottom) {
-        gallery.style.position = 'static';
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let galleryRect = gallery.getBoundingClientRect();
+    let descriptionRect = description.getBoundingClientRect();
+
+    if (galleryRect.bottom <= descriptionRect.bottom) {
+        if (scrollTop > lastScrollTop) {
+            gallery.style.position = 'sticky';
+            gallery.style.top = '0';
+        } else {
+            if (galleryRect.top >= 0) {
+                gallery.style.position = 'sticky';
+                gallery.style.top = '0';
+            } else {
+                gallery.style.position = 'relative';
+            }
+        }
     } else {
-        gallery.style.position = 'sticky';
+        gallery.style.position = 'relative';
     }
+
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    setActiveImage(0);
+});
+
+    
+
+//zoom effect
+document.querySelector('.image-zoom-container').addEventListener('mousemove', function (e) {
+    const zoomImage = e.target.querySelector('.zoom-image');
+    const containerRect = this.getBoundingClientRect();
+
+    const offsetX = e.clientX - containerRect.left;
+    const offsetY = e.clientY - containerRect.top;
+    const moveX = (offsetX / containerRect.width) * 100;
+    const moveY = (offsetY / containerRect.height) * 100;
+
+    zoomImage.style.transformOrigin = `${moveX}% ${moveY}%`;
+    zoomImage.style.transform = 'scale(1.5)';
+});
+document.querySelector('.image-zoom-container').addEventListener('mouseleave', function () {
+    const zoomImage = this.querySelector('.zoom-image');
+    zoomImage.style.transformOrigin = 'center center';
+    zoomImage.style.transform = 'scale(1)';
 });
 </script>
 {% endblock %}

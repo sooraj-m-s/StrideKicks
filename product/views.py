@@ -74,7 +74,12 @@ def add_product(request):
         quantity = request.POST.get('quantity')
         variants = json.loads(request.POST.get('variants', '[]'))
 
+        existing_product = Product.objects.filter(name=name).exists()
+
         errors = {}
+
+        if existing_product:
+            errors['name_exist'] = 'Product with this name already exists.'
 
         if not name or re.search(r'[^a-zA-Z0-9\s]', name):
             errors['name'] = 'Product name should contain only text and numbers.'
@@ -122,7 +127,6 @@ def add_product(request):
 
         if errors:
             return JsonResponse({'success': False, 'errors': errors})
-
         try:
             product = Product(
                 name=name,
