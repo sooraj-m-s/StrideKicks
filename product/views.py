@@ -24,7 +24,7 @@ from django.db.models import Min
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def products_view(request):
     first_name = request.user.first_name.title()
-    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images')
+    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('name')
     varients = ProductVarient.objects.filter(is_deleted=False)
     categories = Category.objects.filter(is_deleted=False)
 

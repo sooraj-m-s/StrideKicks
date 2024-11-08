@@ -182,7 +182,8 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 
 LOGIN_URL = '/login_to_account/'
 LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login_to_account'
+LOGOUT_REDIRECT_URL = ''
+
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',

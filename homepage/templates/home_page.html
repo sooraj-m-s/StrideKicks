@@ -177,18 +177,22 @@
             {% for product in latest_products %}
             <div class="col">
                 <div class="card product-card h-100 border-0 shadow-sm">
-                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
-                    <div class="card-body">
-                        <h5 class="card-title h6">{{ product.name }}</h5>
-                        {% with variant=product.variants.first %}
-                        <div class="d-flex align-items-center">
-                            <span class="original-price">₹{{ variant.actual_price }}</span>
-                            {% if variant.sale_price %}
-                            <span class="sale-price">₹{{ variant.sale_price }}</span>
-                            {% endif %}
+                    <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                        <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <p class="rating">
+                                <span>⭐⭐⭐⭐☆</span>
+                                <span class="rating-value">(4.0)</span>
+                            </p>
+                            {% with variant=product.variants.first %}
+                            <div class="d-flex align-items-center">
+                                <span class="original-price">₹{{ variant.actual_price }}</span>
+                                <span class="sale-price">₹{{ variant.sale_price }}</span>
+                            </div>
+                            {% endwith %}
                         </div>
-                        {% endwith %}
-                    </div>
+                    </a>
                 </div>
             </div>
             {% endfor %}
@@ -207,16 +211,22 @@
             {% for product in featured_products %}
             <div class="col">
                 <div class="card product-card h-100 border-0 shadow-sm">
-                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
-                    <div class="card-body">
-                        <h5 class="card-title h6">{{ product.name }}</h5>
-                        {% with variant=product.variants.first %}
-                        <div class="d-flex align-items-center">
-                            <span class="original-price">₹{{ variant.actual_price }}</span>
-                            <span class="sale-price">₹{{ variant.sale_price }}</span>
+                    <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                        <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <p class="rating">
+                                <span>⭐⭐⭐☆☆</span>
+                                <span class="rating-value">(3.0)</span>
+                            </p>
+                            {% with variant=product.variants.first %}
+                            <div class="d-flex align-items-center">
+                                <span class="original-price">₹{{ variant.actual_price }}</span>
+                                <span class="sale-price">₹{{ variant.sale_price }}</span>
+                            </div>
+                            {% endwith %}
                         </div>
-                        {% endwith %}
-                    </div>
+                    </a>
                 </div>
             </div>
             {% endfor %}
@@ -235,19 +245,23 @@
             {% for product in trending_products %}
             <div class="col">
                 <div class="card product-card h-100 border-0 shadow-sm">
-                    <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
-                    <div class="card-body">
-                        <h5 class="card-title h6">{{ product.name }}</h5>
-                        {% with variant=product.variants.first %}
-                        <div class="d-flex align-items-center">
-                            <!-- <span class="price">₹{{ variant.actual_price }}</span> -->
-                            <span class="original-price">₹{{ variant.actual_price }}</span>
-                            {% if variant.sale_price %}
-                            <span class="sale-price">₹{{ variant.sale_price }}</span>
-                            {% endif %}
+                    <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                        <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <p class="rating">
+                                <span>⭐⭐⭐☆☆</span>
+                                <span class="rating-value">(3.0)</span>
+                            </p>
+                            {% with variant=product.variants.first %}
+                            <div class="d-flex align-items-center">
+                                <!-- <span class="price">₹{{ variant.actual_price }}</span> -->
+                                <span class="original-price">₹{{ variant.actual_price }}</span>
+                                <span class="sale-price">₹{{ variant.sale_price }}</span>
+                            </div>
+                            {% endwith %}
                         </div>
-                        {% endwith %}
-                    </div>
+                    </a>
                 </div>
             </div>
             {% endfor %}

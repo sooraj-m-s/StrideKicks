@@ -53,7 +53,7 @@ def signup_view(request):
         #create a new user
         otp = random.randint(100000, 999999)
         otp_expiry = (timezone.now() + timedelta(minutes=5)).isoformat()
-
+        print(otp)
         request.session['user_data'] = {
             'first_name': first_name,
             'last_name': last_name,
@@ -205,21 +205,24 @@ def login_to_account(request):
     if request.user.is_authenticated:
         return redirect('home')
     
+    google_auth_url = reverse('social:begin', args=['google-oauth2'])
     if request.method == 'POST':
-        form = CustomAuthenticationForm(data=request.POST)
+        form = CustomAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
-            messages.success(request, 'Login Successful.')
-            return redirect('home')
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Login Successful.')
+                return redirect('home')
+            else:
+                messages.error(request, 'Authentication failed.')
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
-            return render(request, 'login.html', {'form': form})
     else:
-        form = CustomAuthenticationForm()
-        google_auth_url = reverse('social:begin', args=['google-oauth2'])
-        return render(request, 'login.html', {'form': form, 'google_auth_url': google_auth_url})
+        form = CustomAuthenticationForm(request)
+    
+    return render(request, 'login.html', {'form': form, 'google_auth_url': google_auth_url})
 
 
 def logout_account(request):

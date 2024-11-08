@@ -58,7 +58,7 @@ def admin_orders(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customers_view(request):
-    users = Users.objects.filter(is_superuser=False)
+    users = Users.objects.filter(is_superuser=False).order_by('first_name')
     search_query = request.GET.get('search')
     status_filter = request.GET.get('status')
 
