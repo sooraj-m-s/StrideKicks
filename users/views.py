@@ -214,12 +214,13 @@ def login_to_account(request):
                 return redirect('home')
             else:
                 messages.error(request, 'Authentication failed.')
+                return redirect('login_to_account')
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
-    else:
-        form = CustomAuthenticationForm(request)
-    
+                return redirect('login_to_account')
+
+    form = CustomAuthenticationForm(request)
     return render(request, 'login.html', {'form': form, 'google_auth_url': google_auth_url})
 
 

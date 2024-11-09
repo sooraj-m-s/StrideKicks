@@ -1,20 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Min
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
-import cloudinary
-import cloudinary.uploader
+import cloudinary, cloudinary.uploader
 import re, json
 from django.db import transaction
 from .models import Product, ProductVarient, ProductImage
 from brand.models import Brand
 from category.models import Category
 from utils.decorators import admin_required
-from django.db.models import Min
 
 
 # Create your views here.

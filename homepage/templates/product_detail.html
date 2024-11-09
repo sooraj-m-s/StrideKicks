@@ -35,22 +35,20 @@
     display: none;
     z-index: 1000;
     border: 1px solid #ddd;
-}
-.image-zoom-container {
     overflow: hidden;
-    /* width: 400px;
-    height: 400px; */
+}
+* {box-sizing: border-box;}
+.img-magnifier-container {
     position: relative;
-    cursor: zoom-in;
-    border: 1px solid #ddd;
 }
-.zoom-image {
-    width: 100%;
-    height: auto;
-    transition: transform 0.3s ease;
-}
-.image-zoom-container:hover .zoom-image {
-    transform: scale(1.5);
+.img-magnifier-glass {
+    position: absolute;
+    border-radius: 50%;
+    cursor: none;
+    width: 60%;
+    height: 60%;
+    /* transition: top 0.05s ease, left 0.05s ease; */
+    z-index: 1000;
 }
 /* ------ */
 .image-nav-button {
@@ -189,8 +187,8 @@
                     <button class="image-nav-button prev" onclick="changeImage(-1)">&#10094;</button>
                     <button class="image-nav-button next" onclick="changeImage(1)">&#10095;</button>
                 </div> -->
-                <div class="product-image-container image-zoom-container">
-                    <img src="{{ product.images.first.image }}" class="product-image zoom-image" id="mainImage" alt="{{ product.name }}">
+                <div class="product-image-container img-magnifier-container">
+                    <img src="{{ product.images.first.image }}" class="product-image" id="mainImage" alt="{{ product.name }}">
                     <div class="image-zoom-result" id="imageZoomResult"></div>
                     <button class="image-nav-button prev" onclick="changeImage(-1)">&#10094;</button>
                     <button class="image-nav-button next" onclick="changeImage(1)">&#10095;</button>
@@ -392,7 +390,9 @@ const images = [
 
 function setActiveImage(index) {
     currentImageIndex = index;
-    document.getElementById('mainImage').src = images[index];
+    const mainImage = document.getElementById('mainImage');
+    mainImage.src = images[index];
+    magnify("mainImage", 1.5); //this line ensures the zoom is re-applied to the new image
     updateThumbnails();
 }
 
@@ -470,22 +470,91 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
 //zoom effect
-document.querySelector('.image-zoom-container').addEventListener('mousemove', function (e) {
-    const zoomImage = e.target.querySelector('.zoom-image');
-    const containerRect = this.getBoundingClientRect();
+function magnify(imgID, zoom) {
+  var img, glass, w, h, bw;
+  img = document.getElementById(imgID);
 
-    const offsetX = e.clientX - containerRect.left;
-    const offsetY = e.clientY - containerRect.top;
-    const moveX = (offsetX / containerRect.width) * 100;
-    const moveY = (offsetY / containerRect.height) * 100;
+    // Check if magnifier glass already exists and remove it
+    let existingGlass = img.parentElement.querySelector(".img-magnifier-glass");
+    if (existingGlass) {
+        existingGlass.remove();
+    }
+  
+  /* Create magnifier glass: */
+  glass = document.createElement("DIV");
+  glass.setAttribute("class", "img-magnifier-glass");
 
-    zoomImage.style.transformOrigin = `${moveX}% ${moveY}%`;
-    zoomImage.style.transform = 'scale(1.5)';
-});
-document.querySelector('.image-zoom-container').addEventListener('mouseleave', function () {
-    const zoomImage = this.querySelector('.zoom-image');
-    zoomImage.style.transformOrigin = 'center center';
-    zoomImage.style.transform = 'scale(1)';
-});
+  /* Insert magnifier glass: */
+  img.parentElement.insertBefore(glass, img);
+
+  /* Set background properties for the magnifier glass: */
+  glass.style.backgroundImage = "url('" + img.src + "')";
+  glass.style.backgroundRepeat = "no-repeat";
+  glass.style.backgroundSize = (img.width * zoom) + "px " + (img.height * zoom) + "px";
+  bw = 3;
+  w = glass.offsetWidth / 2;
+  h = glass.offsetHeight / 2;
+
+  // Initially hide the magnifier
+  glass.style.display = "none"; // <-- Initially hide the magnifier
+
+  /* Execute a function when someone moves the magnifier glass over the image: */
+  glass.addEventListener("mousemove", moveMagnifier);
+  img.addEventListener("mousemove", moveMagnifier);
+
+  /* and also for touch screens: */
+  glass.addEventListener("touchmove", moveMagnifier);
+  img.addEventListener("touchmove", moveMagnifier);
+
+  /* Hide the magnifier when the mouse leaves the image or the magnifier: */
+  img.addEventListener("mouseleave", function() {
+    glass.style.display = "none"; // <-- Hide the magnifier
+  });
+  
+  glass.addEventListener("mouseleave", function() {
+    glass.style.display = "none"; // <-- Hide the magnifier
+  });
+
+  /* Show the magnifier when hovering over the image */
+  img.addEventListener("mouseenter", function() {
+    glass.style.display = "block"; // <-- Show the magnifier
+  });
+
+  function moveMagnifier(e) {
+    var pos, x, y;
+    /* Prevent any other actions that may occur when moving over the image */
+    e.preventDefault();
+    /* Get the cursor's x and y positions: */
+    pos = getCursorPos(e);
+    x = pos.x;
+    y = pos.y;
+    /* Prevent the magnifier glass from being positioned outside the image: */
+    if (x > img.width - (w / zoom)) {x = img.width - (w / zoom);}
+    if (x < w / zoom) {x = w / zoom;}
+    if (y > img.height - (h / zoom)) {y = img.height - (h / zoom);}
+    if (y < h / zoom) {y = h / zoom;}
+    /* Set the position of the magnifier glass: */
+    glass.style.left = (x - w) + "px";
+    glass.style.top = (y - h) + "px";
+    /* Display what the magnifier glass "sees": */
+    glass.style.backgroundPosition = "-" + ((x * zoom) - w + bw) + "px -" + ((y * zoom) - h + bw) + "px";
+  }
+
+  function getCursorPos(e) {
+    var a, x = 0, y = 0;
+    e = e || window.event;
+    /* Get the x and y positions of the image: */
+    a = img.getBoundingClientRect();
+    /* Calculate the cursor's x and y coordinates, relative to the image: */
+    x = e.pageX - a.left;
+    y = e.pageY - a.top;
+    /* Consider any page scrolling: */
+    x = x - window.pageXOffset;
+    y = y - window.pageYOffset;
+    return {x : x, y : y};
+  }
+}
+
+magnify("mainImage", 1.2);
 </script>
 {% endblock %}
