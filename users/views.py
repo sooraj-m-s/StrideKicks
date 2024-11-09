@@ -140,7 +140,6 @@ def verify_email(request):
         )
         new_user.save()
 
-        # Clear the session data after verification and user creation
         if 'user_data' in request.session:
                 del request.session['user_data']
                 request.session.modified = True

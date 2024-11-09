@@ -61,6 +61,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
+    'admin.middleware.SocialAuthExceptionMiddleware',
+    # 'admin.middleware.ActiveUserMiddleware',
 ]
 
 ROOT_URLCONF = 'StrideKicks.urls'
@@ -177,12 +179,14 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://127.0.0.1:8000/complete/google-oauth2/'
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/users/account_overview/'
-
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 
-LOGIN_URL = '/login_to_account/'
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = ''
+
+LOGIN_URL = '/'
+LOGOUT_URL = 'logout/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
