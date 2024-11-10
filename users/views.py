@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from django.conf import settings
 from django.utils.html import strip_tags
+from django.views.decorators.http import require_http_methods
 import re, random, json
 from .models import Users
 from .forms import CustomAuthenticationForm
@@ -28,6 +29,14 @@ def signup_view(request):
         mobile_no = request.POST.get('mobile_no')
         password = request.POST.get('password')
         retype_password = request.POST.get('retype_password')
+
+        if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", first_name):
+            messages.error(request, 'Invalid first name, please enter a valid input.')
+            return redirect('signup')
+
+        if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", last_name):
+            messages.error(request, 'Invalid last name, please enter a valid input.')
+            return redirect('signup')
 
         if not re.match(r"^[A-Za-z\._\-0-9]+@[A-Za-z]+\.[a-z]{2,4}$", email):
             messages.error(request, 'Invalid email, please enter a valid emali.')
@@ -59,7 +68,6 @@ def signup_view(request):
             'email': email,
             'mobile_no': mobile_no,
             'password': password,
-            'retype_password': retype_password,
             'otp': otp,
             'otp_expiry': otp_expiry
         }
@@ -210,7 +218,7 @@ def login_to_account(request):
             user = form.get_user()
             if user is not None:
                 login(request, user)
-                messages.success(request, 'Login Successful.')
+                request.session['user_id'] = user.user_id
                 return redirect('home')
             else:
                 messages.error(request, 'Authentication failed.')
@@ -222,6 +230,46 @@ def login_to_account(request):
 
     form = CustomAuthenticationForm(request)
     return render(request, 'login.html', {'form': form, 'google_auth_url': google_auth_url})
+
+
+@require_http_methods(["GET", "POST"])
+def get_account(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = Users.objects.get(email=email)
+            return redirect('forgot_password', user_id=user.user_id)
+        except Users.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+    return render(request, 'get_account.html')
+
+
+@require_http_methods(["GET", "POST"])
+def reset_password(request, user_id):
+    try:
+        user = Users.objects.get(user_id=user_id)
+    except Users.DoesNotExist:
+        messages.error(request, 'Invalid user.')
+        return redirect('verify_email')
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'forgot_password.html', {'user': user})
+
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long.')
+            return render(request, 'forgot_password.html', {'user': user})
+
+        user.password = make_password(new_password)
+        user.save()
+        messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
+        return redirect('login_to_account')
+
+    return render(request, 'forgot_password.html', {'user': user})
 
 
 def logout_account(request):

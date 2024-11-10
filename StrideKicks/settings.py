@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'product',
     'category',
     'brand',
+    'userpanel',
     'wallet',
     'coupon',
     'reviews',

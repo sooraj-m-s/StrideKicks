@@ -41,12 +41,10 @@ def products_view(request):
         'categories': categories,
         'search_query': search_query,
         'selected_category': category_id
-
     }
     return render(request, 'admin_product.html', data)
 
 
-@transaction.atomic
 @login_required(login_url='admin_login')
 @require_POST
 def delete_product(request, product_id):
@@ -221,11 +219,14 @@ def edit_product(request, product_id):
         except ValueError:
             errors['quantity'] = 'Quantity should be a valid number.'
 
-        if new_images and (len(new_images) + product.image.count() < 3 or len(new_images) + product.image.count() > 10):
-            errors['images'] = 'Total number of images should be between 3 and 10.'
+        existing_image_count = product.images.count()
+        print('img cnt: ',existing_image_count)
+        total_image_count = existing_image_count + len(new_images)
+        if total_image_count < 3 or total_image_count > 10:
+            errors['images'] = f'Total number of images should be between 3 and 10. Current total: {total_image_count}'
 
         if not variants:
-            errors['variants'] = 'At least one variant is required.'
+            errors['variants'] = 'At least one varient is required.'
 
         for variant in variants:
             if not variant['color'].strip():

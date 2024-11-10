@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Get Account{% endblock %}
+
+{% block style %}
+<style>
+    .auth-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: stretch;
+    }
+    
+    .auth-form-side {
+        flex: 1;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-width: 500px;
+    }
+    
+    .auth-image-side {
+        flex: 1;
+        background-image: url('{% static "images/auth-bg.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        display: none;
+    }
+    
+    .auth-form {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .form-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: #333;
+    }
+    
+    .form-control {
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        background-color: #333;
+        color: white;
+        border: none;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+    
+    .btn-primary:hover {
+        background-color: #222;
+    }
+    
+    .message-error {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .message-success {
+        color: #28a745;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    @media (min-width: 768px) {
+        .auth-image-side {
+            display: block;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-container">
+    <div class="auth-form-side">
+        <div class="auth-form">
+            <h1 class="form-title">Forgot Password?</h1>
+            <p class="mb-4">Enter your email address to reset your password.</p>
+
+            {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'error' %}
+                    <div class="message-error">{{ message }}</div>
+                {% elif message.tags == 'success' %}
+                    <div class="message-success">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="{% url 'forgot_password' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input 
+                        type="email" 
+                        class="form-control" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        placeholder="Enter your email"
+                    >
+                </div>
+                <button type="submit" class="btn btn-primary">Send Reset Link</button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <a href="{% url 'login' %}" class="text-decoration-none">Back to Login</a>
+            </div>
+        </div>
+    </div>
+    <div class="auth-image-side"></div>
+</div>
+{% endblock %}

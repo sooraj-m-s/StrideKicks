@@ -1,0 +1,165 @@
+{% extends "base_user.html" %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block link %}
+{% endblock %}
+
+{% block style %}
+<style>
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #000;
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .list-group-item.active:hover {
+        background-color: #f0f1f2;
+    }
+    .card {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #333;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+    }
+    .message-success {
+        color: #28a745;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    .message-error {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'profile' %}">Account</a></li>
+            <li class="breadcrumb-item active">Edit Profile</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hi, {{ user.first_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-box me-2"></i> My Orders
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-cart me-2"></i> Cart
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart me-2"></i> Wishlist
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> Manage Address
+                        </a>
+                        <a href="{% url 'logout_account' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Update Profile</h5>
+                </div>
+                {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <p class="message-error">{{ message }}</p>
+                    {% elif message.tags == 'success' %}
+                        <p class="message-success">{{ message }}</p>
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
+                <div class="card-body">
+                    <form method="POST" action="{% url 'update_profile' %}">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">First Name</label>
+                                <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                            <small class="text-muted">Email cannot be changed</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mobile Number</label>
+                            <input type="tel" class="form-control" value="{{ user.mobile_no }}" readonly>
+                            <small class="text-muted">Contact support to update mobile number</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="{% url 'cancel_profile_update' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

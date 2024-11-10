@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             fetch(`/product/delete-product/${productToDelete}/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': '{{ csrf_token }}',
                     'Content-Type': 'application/json',
                 },
                 credentials: 'same-origin'

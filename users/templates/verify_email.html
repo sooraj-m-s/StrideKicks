@@ -1,47 +1,88 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block title %}Email Verification{% endblock %}
 
 {% block style %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
-.form-container {
-    max-width: 500px;
-    margin: 2rem auto;
-    padding: 2rem;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+    background-color: #f8f9fa;
 }
+
+.form-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.image-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.image-side img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
 .logo {
     font-family: cursive;
     font-size: 2rem;
     text-decoration: none;
     color: #000;
 }
-.form-label {
-    font-weight: 500;
-}
+
 .btn-verify {
     background-color: #dc3545;
     border-color: #dc3545;
     padding: 0.8rem;
+    width: 100%;
 }
+
 .btn-verify:hover {
     background-color: #bb2d3b;
     border-color: #bb2d3b;
 }
+
 .btn-resend {
     background-color: #6c757d;
     border-color: #6c757d;
+    width: 100%;
 }
+
 .btn-resend:hover:not(:disabled) {
     background-color: #5a6268;
     border-color: #545b62;
 }
+
 .timer {
     font-size: 0.9rem;
     color: #6c757d;
+    text-align: center;
+    margin-top: 1rem;
 }
+
 .message-info {
     background-color: #cce5ff;
     border: 1px solid #b8daff;
@@ -51,57 +92,60 @@
     border-radius: 4px;
     text-align: center;
 }
-.btn-back {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+
+.form-control {
+    padding: 0.8rem;
+    border-radius: 4px;
 }
 </style>
 {% endblock %}
 
 {% block body %}
-<div class="container">
-    <a href="{% url 'signup' %}" class="btn btn-outline-secondary btn-back">&larr; Back</a>
-    <div class="text-center mt-4">
-        <a href="/" class="logo">StrideKicks</a>
-        <p class="text-muted">Online Store</p>
+<div class="auth-container">
+    <div class="form-side">
+        <div class="form-container">
+            <div class="text-center mb-4">
+                <a href="/" class="logo">StrideKicks</a>
+                <p class="text-muted">Online Store</p>
+            </div>
+
+            <h2 class="text-center mb-4">Welcome {{ first_name }}</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                <p class="message-info">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+
+            <form id="verificationForm" action="{% url 'verify_email' %}" method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <input type="text" class="form-control text-center" id="verification-code" name="code" required placeholder="Enter OTP to get verified">
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-verify">Verify OTP</button>
+                    <button type="button" id="resendBtn" class="btn btn-secondary btn-resend" style="display: none;">
+                        Resend OTP
+                    </button>
+                </div>
+
+                <p id="resendTimer" class="timer">
+                    Resend OTP in <span id="countdown">30</span> seconds
+                </p>
+
+                <p class="timer">
+                    OTP expires in <span id="expirationTimer">05:00</span>
+                </p>
+            </form>
+        </div>
     </div>
-
-    <div class="form-container">
-        <h2 class="text-center mb-4">Welcome {{ first_name }}</h2>
-
-        {% if messages %}
-            {% for message in messages %}
-            <p class="message-info">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-
-        <form id="verificationForm" action="{% url 'verify_email' %}" method="POST">
-            {% csrf_token %}
-            
-            <div class="mb-3">
-                <input type="text" class="form-control text-center" id="verification-code" name="code" required placeholder="Enter OTP to get verified">
-            </div>
-
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-verify">Verify OTP</button>
-                <button type="button" id="resendBtn" class="btn btn-secondary btn-resend" {% if not can_resend %}style="display: none;"{% endif %}>
-                    Resend OTP
-                </button>
-            </div>
-
-            <p id="resendTimer" class="text-center mt-3 timer" {% if can_resend %}style="display: none;"{% endif %}>
-                Resend OTP in <span id="countdown">{{ resend_countdown }}</span> seconds
-            </p>
-
-            <p class="text-center mt-3 timer">
-                OTP expires in <span id="expirationTimer">{{ expiration_time }}</span>
-            </p>
-        </form>
+    <div class="image-side">
+        <img src="{% static 'images/login.png' %}" alt="Authentication">
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const verificationForm = document.getElementById('verificationForm');
@@ -110,41 +154,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const countdownEl = document.getElementById('countdown');
     const expirationTimer = document.getElementById('expirationTimer');
     
-    let resendCount = {{ resend_countdown }};
-    let expirationCount = {{ expiration_seconds }};
+    let resendCount = parseInt(localStorage.getItem('resendCount')) || 30;
+    let expirationCount = parseInt(localStorage.getItem('expirationCount')) || 300;
+    let resendTimerId, expirationTimerId;
 
-    function updateResendTimer() {
-        resendCount--;
-        if (resendCount >= 0) {
-            countdownEl.textContent = resendCount;
-        } else {
+    function updateUI() {
+        if (resendCount <= 0) {
             resendTimer.style.display = 'none';
             resendBtn.style.display = 'block';
-        }
-    }
-
-    function updateExpirationTimer() {
-        expirationCount--;
-        if (expirationCount >= 0) {
-            const minutes = Math.floor(expirationCount / 60);
-            const seconds = expirationCount % 60;
-            expirationTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         } else {
-            Swal.fire({
-                title: 'OTP Expired',
-                text: 'Please request a new one.',
-                icon: 'warning',
-                confirmButtonText: 'Resend OTP'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    resendOTP();
-                }
-            });
+            resendTimer.style.display = 'block';
+            resendBtn.style.display = 'none';
+            countdownEl.textContent = resendCount;
         }
+
+        const minutes = Math.floor(expirationCount / 60);
+        const seconds = expirationCount % 60;
+        expirationTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    setInterval(updateResendTimer, 1000);
-    setInterval(updateExpirationTimer, 1000);
+    function startTimers() {
+        clearInterval(resendTimerId);
+        clearInterval(expirationTimerId);
+
+        resendTimerId = setInterval(function() {
+            if (resendCount > 0) {
+                resendCount--;
+                localStorage.setItem('resendCount', resendCount);
+                updateUI();
+            } else {
+                clearInterval(resendTimerId);
+            }
+        }, 1000);
+
+        expirationTimerId = setInterval(function() {
+            if (expirationCount > 0) {
+                expirationCount--;
+                localStorage.setItem('expirationCount', expirationCount);
+                updateUI();
+            } else {
+                clearInterval(expirationTimerId);
+                Swal.fire({
+                    title: 'OTP Expired',
+                    text: 'Please request a new one.',
+                    icon: 'warning',
+                    confirmButtonText: 'Resend OTP'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        resendOTP();
+                    }
+                });
+            }
+        }, 1000);
+    }
+
+    updateUI();
+    startTimers();
 
     verificationForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -161,6 +226,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                localStorage.removeItem('resendCount');
+                localStorage.removeItem('expirationCount');
+                clearInterval(resendTimerId);
+                clearInterval(expirationTimerId);
                 Swal.fire({
                     title: 'Success!',
                     text: 'Verification successful!',
@@ -192,23 +261,25 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                resendCount = 30;
+                expirationCount = 300;
+                localStorage.setItem('resendCount', resendCount);
+                localStorage.setItem('expirationCount', expirationCount);
+                updateUI();
+                startTimers();
+                
                 Swal.fire({
                     title: 'OTP Resent',
                     text: 'Please check your email for the new verification code.',
                     icon: 'success',
-                    confirmButtonText: 'OK',
+                    confirmButtonText: 'OK'
                 });
-                location.reload();
             } else {
                 Swal.fire({
                     title: 'Error',
                     text: 'Unable to resend code.',
                     icon: 'error',
                     confirmButtonText: 'Try Again'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '{% url "signup" %}';
-                    }
                 });
             }
         });

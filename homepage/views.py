@@ -35,3 +35,9 @@ def product_detail(request, product_id):
     }
     
     return render(request, 'product_detail.html', data)
+
+
+@login_required(login_url='login_to_account')
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def about_us(request):
+    return render(request, 'about.html')

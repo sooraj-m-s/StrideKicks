@@ -133,7 +133,6 @@
         
         <form action="{% url 'signup' %}" method="POST">
             {% csrf_token %}
-            
             <div class="row mb-3">
                 <div class="col-md-6">
                     <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" required>
