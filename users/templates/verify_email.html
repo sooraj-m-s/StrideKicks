@@ -97,6 +97,13 @@
     padding: 0.8rem;
     border-radius: 4px;
 }
+
+.btn-back {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
 </style>
 {% endblock %}
 
@@ -105,6 +112,7 @@
     <div class="form-side">
         <div class="form-container">
             <div class="text-center mb-4">
+                <a href="{% url 'signup' %}" class="btn btn-outline-secondary btn-back">&larr; Back</a>
                 <a href="/" class="logo">StrideKicks</a>
                 <p class="text-muted">Online Store</p>
             </div>
@@ -142,7 +150,7 @@
         </div>
     </div>
     <div class="image-side">
-        <img src="{% static 'images/login.png' %}" alt="Authentication">
+        <img src="{% static 'images/verify-email.jpg' %}" alt="Authentication">
     </div>
 </div>
 
