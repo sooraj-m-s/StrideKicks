@@ -19,7 +19,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 5rem;
 }
 
 .form-container {
@@ -36,7 +36,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 5rem;
 }
 
 .image-side img {
@@ -158,6 +158,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let expirationCount = parseInt(localStorage.getItem('expirationCount')) || 300;
     let resendTimerId, expirationTimerId;
 
+    // Check if the resend button should be visible on page load
+    if (resendCount <= 0) {
+        resendBtn.style.display = 'block';
+        resendTimer.style.display = 'none';
+    }
+
     function updateUI() {
         if (resendCount <= 0) {
             resendTimer.style.display = 'none';
@@ -177,15 +183,17 @@ document.addEventListener('DOMContentLoaded', function() {
         clearInterval(resendTimerId);
         clearInterval(expirationTimerId);
 
-        resendTimerId = setInterval(function() {
-            if (resendCount > 0) {
-                resendCount--;
-                localStorage.setItem('resendCount', resendCount);
-                updateUI();
-            } else {
-                clearInterval(resendTimerId);
-            }
-        }, 1000);
+        if (resendCount > 0) {
+            resendTimerId = setInterval(function() {
+                if (resendCount > 0) {
+                    resendCount--;
+                    localStorage.setItem('resendCount', resendCount);
+                    updateUI();
+                } else {
+                    clearInterval(resendTimerId);
+                }
+            }, 1000);
+        }
 
         expirationTimerId = setInterval(function() {
             if (expirationCount > 0) {
