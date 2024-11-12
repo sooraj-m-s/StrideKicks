@@ -95,7 +95,7 @@
                     <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
-                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <p class="rating">
                                 <span>⭐⭐⭐⭐☆</span>
                                 <span class="rating-value">(4.0)</span>
@@ -129,7 +129,7 @@
                     <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
-                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <p class="rating">
                                 <span>⭐⭐⭐☆☆</span>
                                 <span class="rating-value">(3.0)</span>
@@ -163,7 +163,7 @@
                     <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
-                            <h5 class="card-title h6">{{ product.name }}</h5>
+                            <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <p class="rating">
                                 <span>⭐⭐⭐☆☆</span>
                                 <span class="rating-value">(3.0)</span>

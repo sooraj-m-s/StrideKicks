@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'category',
     'brand',
     'userpanel',
+    'cart',
     'wallet',
     'coupon',
     'reviews',
