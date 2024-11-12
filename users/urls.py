@@ -8,7 +8,5 @@ urlpatterns = [
     path('', views.login_to_account, name='login_to_account'),
     path('logout/', views.logout_account, name='logout_account'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),
-    path('reset-password/<int:user_id>/', views.reset_password, name='reset_password'),
-    path('resend-otp/<int:user_id>/', views.resend_otp, name='resend_otp'),
+    path('reset-password/', views.reset_password, name='reset_password'),
 ]
-                                                                                   
