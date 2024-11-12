@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
+from django.utils.timezone import now
 import re, random, json
 from .models import Users
 from .forms import CustomAuthenticationForm
@@ -240,20 +241,42 @@ def forgot_password(request):
             user = Users.objects.get(email=email)
             otp = random.randint(100000, 999999)
             otp_expiry = (timezone.now() + timedelta(minutes=5)).isoformat()
+            html_message = f"""
+                <html>
+                    <body style="font-family: Arial, sans-serif; color: #333;">
+                        <h2 style="color: #4CAF50;">Reset Password</h2>
+                        <p>Dear user,</p>
+                        <p>Hi {user.first_name.title()}. Please use the following code to reset password. <strong>This code will expire in 5 minutes.</strong></p>
+                        <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{otp}</p>
+                        <p>If you didn’t request this, please ignore this email.</p>
+                        <p>Best regards,<br>StrideKicks</p>
+                    </body>
+                </html>
+                """
+            plain_message = strip_tags(html_message)
+            send_mail(
+                'Verify your email',
+                plain_message,
+                settings.EMAIL_HOST_USER,
+                [user],
+                fail_silently=False,
+                html_message=html_message,
+            )
             request.session['user_data'] = {
-            'user': user,
-            'otp': otp,
-            'otp_expiry': otp_expiry,
-        }
+                'user_id': user.user_id,
+                'email': user.email,
+                'otp': otp,
+                'otp_expiry': otp_expiry,
+            }
             return redirect('reset_password')
         except Users.DoesNotExist:
             messages.error(request, 'No account found with this email address.')
     return render(request, 'forgot_password.html')
 
 
+@require_http_methods(["GET", "POST"])
 def reset_password(request):
     user_data = request.session.get('user_data')
-    
     if not user_data:
         messages.error(request, 'Password reset session expired. Please try again.')
         return redirect('forgot_password')
@@ -264,27 +287,41 @@ def reset_password(request):
         confirm_password = request.POST.get('confirm_password')
 
         if str(user_data['otp']) != str(otp):
-            messages.error(request, 'Invalid OTP. Please try again.')
-            return render(request, 'reset_password.html')
+            messages.error(request, 'Invalid OTP.')
+            return redirect('reset_password')
 
-        otp_expiry = timezone.datetime.fromisoformat(user_data['otp_expiry'])
-        if timezone.now() > otp_expiry:
+        if now() > timezone.datetime.fromisoformat(user_data['otp_expiry']):
             messages.error(request, 'OTP has expired. Please request a new one.')
-            return render(request, 'reset_password.html')
+            return redirect('forgot_password')
 
         if new_password != confirm_password:
             messages.error(request, 'Passwords do not match.')
-            return render(request, 'reset_password.html')
+            return redirect('reset_password')
+        
+        if len(new_password) < 8 or new_password.isspace():
+            messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+            return redirect('signup')
 
-        user = user_data['user']
-        user.password = make_password(new_password)
-        user.save()
+        try:
+            user = Users.objects.get(user_id=user_data['user_id'])
+            user.set_password(new_password)
+            user.save()
 
-        messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
-        del request.session['user_data']
-        return redirect('login_to_account')
+            messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
+            del request.session['user_data']
+            return redirect('login_to_account')
+        except Users.DoesNotExist:
+            messages.error(request, 'User not found. Please try the password reset process again.')
+            return redirect('forgot_password')
 
-    return render(request, 'reset_password.html')
+    otp_expiry = timezone.datetime.fromisoformat(user_data['otp_expiry'])
+    resend_available = timezone.now() + timedelta(seconds=30)
+
+    context = {
+        'otp_expiry_timestamp': int(otp_expiry.timestamp()),
+        'resend_available_timestamp': int(resend_available.timestamp()),
+    }
+    return render(request, 'reset_password.html', context)
 
 
 def logout_account(request):

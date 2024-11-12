@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Get Account{% endblock %}
+
+{% block style %}
+<style>
+    .form-control {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+    }
+    .btn {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+    }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <!-- Form Section -->
+        <div class="col-md-6 d-flex align-items-center justify-content-center">
+            <div class="w-75">
+                <h2 class="mb-4">Forgot Password</h2>
+                <p class="text-muted mb-4">Enter your email address to reset your password</p>
+                
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'get_account' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Send Reset Link
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p>Remember your password? <a href="{% url 'login_to_account' %}" class="text-decoration-none">Login here</a></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Image Section -->
+        <div class="col-md-6 d-none d-md-block">
+            <div class="h-100" style="background: url('{% static 'images/verify-email.jpg' %}') center/cover no-repeat;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
