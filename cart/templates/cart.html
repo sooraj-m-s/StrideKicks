@@ -255,7 +255,7 @@
                 <span>TOTAL</span>
                 <span>₹{{ cart.total_price }}</span>
             </div>
-            <a href="{% url 'checkout' %}" class="checkout-btn">Checkout</a>
+            <a href="#" class="checkout-btn">Checkout</a>
         </div>
     </div>
     <!-- Latest Products Section -->
@@ -296,7 +296,6 @@
         <h2>Your cart is empty</h2>
         <p>Add items to your cart to see them here.</p>
     </div>
-    {% endif %}
 
     <!-- Latest Products Section -->
     <div class="latest-products">
@@ -331,5 +330,7 @@
             {% endfor %}
         </div>
     </div>
+    {% endif %}
+
 </div>
 {% endblock %}

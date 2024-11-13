@@ -28,7 +28,7 @@ def home(request):
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     # related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
-    related_products = Product.objects.all().exclude(id=product.id)[:4]
+    related_products = Product.objects.filter(is_deleted=False).exclude(id=product.id)[:4]
     data = {
         'product': product,
         'related_products': related_products,

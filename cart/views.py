@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+from django.contrib import messages
 from django.db.models import Sum
 from .models import Cart, CartItem
 from product.models import Product, ProductVarient
@@ -81,45 +83,42 @@ def add_to_cart(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(Product, id=product_id)
         variant_id = request.POST.get('variant')
-        quantity = int(request.POST.get('quantity', 1))
+        quantity = 1  # Default quantity
         
-        if product.quantity < quantity:
-            return JsonResponse({
-                'success': False,
-                'message': 'Not enough stock available'
-            })
-        
+        # Get or create cart
         cart, created = Cart.objects.get_or_create(user=request.user)
         variant = get_object_or_404(ProductVarient, id=variant_id) if variant_id else None
         
-        # Calculate discount
-        discount = variant.actual_price - variant.sale_price if variant and variant.sale_price else 0
-        
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            variant=variant,
-            defaults={
-                'quantity': 0,
-                'price': variant.sale_price if variant else product.price,
-                'discount': discount
-            }
-        )
-        
-        # Update quantity if within limits
-        new_quantity = cart_item.quantity + quantity
-        max_quantity = min(5, product.quantity)
-        if new_quantity <= max_quantity:
+        try:
+            # Calculate discount
+            discount = variant.actual_price - variant.sale_price if variant and variant.sale_price else 0
+            
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product=product,
+                variant=variant,
+                defaults={
+                    'quantity': 0,
+                    'price': variant.sale_price if variant else product.price,
+                    'discount': discount
+                }
+            )
+            
+            # Update quantity
+            new_quantity = cart_item.quantity + quantity
             cart_item.quantity = new_quantity
-            cart_item.save()
-            message = 'Product added to cart successfully'
-        else:
-            message = f'Cannot add more than {max_quantity} units of this product'
+            cart_item.save()  # This will trigger validation in the model
+            
+            messages.success(request, 'Product added to cart successfully')
+            
+        except ValidationError as e:
+            messages.error(request, str(e))
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
-                'message': message,
+                'message': 'Product added to cart successfully',
                 'cart_total': float(cart.total_price)
             })
     

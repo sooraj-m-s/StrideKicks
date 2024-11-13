@@ -38,6 +38,10 @@
     align-items: center;
     margin-bottom: 1.5rem;
 }
+.product-rating {
+    color: #ffd700;
+    margin-bottom: 5px;
+}
 .price {
     font-weight: bold;
     color: #333;
@@ -96,10 +100,16 @@
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
-                            <p class="rating">
-                                <span>⭐⭐⭐⭐☆</span>
-                                <span class="rating-value">(4.0)</span>
-                            </p>
+                            <div class="product-rating">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= product.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ product.rating }}.0)
+                            </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
                                 <span class="original-price">₹{{ variant.actual_price }}</span>
@@ -130,10 +140,16 @@
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
-                            <p class="rating">
-                                <span>⭐⭐⭐☆☆</span>
-                                <span class="rating-value">(3.0)</span>
-                            </p>
+                            <div class="product-rating">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= product.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ product.rating }}.0)
+                            </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
                                 <span class="original-price">₹{{ variant.actual_price }}</span>
@@ -164,10 +180,16 @@
                         <img src="{{ product.images.first.image }}" class="card-img-top product-image" alt="{{ product.name }}">
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
-                            <p class="rating">
-                                <span>⭐⭐⭐☆☆</span>
-                                <span class="rating-value">(3.0)</span>
-                            </p>
+                            <div class="product-rating">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= product.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ product.rating }}.0)
+                            </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
                                 <!-- <span class="price">₹{{ variant.actual_price }}</span> -->

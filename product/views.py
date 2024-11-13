@@ -29,7 +29,7 @@ def products_view(request):
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     if search_query:
-        products = products.filter(Q(name__icontains=search_query))
+        products = products.filter(Q(name__istartswith=search_query))
     if category_id:
         products = products.filter(category_id=category_id)
     products = products.annotate(min_sale_price=Min('variants__sale_price'))

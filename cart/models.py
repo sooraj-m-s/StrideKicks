@@ -34,9 +34,9 @@ class CartItem(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     added_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        if self.quantity <= 0 or self.product.quantity < self.quantity:
-            raise ValidationError(f"Insufficient quantity for {self.product.name}. Available: {self.product.quantity}")
+    # def clean(self):
+    #     if self.quantity <= 0 or self.product.quantity < self.quantity:
+    #         raise ValidationError(f"Insufficient quantity for {self.product.name}. Available: {self.product.quantity}")
 
     def save(self, *args, **kwargs):
         self.clean()

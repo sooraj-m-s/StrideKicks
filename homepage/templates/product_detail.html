@@ -94,6 +94,10 @@
 .thumbnail.active {
     border-color: #000;
 }
+.product-rating {
+    color: #ffd700;
+    margin-bottom: 5px;
+}
 .product-info {
     padding-left: 2rem;
 }
@@ -168,10 +172,16 @@
         <div class="col-md-6">
             <div class="product-info">
                 <h1>{{ product.name }}</h1>
-                <p class="rating">
-                    <span>⭐⭐⭐⭐☆</span>
-                    <span class="rating-value">(4.0)</span>
-                </p>
+                <div class="product-rating">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= product.rating %}
+                            ★
+                        {% else %}
+                            ☆
+                        {% endif %}
+                    {% endfor %}
+                    ({{ product.rating }}.0)
+                </div>
                 <div class="sale-price">₹{{ product.variants.first.sale_price }}</div>
                 <div class="original-price">₹{{ product.variants.first.actual_price }}</div>
                 
@@ -198,11 +208,24 @@
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
                     {% if product.quantity > 0 %}
-                    <button class="btn btn-primary btn-lg me-2 flex-grow-1">Buy Now</button>
+                    <!-- <button class="btn btn-primary btn-lg me-2 flex-grow-1">Buy Now</button>
                     <button class="btn btn-dark btn-lg me-2 flex-grow-1">Add to Cart</button>
                     <button class="wishlist-btn" onclick="toggleWishlist(this)">
                         <i class="fas fa-heart"></i>
-                    </button>
+                    </button> -->
+
+            
+                    <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="variant" value="{{ product.variants.first.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">Buy Now</button>
+                        <button type="submit" class="btn btn-dark btn-lg flex-grow-1">Add to Cart</button>
+                        <button type="button" class="wishlist-btn" onclick="toggleWishlist(this)">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </form>
+                  
                     {% else %}
                         <button class="btn btn-secondary btn-lg me-2 flex-grow-1" disabled>Sold Out</button>
                         <button class="wishlist-btn" onclick="toggleWishlist(this)">
@@ -234,12 +257,20 @@
                         <img src="{{ related_product.images.first.image }}" class="card-img-top" alt="{{ related_product.name }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ related_product.name }}</h5>
-                            <p class="rating">
-                                <span>⭐⭐⭐☆☆</span>
-                                <span class="rating-value">(3.0)</span>
-                            </p>
-                            <p class="card-text">₹{{ related_product.variants.first.sale_price }}</p>
-                            <p class="original-price">₹{{ related_product.variants.first.actual_price }}</p>
+                            <div class="product-rating">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= product.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ product.rating }}.0)
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="original-price">₹{{ related_product.variants.first.sale_price }}</span>
+                                <span class="card-text" style="color: #dc3545; margin-left: 0.5rem;">₹{{ related_product.variants.first.actual_price }}</span>
+                            </div>
                         </div>
                     </a>
                 </div>
