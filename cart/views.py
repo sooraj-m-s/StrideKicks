@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.db.models import Sum
 from .models import Cart, CartItem
-from product.models import Product, ProductVarient
+from product.models import Product, ProductVariant
 
 
 # Create your views here.
@@ -87,7 +87,7 @@ def add_to_cart(request, product_id):
         
         # Get or create cart
         cart, created = Cart.objects.get_or_create(user=request.user)
-        variant = get_object_or_404(ProductVarient, id=variant_id) if variant_id else None
+        variant = get_object_or_404(ProductVariant, id=variant_id) if variant_id else None
         
         try:
             # Calculate discount

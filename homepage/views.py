@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
-from product.models import Product, ProductVarient, ProductImage
+from product.models import Product
 
 
 # Create your views here.

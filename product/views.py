@@ -8,8 +8,8 @@ from django.utils import timezone
 from django.views.decorators.cache import cache_control
 import cloudinary, cloudinary.uploader
 import re, json
-from django.db import transaction
-from .models import Product, ProductVarient, ProductImage
+from django.db import transaction, IntegrityError
+from .models import Product, ProductVariant, ProductImage
 from brand.models import Brand
 from category.models import Category
 from utils.decorators import admin_required
@@ -23,7 +23,7 @@ from utils.decorators import admin_required
 def products_view(request):
     first_name = request.user.first_name.title()
     products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('name')
-    varients = ProductVarient.objects.filter(is_deleted=False)
+    variants = ProductVariant.objects.filter(is_deleted=False)
     categories = Category.objects.filter(is_deleted=False)
 
     search_query = request.GET.get('search', '')
@@ -37,7 +37,7 @@ def products_view(request):
     data = {
         'first_name': first_name,
         'products': products,
-        'varients': varients,
+        'variants': variants,
         'categories': categories,
         'search_query': search_query,
         'selected_category': category_id
@@ -47,9 +47,11 @@ def products_view(request):
 
 @login_required(login_url='admin_login')
 @require_POST
-def delete_product(request, product_id):
+def delete_product(request, id):
     try:
-        product = get_object_or_404(Product, id=product_id)
+        print('hello: ', id, type(id))
+        product = get_object_or_404(Product, id=id)
+        print('getted okok')
         product.is_deleted = True
         product.deleted_at = timezone.now()
         product.save()
@@ -67,15 +69,12 @@ def add_product(request):
         category_id = request.POST.get('category')
         brand_id = request.POST.get('brand')
         description = request.POST.get('description', '').strip()
-        quantity = request.POST.get('quantity')
         variants = json.loads(request.POST.get('variants', '[]'))
-
-        existing_product = Product.objects.filter(name=name).exists()
 
         errors = {}
 
-        if existing_product:
-            errors['name_exist'] = 'Product with this name already exists.'
+        if Product.objects.filter(name=name).exists():
+            errors['name'] = 'Product with this name already exists.'
 
         if not name or re.search(r'[^a-zA-Z0-9\s]', name):
             errors['name'] = 'Product name should contain only text and numbers.'
@@ -89,82 +88,104 @@ def add_product(request):
         if len(description) < 20:
             errors['description'] = f'{20 - len(description)} more characters needed.'
 
-        try:
-            quantity = int(quantity)
-            if quantity <= 0 or quantity > 1000:
-                errors['quantity'] = 'Quantity should be between 1 and 1000.'
-        except ValueError:
-            errors['quantity'] = 'Quantity should be a valid number.'
-
         if not variants:
             errors['variants'] = 'At least one variant is required.'
 
-        for variant in variants:
-            if not variant['color'].strip():
-                errors['color'] = 'Color is required for all variants.'
-            if not variant['size']:
-                errors['size'] = 'Size is required for all variants.'
-            try:
-                actual_price = float(variant['actual_price'])
-                if actual_price <= 0:
-                    errors['actual_price'] = 'Product price must be a positive number.'
-            except ValueError:
-                errors['actual_price'] = 'Please enter a valid price.'
+        for i, variant in enumerate(variants):
+            variant_name = f"Variant {i+1}"
+            if not variant.get('color', '').strip():
+                errors[f'color{i+1}'] = 'Color is required.'
+            if not variant.get('size'):
+                errors[f'size{i+1}'] = 'Size is required.'
+            if variant.get('quantity') is None:
+                errors[f'quantity{i+1}'] = 'Quantity is required.'
+            else:
+                try:
+                    quantity = int(variant['quantity'])
+                    if quantity <= 0 or quantity > 1000:
+                        errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
+                except ValueError:
+                    errors[f'quantity{i+1}'] = 'Quantity should be a valid number.'
+            
+            if variant.get('actual_price') is None:
+                errors[f'actual_price{i+1}'] = 'Actual price is required.'
+            else:
+                try:
+                    actual_price = float(variant['actual_price'])
+                    if actual_price <= 0:
+                        errors[f'actual_price{i+1}'] = 'Actual price must be a positive number.'
+                except ValueError:
+                    errors[f'actual_price{i+1}'] = 'Please enter a valid price.'
 
-            if variant['sale_price']:
+            if variant.get('sale_price'):
                 try:
                     sale_price = float(variant['sale_price'])
                     if sale_price <= 0:
-                        errors['sale_price'] = 'Sale price must be a positive number.'
-                    if sale_price >= actual_price:
-                        errors['sale_price'] = 'Sale price must be less than actual price.'
+                        errors[f'sale_price{i+1}'] = 'Sale price must be a positive number.'
+                    if sale_price >= float(variant['actual_price']):
+                        errors[f'sale_price{i+1}'] = 'Sale price must be less than actual price.'
                 except ValueError:
-                    errors['sale_price'] = 'Please enter a valid price.'
+                    errors[f'sale_price{i+1}'] = 'Please enter a valid sale price.'
+
+            variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
+            if len(variant_images) < 3:
+                errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
 
         if errors:
             return JsonResponse({'success': False, 'errors': errors})
+
         try:
-            product = Product(
-                name=name,
-                category_id=category_id,
-                brand_id=brand_id,
-                description=description,
-                quantity=quantity,
-                is_deleted=False
-            )
-            product.save()
-
-            for i, variant in enumerate(variants):
-                product_variant = ProductVarient(
-                    product=product,
-                    color=variant['color'].strip(),
-                    size=variant['size'],
-                    actual_price=variant['actual_price'],
-                    sale_price=variant['sale_price'] if variant['sale_price'] else None
+            with transaction.atomic():
+                product = Product(
+                    name=name,
+                    category_id=category_id,
+                    brand_id=brand_id,
+                    description=description,
+                    total_quantity=0,
+                    is_deleted=False
                 )
-                product_variant.save()
+                product.save()
 
-                # Handle images for each variant
-                variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
-                for index, image in enumerate(variant_images):
-                    cloudinary_response = cloudinary.uploader.upload(image, 
-                        folder=f"product_images/{product.id}/variant_{i + 1}",
-                        public_id=f"{product.id:03d}_{i + 1:02d}_{index + 1:03d}",
-                        overwrite=True,
-                        format="webp",
-                        quality=85
-                    )
-                    cloudinary_url = cloudinary_response['secure_url']
-                    product_image = ProductImage(
-                        image=cloudinary_url, 
+                total_quantity = 0
+                for i, variant in enumerate(variants):
+                    quantity = int(variant['quantity'])
+                    total_quantity += quantity
+                    product_variant = ProductVariant(
                         product=product,
+                        color=variant['color'].strip(),
+                        size=variant['size'],
+                        quantity=quantity,
+                        actual_price=float(variant['actual_price']),
+                        sale_price=float(variant['sale_price']) if variant.get('sale_price') else None
                     )
-                    product_image.save()
+                    product_variant.save()
+
+                    variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
+                    for index, image in enumerate(variant_images):
+                        cloudinary_response = cloudinary.uploader.upload(
+                            image,
+                            folder=f"product_images/{product.id}/variant_{i + 1}",
+                            public_id=f"{product.id:03d}_{i + 1:02d}_{index + 1:03d}",
+                            overwrite=True,
+                            format="webp",
+                            quality=85
+                        )
+                        cloudinary_url = cloudinary_response['secure_url']
+                        ProductImage.objects.create(
+                            image=cloudinary_url, 
+                            product=product
+                        )
+
+                product.total_quantity = total_quantity
+                product.save()
                 
             return JsonResponse({'success': True, 'message': 'Product added successfully!'})
+        except IntegrityError as e:
+            return JsonResponse({'success': False, 'message': 'A database integrity error occurred. Please try again.'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': 'Error, retry!'})
-            # return JsonResponse({'success': False, 'errors': {'server': str(e)}})
+            # import traceback
+            # traceback.print_exc()
+            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
     first_name = request.user.first_name.title()
     categories = Category.objects.filter(is_deleted=False, is_listed=True)
@@ -220,7 +241,6 @@ def edit_product(request, product_id):
             errors['quantity'] = 'Quantity should be a valid number.'
 
         existing_image_count = product.images.count()
-        print('img cnt: ',existing_image_count)
         total_image_count = existing_image_count + len(new_images)
         if total_image_count < 3 or total_image_count > 10:
             errors['images'] = f'Total number of images should be between 3 and 10. Current total: {total_image_count}'
@@ -264,7 +284,7 @@ def edit_product(request, product_id):
             # Delete existing variants and create new ones
             product.varient.all().delete()
             for variant in variants:
-                product_variant = ProductVarient(
+                product_variant = ProductVariant(
                     product_id=product,
                     color=variant['color'].strip(),
                     size=variant['size'],
