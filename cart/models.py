@@ -22,6 +22,9 @@ class Cart(models.Model):
         self.total_price += self.delivery_charge
         self.save()
 
+    def get_total_actual_price(self):
+        return sum(item.get_actual_price() for item in self.items.all() if item.quantity > 0)
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
@@ -34,15 +37,15 @@ class CartItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     # def clean(self):
-    #     if self.quantity <= 0 or self.product.quantity < self.quantity:
-    #         raise ValidationError(f"Insufficient quantity for {self.product.name}. Available: {self.product.quantity}")
+    #     if self.quantity <= 0 or self.variant.quantity < self.quantity:
+    #         raise ValidationError(f"Insufficient quantity for {self.product.name}. Available: {self.variant.quantity}")
 
     def save(self, *args, **kwargs):
         self.clean()
 
         # Set total_price, ensuring it's 0 if quantity is 0
         if self.quantity > 0:
-            self.total_price = (self.price - self.discount) * self.quantity
+            self.total_price = self.price * self.quantity
         else:
             self.total_price = 0
 
@@ -52,3 +55,6 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} of {self.product.name} in cart ID {self.cart.id}"
+
+    def get_actual_price(self):
+        return self.variant.actual_price * self.quantity

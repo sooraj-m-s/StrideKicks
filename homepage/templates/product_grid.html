@@ -1,0 +1,33 @@
+{% for product in products %}
+<div class="col">
+    <div class="card product-card h-100 border-0 shadow-sm">
+        <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+            <img src="{{ product.images.first.image }}" 
+                 class="card-img-top product-image" 
+                 alt="{{ product.name }}">
+            <div class="card-body">
+                <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
+                <div class="product-rating">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= product.rating %}
+                            ★
+                        {% else %}
+                            ☆
+                        {% endif %}
+                    {% endfor %}
+                    <span class="text-muted">({{ product.rating }}.0)</span>
+                </div>
+                {% with variant=product.variants.first %}
+                <div class="d-flex align-items-center mt-2">
+                    <span class="original-price">₹{{ variant.actual_price }}</span>
+                    <span class="sale-price">₹{{ variant.sale_price }}</span>
+                    <span class="ms-2 text-success">
+                        {{ variant.discount_percentage }}% off
+                    </span>
+                </div>
+                {% endwith %}
+            </div>
+        </a>
+    </div>
+</div>
+{% endfor %}

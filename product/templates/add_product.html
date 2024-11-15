@@ -184,7 +184,8 @@ body {
     border-color: #dc3545;
 }
 #cropperModal .modal-body {
-    height: 400px;
+    height: 100%;
+    width: 100%;
 }
 </style>
 {% endblock %}
@@ -341,7 +342,7 @@ body {
 <!-- Cropper Modal -->
 <div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content bg-dark text-white">
             <div class="modal-header">
                 <h5 class="modal-title" id="cropperModalLabel">Crop Image</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -590,6 +591,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error!',

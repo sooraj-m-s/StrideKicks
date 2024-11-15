@@ -195,7 +195,7 @@
                         <div>Color: {{ item.variant.color }}</div>
                         <div>Size: {{ item.variant.size }}</div>
                         <div>
-                            {% if item.product.quantity > 0 %}
+                            {% if item.product.total_quantity > 0 %}
                                 <span style="color: green;">In Stock</span>
                             {% else %}
                                 <span style="color: red;">Out of Stock</span>
@@ -235,7 +235,7 @@
             <h2 class="summary-title">ORDER SUMMARY</h2>
             <div class="summary-item">
                 <span>{{ cart.items.count }} ITEMS</span>
-                <span>₹{{ cart.total_price }}</span>
+                <span>₹{{ total_actual_price }}</span>
             </div>
             <div class="summary-item">
                 <span>Delivery Charges</span>
@@ -247,7 +247,7 @@
             </div>
             {% if total_discount > 0 %}
             <div class="summary-item">
-                <span>Discount</span>
+                <span>Saved</span>
                 <span>₹{{ total_discount }}</span>
             </div>
             {% endif %}

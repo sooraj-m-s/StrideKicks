@@ -29,13 +29,15 @@ def view_cart(request):
 
     total_discount = cart.items.aggregate(total_discount=Sum('discount'))['total_discount'] or 0
     latest_products = Product.objects.filter(is_deleted=False).order_by('-created_at')[:5]
-    context = {
+    total_actual_price = cart.get_total_actual_price()
+    data = {
         'cart': cart,
         'total_discount': total_discount,
         'latest_products': latest_products,
         'max_quantity': 5,
+        'total_actual_price': total_actual_price,
     }
-    return render(request, 'cart.html', context)
+    return render(request, 'cart.html', data)
 
 
 @login_required(login_url='login_to_account')
@@ -46,7 +48,7 @@ def update_cart_item(request, item_id):
         quantity = int(request.POST.get('quantity', 1))
         
         # Validate quantity against stock
-        max_quantity = min(5, cart_item.product.quantity)
+        max_quantity = min(5, cart_item.variant.quantity)
         if quantity <= max_quantity:
             cart_item.quantity = quantity
             cart_item.save()
@@ -91,7 +93,10 @@ def add_to_cart(request, product_id):
         
         try:
             # Calculate discount
-            discount = variant.actual_price - variant.sale_price if variant and variant.sale_price else 0
+            if variant and variant.sale_price:
+                discount = (variant.actual_price - variant.sale_price) * quantity
+            else:
+                discount = 0
             
             # Get or create cart item
             cart_item, created = CartItem.objects.get_or_create(
@@ -109,6 +114,13 @@ def add_to_cart(request, product_id):
             new_quantity = cart_item.quantity + quantity
             cart_item.quantity = new_quantity
             cart_item.save()  # This will trigger validation in the model
+
+            # Recalculate discount based on new quantity
+            # if variant and variant.sale_price:
+            #     cart_item.discount = (variant.actual_price - variant.sale_price) * new_quantity
+            # else:
+            #     cart_item.discount = 0
+            # cart_item.save()
             
             messages.success(request, 'Product added to cart successfully')
             

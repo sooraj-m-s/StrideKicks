@@ -207,14 +207,13 @@
 
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
-                    {% if product.quantity > 0 %}
+                    {% if product.total_quantity > 0 %}
                     <!-- <button class="btn btn-primary btn-lg me-2 flex-grow-1">Buy Now</button>
                     <button class="btn btn-dark btn-lg me-2 flex-grow-1">Add to Cart</button>
                     <button class="wishlist-btn" onclick="toggleWishlist(this)">
                         <i class="fas fa-heart"></i>
                     </button> -->
 
-            
                     <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2">
                         {% csrf_token %}
                         <input type="hidden" name="variant" value="{{ product.variants.first.id }}">

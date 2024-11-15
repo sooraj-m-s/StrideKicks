@@ -171,6 +171,44 @@ body {
 .dropzone.dragover {
     background-color: #2c2c2c;
 }
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.image-preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.remove-image, .remove-existing-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    border-radius: 50%;
+    padding: 2px 5px;
+    cursor: pointer;
+}
+.error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+.is-invalid {
+    border-color: #dc3545;
+}
+#cropperModal .modal-body {
+    height: 600px;
+    max-height: 80vh;
+}
 </style>
 {% endblock %}
 
@@ -275,32 +313,27 @@ body {
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Product Name:</label>
-                    <input type="text" class="form-control" id="name" name="name" required value="{{ product.name }}">
+                    <input type="text" class="form-control" id="name" name="name" value="{{ product.name }}" required>
                     <div class="error-message" id="name_error"></div>
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="category" class="form-label">Category:</label>
                         <select class="form-select" id="category" name="category" required>
                             <option value="">Select Category</option>
                             {% for category in categories %}
-                                <option value="{{ category.id }}" {% if category.id == product.category_id %}selected{% endif %}>{{ category.name }}</option>
+                                <option value="{{ category.id }}" {% if category.id == product.category.id %}selected{% endif %}>{{ category.name }}</option>
                             {% endfor %}
                         </select>
                         <div class="error-message" id="category_error"></div>
                     </div>
-                    <div class="col-md-4">
-                        <label for="quantity" class="form-label">Quantity:</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" required value="{{ product.quantity }}">
-                        <div class="error-message" id="quantity_error"></div>
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="brand" class="form-label">Brand:</label>
                         <select class="form-select" id="brand" name="brand" required>
                             <option value="">Select Brand</option>
                             {% for brand in brands %}
-                                <option value="{{ brand.id }}" {% if brand.id == product.brand_id %}selected{% endif %}>{{ brand.name }}</option>
+                                <option value="{{ brand.id }}" {% if brand.id == product.brand.id %}selected{% endif %}>{{ brand.name }}</option>
                             {% endfor %}
                         </select>
                         <div class="error-message" id="brand_error"></div>
@@ -315,48 +348,49 @@ body {
 
                 <div id="variantsContainer">
                     {% for variant in product.variants.all %}
-                    <div class="variant-container">
+                    <div class="variant-container mb-4" data-variant-id="{{ variant.id }}" data-images='{{ variant.images.all|stringformat:"s"|escapejs }}'>
                         <h4>Variant {{ forloop.counter }}</h4>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="color{{ forloop.counter }}" class="form-label">Color:</label>
                                 <input type="text" class="form-control color-input" id="color{{ forloop.counter }}" name="color{{ forloop.counter }}" value="{{ variant.color }}" required>
+                                <div class="error-message" id="color{{ forloop.counter }}_error"></div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="size{{ forloop.counter }}" class="form-label">Size:</label>
                                 <select class="form-select size-input" id="size{{ forloop.counter }}" name="size{{ forloop.counter }}" required>
                                     <option value="">Select Size</option>
-                                    {% for size_choice in variant.STATUS_CHOICES %}
-                                        <option value="{{ size_choice.0 }}" {% if size_choice.0 == variant.size %}selected{% endif %}>{{ size_choice.1 }}</option>
+                                    {% for size in sizes %}
+                                        <option value="{{ size }}" {% if size == variant.size %}selected{% endif %}>{{ size }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="error-message" id="size{{ forloop.counter }}_error"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="quantity{{ forloop.counter }}" class="form-label">Quantity:</label>
+                                <input type="number" class="form-control" id="quantity{{ forloop.counter }}" name="quantity{{ forloop.counter }}" value="{{ variant.quantity }}" required>
+                                <div class="error-message" id="quantity{{ forloop.counter }}_error"></div>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="actual_price{{ forloop.counter }}" class="form-label">Actual Price:</label>
-                                <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" step="0.01" value="{{ variant.actual_price }}" required>
+                                <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" value="{{ variant.actual_price }}" step="0.01" required>
+                                <div class="error-message" id="actual_price{{ forloop.counter }}_error"></div>
                             </div>
                             <div class="col-md-6">
                                 <label for="sale_price{{ forloop.counter }}" class="form-label">Sale Price:</label>
-                                <input type="number" class="form-control sale-price-input" id="sale_price{{ forloop.counter }}" name="sale_price{{ forloop.counter }}" step="0.01" value="{{ variant.sale_price|default_if_none:'' }}">
+                                <input type="number" class="form-control sale-price-input" id="sale_price{{ forloop.counter }}" name="sale_price{{ forloop.counter }}" value="{{ variant.sale_price }}" step="0.01">
+                                <div class="error-message" id="sale_price{{ forloop.counter }}_error"></div>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="variant_image{{ forloop.counter }}" class="form-label">Variant Images:</label>
-                            <div class="dropzone" id="dropzone{{ forloop.counter }}">
-                                <input type="file" class="file-input" id="variant_image{{ forloop.counter }}" name="variant_image{{ forloop.counter }}[]" accept="image/*" multiple hidden>
-                                <p>Drag & drop images here or click to select files</p>
-                            </div>
-                            <div id="imagePreview{{ forloop.counter }}" class="image-preview mt-2">
-                                {% for image in variant.productimage_set.all %}
-                                    <img src="{{ image.image }}" alt="Variant Image" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
-                                {% endfor %}
-                            </div>
+                            <input type="file" class="form-control file-input" id="variant_image{{ forloop.counter }}" name="variant_image{{ forloop.counter }}[]" accept="image/*" multiple>
+                            <div class="image-preview-container" id="imagePreview{{ forloop.counter }}"></div>
+                            <div class="error-message" id="variant_image{{ forloop.counter }}_error"></div>
                         </div>
-                        {% if forloop.counter > 1 %}
-                            <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
-                        {% endif %}
+                        <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
                     </div>
                     {% endfor %}
                 </div>
@@ -364,13 +398,32 @@ body {
                 <button type="button" id="addVariantBtn" class="btn btn-secondary mb-3">Add Another Variant</button>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-add">Update Product</button>
-                    <a href="{% url 'products' %}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Product</button>
+                    <a href="{% url 'products' %}" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
     </div>
 </main>
+
+<!-- Cropper Modal -->
+<div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title" id="cropperModalLabel">Crop Image</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: 600px; max-height: 80vh;">
+                <img id="cropperImage" src="" alt="Image to crop" style="max-width: 100%; max-height: 100%;">
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="cropImageBtn">Crop</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
@@ -381,192 +434,301 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const form = document.getElementById('editProductForm');
     const addVariantBtn = document.getElementById('addVariantBtn');
     const variantsContainer = document.getElementById('variantsContainer');
-    let variantCount = {{ product.variants.count }};
+    let variantCount = document.querySelectorAll('.variant-container').length;
+    let cropper;
+    let currentFileInput;
+    let currentImagePreview;
 
-    function validateImages(files, errorElement) {
-        if (files.length < 3) {
-            errorElement.textContent = 'Please select at least 3 images.';
-            return false;
+    function addVariant() {
+        variantCount++;
+        const variantHtml = `
+            <div class="variant-container mb-4">
+                <h4>Variant ${variantCount}</h4>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="color${variantCount}" class="form-label">Color:</label>
+                        <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}" required>
+                        <div class="error-message" id="color${variantCount}_error"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="size${variantCount}" class="form-label">Size:</label>
+                        <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}" required>
+                            <option value="">Select Size</option>
+                            {% for size in sizes %}
+                                <option value="{{ size }}">{{ size }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="error-message" id="size${variantCount}_error"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="quantity${variantCount}" class="form-label">Quantity:</label>
+                        <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}" required>
+                        <div class="error-message" id="quantity${variantCount}_error"></div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="actual_price${variantCount}" class="form-label">Actual Price:</label>
+                        <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01" required>
+                        <div class="error-message" id="actual_price${variantCount}_error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="sale_price${variantCount}" class="form-label">Sale Price:</label>
+                        <input type="number" class="form-control sale-price-input" id="sale_price${variantCount}" name="sale_price${variantCount}" step="0.01">
+                        <div class="error-message" id="sale_price${variantCount}_error"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="variant_image${variantCount}" class="form-label">Variant Images:</label>
+                    <input type="file" class="form-control file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple required>
+                    <div class="image-preview-container" id="imagePreview${variantCount}"></div>
+                    <div class="error-message" id="variant_image${variantCount}_error"></div>
+                </div>
+                <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
+            </div>
+        `;
+        variantsContainer.insertAdjacentHTML('beforeend', variantHtml);
+        initializeVariant(variantCount);
+    }
+
+    function initializeVariant(variantNumber) {
+        const variantContainer = document.querySelector(`.variant-container:nth-child(${variantNumber})`);
+        const fileInput = variantContainer.querySelector('.file-input');
+        const imagePreview = variantContainer.querySelector('.image-preview-container');
+        const errorElement = variantContainer.querySelector('.error-message');
+
+        fileInput.addEventListener('change', function(e) {
+            handleImageUpload(this, imagePreview, errorElement);
+        });
+
+        variantContainer.querySelector('.remove-variant-btn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, remove it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    variantContainer.remove();
+                    updateVariantNumbers();
+                }
+            });
+        });
+
+        // Load existing Cloudinary images if any
+        const existingImages = variantContainer.dataset.images;
+        if (existingImages) {
+            try {
+                const images = JSON.parse(existingImages);
+                images.forEach((imageUrl, index) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'image-preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${imageUrl}" alt="Existing Image">
+                        <button type="button" class="btn btn-sm btn-danger remove-existing-image" 
+                                data-variant="${variantNumber}" 
+                                data-image-id="${index}">×</button>
+                    `;
+                    imagePreview.appendChild(previewItem);
+
+                    previewItem.querySelector('.remove-existing-image').addEventListener('click', function() {
+                        const imageId = this.dataset.imageId;
+                        const variantId = this.dataset.variant;
+                        // Add to hidden input to track deleted images
+                        const deletedImagesInput = document.getElementById('deleted_images') || 
+                            document.createElement('input');
+                        deletedImagesInput.type = 'hidden';
+                        deletedImagesInput.id = 'deleted_images';
+                        deletedImagesInput.name = 'deleted_images';
+                        const currentDeleted = deletedImagesInput.value ? 
+                            JSON.parse(deletedImagesInput.value) : [];
+                        currentDeleted.push({
+                            variant: variantId,
+                            image: imageId
+                        });
+                        deletedImagesInput.value = JSON.stringify(currentDeleted);
+                        if (!document.getElementById('deleted_images')) {
+                            document.getElementById('editProductForm').appendChild(deletedImagesInput);
+                        }
+                        previewItem.remove();
+                    });
+                });
+            } catch (e) {
+                console.error('Error loading existing images:', e);
+            }
         }
-        errorElement.textContent = '';
-        return true;
     }
 
     function handleImageUpload(input, previewContainer, errorElement) {
         const files = Array.from(input.files);
         
-        // Clear previous preview
-        previewContainer.innerHTML = '';
+        // Clear the preview container only if new files are being added
+        if (files.length > 0) {
+            previewContainer.innerHTML = '';
+        }
         
-        // Show warning if less than 3 images
         if (files.length < 3) {
             errorElement.textContent = 'Please select at least 3 images.';
+            input.classList.add('is-invalid');
+        } else if (files.length > 10) {
+            errorElement.textContent = 'Please select no more than 10 images.';
+            input.classList.add('is-invalid');
         } else {
             errorElement.textContent = '';
+            input.classList.remove('is-invalid');
         }
 
-        // Create preview for each file
-        files.forEach(file => {
+        files.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'img-thumbnail';
-                img.style.width = '100px';
-                img.style.height = '100px';
-                img.style.objectFit = 'cover';
-                previewContainer.appendChild(img);
+                const previewItem = document.createElement('div');
+                previewItem.className = 'image-preview-item';
+                previewItem.innerHTML = `
+                    <img src="${e.target.result}" alt="Preview">
+                    <button type="button" class="btn btn-sm btn-primary crop-image" data-index="${index}">Crop</button>
+                    <button type="button" class="remove-image" data-index="${index}">&times;</button>
+                `;
+                previewContainer.appendChild(previewItem);
+
+                previewItem.querySelector('.crop-image').addEventListener('click', function() {
+                    openCropper(e.target.result, input, previewItem.querySelector('img'), index);
+                });
+
+                previewItem.querySelector('.remove-image').addEventListener('click', function() {
+                    const dataTransfer = new DataTransfer();
+                    const fileIndex = parseInt(this.dataset.index);
+                    Array.from(input.files)
+                        .filter((_, i) => i !== fileIndex)
+                        .forEach(file => dataTransfer.items.add(file));
+                    input.files = dataTransfer.files;
+                    previewItem.remove();
+                    
+                    // Reindex remaining preview items
+                    previewContainer.querySelectorAll('.image-preview-item').forEach((item, newIndex) => {
+                        item.querySelector('.crop-image').dataset.index = newIndex;
+                        item.querySelector('.remove-image').dataset.index = newIndex;
+                    });
+                });
             }
             reader.readAsDataURL(file);
         });
     }
 
-    function initializeDropzone(variantNumber) {
-        const dropzone = document.getElementById(`dropzone${variantNumber}`);
-        const input = dropzone.querySelector('.file-input');
-        const previewContainer = document.getElementById(`imagePreview${variantNumber}`);
-        const errorElement = document.createElement('div');
-        errorElement.className = 'text-danger mt-1';
-        dropzone.parentNode.insertBefore(errorElement, dropzone.nextSibling);
+    function openCropper(imageSrc, fileInput, imgPreview, fileIndex) {
+        const modal = new bootstrap.Modal(document.getElementById('cropperModal'));
+        const image = document.getElementById('cropperImage');
+        image.src = imageSrc;
+        modal.show();
 
-        dropzone.addEventListener('click', (e) => {
-            e.preventDefault();
-            input.click();
+        if (cropper) {
+            cropper.destroy();
+        }
+
+        cropper = new Cropper(image, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            background: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            autoCropArea: 0.8,
+            responsive: true,
+            minCropBoxWidth: 300,
+            minCropBoxHeight: 300,
+            ready: function() {
+                // Removed the zoomTo and setCropBoxData calls to let the image display at its natural size
+            }
         });
 
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('dragover');
-        });
+        currentFileInput = fileInput;
+        currentImagePreview = imgPreview;
 
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.classList.remove('dragover');
-        });
+        document.getElementById('cropImageBtn').onclick = function() {
+            const croppedCanvas = cropper.getCroppedCanvas();
+            croppedCanvas.toBlob(function(blob) {
+                const file = new File([blob], `cropped_image_${fileIndex}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                Array.from(currentFileInput.files)
+                    .filter((_, i) => i != fileIndex)
+                    .forEach(file => dataTransfer.items.add(file));
+                dataTransfer.items.add(file);
+                currentFileInput.files = dataTransfer.files;
 
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('dragover');
+                currentImagePreview.src = croppedCanvas.toDataURL('image/jpeg');
+                modal.hide();
+            }, 'image/jpeg');
+        };
+    }
+
+    function updateVariantNumbers() {
+        document.querySelectorAll('.variant-container').forEach((container, index) => {
+            const newNumber = index + 1;
+            container.querySelector('h4').textContent = `Variant ${newNumber}`;
             
-            const dt = new DataTransfer();
-            Array.from(e.dataTransfer.files).forEach(file => dt.items.add(file));
-            input.files = dt.files;
+            // Update all input IDs and names
+            container.querySelectorAll('[id^="color"], [id^="size"], [id^="quantity"], [id^="actual_price"], [id^="sale_price"], [id^="variant_image"]')
+                .forEach(element => {
+                    const oldId = element.id;
+                    const newId = oldId.replace(/\d+/, newNumber);
+                    element.id = newId;
+                    element.name = newId;
+                });
+                
+            // Update all error message IDs
+            container.querySelectorAll('[id$="_error"]').forEach(element => {
+                const oldId = element.id;
+                const newId = oldId.replace(/\d+/, newNumber);
+                element.id = newId;
+            });
             
-            handleImageUpload(input, previewContainer, errorElement);
-        });
-
-        input.addEventListener('change', () => {
-            handleImageUpload(input, previewContainer, errorElement);
+            // Update data attributes if they exist
+            container.querySelectorAll('[data-variant]').forEach(element => {
+                element.dataset.variant = newNumber;
+            });
         });
     }
 
-    // Initialize dropzones for existing variants
+    addVariantBtn.addEventListener('click', addVariant);
+
+    // Initialize existing variants on page load
     document.querySelectorAll('.variant-container').forEach((container, index) => {
-        initializeDropzone(index + 1);
-    });
-
-    addVariantBtn.addEventListener('click', () => {
-        variantCount++;
-        const newVariant = document.createElement('div');
-        newVariant.className = 'variant-container';
-        newVariant.innerHTML = `
-            <h4>Variant ${variantCount}</h4>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="color${variantCount}" class="form-label">Color:</label>
-                    <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="size${variantCount}" class="form-label">Size:</label>
-                    <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}" required>
-                        <option value="">Select Size</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="actual_price${variantCount}" class="form-label">Actual Price:</label>
-                    <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="sale_price${variantCount}" class="form-label">Sale Price:</label>
-                    <input type="number" class="form-control sale-price-input" id="sale_price${variantCount}" name="sale_price${variantCount}" step="0.01">
-                </div>
-            </div>
-            <div class="mb-3">
-                <label for="variant_image${variantCount}" class="form-label">Variant Images:</label>
-                <div class="dropzone" id="dropzone${variantCount}">
-                    <input type="file" class="file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple hidden>
-                    <p>Drag & drop images here or click to select files</p>
-                </div>
-                <div id="imagePreview${variantCount}" class="image-preview mt-2"></div>
-            </div>
-            <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
-        `;
-        
-        variantsContainer.appendChild(newVariant);
-        
-        initializeDropzone(variantCount);
-
-        newVariant.querySelector('.remove-variant-btn').addEventListener('click', function() {
-            variantsContainer.removeChild(newVariant);
-        });
-    });
-
-    // Add event listener for description input
-    const description = document.getElementById('description');
-    description.addEventListener('input', function() {
-        const remainingChars = 20 - this.value.length;
-        const errorElement = document.getElementById('description_error');
-        if (remainingChars > 0) {
-            errorElement.textContent = `${remainingChars} more characters needed.`;
-        } else {
-            errorElement.textContent = '';
-        }
+        initializeVariant(index + 1);
     });
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // Validate all variant images before submission
-        let hasErrors = false;
-        document.querySelectorAll('.file-input').forEach((input, index) => {
-            const errorElement = input.parentNode.nextElementSibling.nextElementSibling;
-            if (!validateImages(Array.from(input.files), errorElement)) {
-                hasErrors = true;
-            }
-        });
-
-        if (hasErrors) {
+        const variants = document.querySelectorAll('.variant-container');
+        if (variants.length === 0) {
             Swal.fire({
                 icon: 'error',
-                title: 'Validation Error',
-                text: 'Please ensure each variant has at least 3 images.',
+                title: 'Error!',
+                text: 'Please add at least one variant.',
                 confirmButtonText: 'OK'
             });
             return;
         }
-
-        // Continue with form submission
+        
         const formData = new FormData(form);
-        const variants = [];
+        const variantsData = [];
+        formData.append('deleted_images', document.getElementById('deleted_images')?.value || '[]');
 
         document.querySelectorAll('.variant-container').forEach((container, index) => {
             const variantNumber = index + 1;
-            variants.push({
+            variantsData.push({
                 color: formData.get(`color${variantNumber}`),
                 size: formData.get(`size${variantNumber}`),
+                quantity: formData.get(`quantity${variantNumber}`),
                 actual_price: formData.get(`actual_price${variantNumber}`),
                 sale_price: formData.get(`sale_price${variantNumber}`)
             });
         });
 
-        formData.append('variants', JSON.stringify(variants));
+        formData.append('variants', JSON.stringify(variantsData));
 
         fetch('{% url "edit_product" product.id %}', {
             method: 'POST',
@@ -589,14 +751,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     }
                 });
             } else {
-                let errorMessage = '';
-                for (const [key, value] of Object.entries(data.errors)) {
-                    errorMessage += `${key}: ${value}\n`;
+                // Clear previous error messages and invalid classes
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                
+                if (data.errors) {
+                    for (const [key, value] of Object.entries(data.errors)) {
+                        const inputElement = document.getElementById(key);
+                        const errorElement = document.getElementById(`${key}_error`);
+                        if (inputElement) {
+                            inputElement.classList.add('is-invalid');
+                        }
+                        if (errorElement) {
+                            errorElement.textContent = value;
+                        }
+                    }
                 }
                 Swal.fire({
                     icon: 'error',
                     title: 'Error!',
-                    text: errorMessage,
+                    text: 'Please correct the errors in the form.',
                     confirmButtonText: 'OK'
                 });
             }

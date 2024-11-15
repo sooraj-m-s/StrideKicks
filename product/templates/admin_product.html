@@ -286,11 +286,11 @@ body {
                             {% endif %}
                         </td>
                         <td>
-                            {% for variant in product.variants.all %}
-                                {{ variant.quantity }}{% if not forloop.last %}, {% endif %}
-                            {% empty %}
+                            {% if product.total_quantity %}
+                                {{ product.total_quantity }}
+                            {% else %}
                                 N/A
-                            {% endfor %}
+                            {% endif %}
                         </td>
                         <td>
                             <img src="{{ product.images.first.image }}" alt="" class="product-image">

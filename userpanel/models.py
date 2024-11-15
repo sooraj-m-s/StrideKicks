@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 from users.models import Users
 
+
 # Create your models here.
 
 
