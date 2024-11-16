@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.cache import cache_control, never_cache
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from users.forms import CustomAuthenticationForm
@@ -35,6 +36,7 @@ def login_to_account(request):
         return render(request, 'admin_login.html', {'form': form})
 
 
+@login_required(login_url='admin_login')
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def dashboard_view(request):
@@ -45,6 +47,7 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', user)
 
 
+@login_required(login_url='admin_login')
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_orders(request):
@@ -55,6 +58,7 @@ def admin_orders(request):
     return render(request, 'admin_orders.html', user)
 
 
+@login_required(login_url='admin_login')
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customers_view(request):
@@ -80,6 +84,7 @@ def customers_view(request):
     return render(request, 'customers.html', context)
 
 
+@login_required(login_url='admin_login')
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customer_status(request, email):
@@ -90,6 +95,7 @@ def customer_status(request, email):
     return redirect('customers')
 
 
+@login_required(login_url='admin_login')
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def settings_view(request):

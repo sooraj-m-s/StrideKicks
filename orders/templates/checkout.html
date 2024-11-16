@@ -1,0 +1,201 @@
+{% extends "base_user.html" %}
+{% load static %}
+{% load order_filters %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block link %}
+{% endblock %}
+
+{% block style %}
+<style>
+    .checkout-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 15px;
+    }
+    .checkout-section {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .section-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: bold;
+    }
+    .section-content {
+        padding: 1rem;
+    }
+    .address-card {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .address-card.selected {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .order-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    .item-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+    .price-details {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    .price-total {
+        font-weight: bold;
+        border-top: 1px solid #dee2e6;
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .btn-place-order {
+        background-color: #000;
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    .btn-place-order:hover {
+        background-color: #333;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="checkout-container">
+    <h1 class="mb-4">Checkout</h1>
+    <form method="POST" action="{% url 'checkout' %}">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-8">
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <h2 class="h5 mb-0">1. Delivery Address</h2>
+                    </div>
+                    <div class="section-content">
+                        {% for address in addresses %}
+                        <div class="form-check address-card {% if address.default_address %}selected{% endif %}">
+                            <input class="form-check-input" type="radio" name="address_id" id="address_{{ address.id }}" value="{{ address.id }}" {% if address.default_address %}checked{% endif %}>
+                            <label class="form-check-label" for="address_{{ address.id }}">
+                                <strong>{{ address.full_name }}</strong><br>
+                                {{ address.address }}, {{ address.street }}<br>
+                                {% if address.landmark %}{{ address.landmark }},<br>{% endif %}
+                                {{ address.city }}, {{ address.get_state_display }} - {{ address.pin_code }}<br>
+                                Phone: {{ address.mobile_no }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                        <a href="{% url 'add_address' %}?next=checkout" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-plus"></i> Add New Address
+                        </a>
+                    </div>
+                </div>
+
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <h2 class="h5 mb-0">2. Order Summary</h2>
+                    </div>
+                    <div class="section-content">
+                        {% for item in cart.items.all %}
+                        <div class="order-item">
+                            <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="item-image">
+                            <div>
+                                <h6>{{ item.product.name }}</h6>
+                                <p class="mb-1">Color: {{ item.variant.color }}, Size: {{ item.variant.size }}</p>
+                                <p class="mb-1">Quantity: {{ item.quantity }}</p>
+                                <p class="mb-0">Price: ₹{{ item.price }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <h2 class="h5 mb-0">3. Payment Method</h2>
+                    </div>
+                    <div class="section-content">
+                        {% for method_code, method_name in payment_methods %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="payment_{{ method_code }}" value="{{ method_code }}">
+                            <label class="form-check-label" for="payment_{{ method_code }}">
+                                {{ method_name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="checkout-section">
+                    <div class="section-header">
+                        <h2 class="h5 mb-0">Price Details</h2>
+                    </div>
+                    <div class="section-content price-details">
+                        <div class="price-row">
+                            <span>Price ({{ cart.items.count }} items)</span>
+                            <span>₹{{ cart.get_total_actual_price }}</span>
+                        </div>
+                        <div class="price-row">
+                            <span>Delivery Charges</span>
+                            <span>{% if cart.total_price > 4999 %}<span class="text-success">FREE</span>{% else %}₹{{ cart.delivery_charge }}{% endif %}</span>
+                        </div>
+                        {% if cart.discount > 0 %}
+                        <div class="price-row text-success">
+                            <span>Discount</span>
+                            <span>-₹{{ cart.discount }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="price-row price-total">
+                            <span>Total Amount</span>
+                            <span>₹{{ cart.total_price }}</span>
+                        </div>
+                        {% if cart.get_total_actual_price > cart.total_price %}
+                        <p class="text-success mt-2 mb-0">Your Total Savings on this order ₹{{ cart.get_total_actual_price|subtract:cart.total_price }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-place-order w-100 mt-3">Place Order</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addressCards = document.querySelectorAll('.address-card');
+    addressCards.forEach(card => {
+        card.addEventListener('click', function() {
+            addressCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            this.querySelector('input[type="radio"]').checked = true;
+        });
+    });
+});
+</script>
+{% endblock %}

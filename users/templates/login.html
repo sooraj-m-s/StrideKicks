@@ -116,23 +116,37 @@
 .btn-google:hover {
     background-color: #f8f9fa;
 }
-.message-success {
-    color: #28a745;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 15px;
+.popup {
+    position: fixed;
+    top: 20px;
+    left: 60%;
+    transform: translateX(-50%);
+    padding: 15px 20px;
+    color: #100766;
+    font-size: 16px;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    max-width: 80%;
     text-align: center;
 }
-.message-error {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 15px;
-    text-align: center;
+.popup.error {
+    background-color: #f44336;
+}
+.popup.warning {
+    background-color: #ff9800;
+}
+.popup.info {
+    background-color: #2196F3;
+}
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    10%, 90% { opacity: 1; }
+}
+.popup.show {
+    animation: fadeInOut 5s forwards;
 }
 .password-container {
     position: relative;
@@ -191,13 +205,13 @@
                 <h2 class="login-title">Welcome Back</h2>
 
                 {% if messages %}
-                {% for message in messages %}
-                    {% if message.tags == 'error' %}
-                        <p class="message-error">{{ message }}</p>
-                    {% elif message.tags == 'success' %}
-                        <p class="message-success">{{ message }}</p>
-                    {% endif %}
-                {% endfor %}
+                    <div id="popup" class="popup">
+                        {% for message in messages %}
+                            <div class="popup-message {{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
 
                 <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-google">
@@ -248,5 +262,14 @@ function togglePassword() {
         toggleIcon.classList.add('fa-eye');
     }
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const popup = document.getElementById('popup');
+    if (popup) {
+        popup.classList.add('show');
+        setTimeout(() => {
+            popup.classList.remove('show');
+        }, 5000);
+    }
+});
 </script>
 {% endblock %}

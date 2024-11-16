@@ -1,7 +1,7 @@
 from django.db import models
 from users.models import Users
-from product.models import ProductVariant
 from userpanel.models import Address
+from product.models import ProductVariant
 
 
 # Create your models here.
@@ -47,11 +47,29 @@ class Order(models.Model):
         return f"Order {self.order_number} by {self.user.email}"
 
 class OrderItem(models.Model):
+    CANCELLATION_REASON_CHOICES = [
+        ('OPM', 'Order Placed by Mistake'),
+        ('CMM', 'Changed My Mind'),
+        ('DTL', 'Delivery Time Was Too Long'),
+        ('ILN', 'Item No Longer Needed'),
+        ('OWI', 'Ordered Wrong Item'),
+        ('OFS', 'Item Not Available or Out of Stock'),
+        ('DP', 'Received Damaged Product'),
+        ('RII', 'Received Incorrect Item'),
+        ('NME', 'Product Didn\'t Meet Expectations'),
+        ('QC', 'Quality Concerns'),
+        ('SCI', 'Size/Color Issue'),
+    ]
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product_variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, related_name='order_items')
     quantity = models.PositiveIntegerField()
     original_price = models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    cancellation_reason = models.CharField(choices=CANCELLATION_REASON_CHOICES, max_length=50, blank=True, null=True)
+    custom_cancellation_reason = models.TextField(blank=True, null=True)
+    note_admin = models.TextField(blank=True, null=True)
+    is_cancelled = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product_variant.product.name} - {self.quantity} pcs at ${self.price}"

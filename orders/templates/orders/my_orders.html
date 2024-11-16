@@ -1,0 +1,164 @@
+{% extends "base_user.html" %}
+
+{% block title %}My Orders{% endblock %}
+{% block link %}
+{% endblock %}
+
+{% block style %}
+<style>
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #000;
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .list-group-item.active:hover {
+        background-color: #f0f1f2;
+    }
+    .card {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #333;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+    }
+    .order-item {
+        border-bottom: 1px solid #eee;
+        padding: 1rem 0;
+    }
+    .order-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active">My Orders</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hi, {{ user.first_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-box me-2"></i> My Orders
+                        </a>
+                        <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-cart me-2"></i> Cart
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart me-2"></i> Wishlist
+                        </a>
+                        <a href="{% url 'manage_address' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> Manage Address
+                        </a>
+                        <a href="{% url 'logout_account' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="container py-4">
+                    <h1 class="mb-4">My Orders</h1>
+                
+                    <!-- Search and Filter Form -->
+                    <form method="get" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="text" name="search" class="form-control" placeholder="Search by order number" value="{{ search_query }}">
+                            </div>
+                            <div class="col-md-4">
+                                <select name="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    {% for status, label in status_choices %}
+                                        <option value="{{ status }}" {% if status == status_filter %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                
+                    {% if orders %}
+                        {% for order in orders %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Order #{{ order.order_number }}</h5>
+                                    <p class="card-text">Date: {{ order.created_at|date:"F d, Y" }}</p>
+                                    <p class="card-text">Total: ₹{{ order.total_amount }}</p>
+                                    <p class="card-text">Status: 
+                                        <span class="
+                                            {% if order.status == 'Delivered' %}text-success
+                                            {% elif order.status == 'Cancelled' or order.status == 'Returned' %}text-danger
+                                            {% else %}text-primary{% endif %}
+                                        ">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </p>
+                                    {% for item in order.items.all %}
+                                        <div class="d-flex align-items-center mb-2">
+                                            <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                            <div>
+                                                <h6>{{ item.product_variant.product.name }}</h6>
+                                                <p class="mb-0">Quantity: {{ item.quantity }}</p>
+                                                <p class="mb-0">Price: ₹{{ item.price }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    <a href="{% url 'order_detail' order.id %}" class="btn btn-primary mt-3">View Details</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No orders found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

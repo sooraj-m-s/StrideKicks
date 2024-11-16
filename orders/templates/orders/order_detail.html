@@ -1,0 +1,47 @@
+{% extends "base_user.html" %}
+
+{% block title %}Order Details{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <h1 class="mb-4">Order Details</h1>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Order #{{ order.order_number }}</h5>
+            <p class="card-text">Date: {{ order.created_at|date:"F d, Y" }}</p>
+            <p class="card-text">Total: ₹{{ order.total_amount }}</p>
+            <p class="card-text">Status: 
+                <span class="
+                    {% if order.status == 'Delivered' %}text-success
+                    {% elif order.status == 'Cancelled' or order.status == 'Returned' %}text-danger
+                    {% else %}text-primary{% endif %}
+                ">
+                    {{ order.get_status_display }}
+                </span>
+            </p>
+            <h6 class="mt-4">Ordered Items:</h6>
+            {% for item in order.items.all %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover;">
+                            <div>
+                                <h6>{{ item.product_variant.product.name }}</h6>
+                                <p class="mb-0">Quantity: {{ item.quantity }}</p>
+                                <p class="mb-0">Price: ₹{{ item.price }}</p>
+                                <p class="mb-0">Color: {{ item.product_variant.color }}</p>
+                                <p class="mb-0">Size: {{ item.product_variant.size }}</p>
+                            </div>
+                        </div>
+                        {% if order.status == 'Delivered' %}
+                            <a href="{% url 'return_product' item.id %}" class="btn btn-warning mt-2">Return Product</a>
+                        {% elif not item.is_cancelled and order.status != 'Cancelled' %}
+                            <a href="{% url 'cancel_product' item.id %}" class="btn btn-danger mt-2">Cancel Product</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -51,24 +51,6 @@
     .breadcrumb-item + .breadcrumb-item::before {
         content: ">";
     }
-    .message-success {
-        color: #28a745;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        border-radius: 4px;
-        padding: 10px;
-        margin-bottom: 15px;
-        text-align: center;
-    }
-    .message-error {
-        color: #dc3545;
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        border-radius: 4px;
-        padding: 10px;
-        margin-bottom: 15px;
-        text-align: center;
-    }
 </style>
 {% endblock %}
 
@@ -92,7 +74,7 @@
                         <a href="{% url 'profile' %}" class="list-group-item list-group-item-action active">
                             <i class="fas fa-user me-2"></i> My Profile
                         </a>
-                        <a href="#" class="list-group-item list-group-item-action">
+                        <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-box me-2"></i> My Orders
                         </a>
                         <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
@@ -118,15 +100,6 @@
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">My Profile</h5>
                 </div>
-                {% if messages %}
-                {% for message in messages %}
-                    {% if message.tags == 'error' %}
-                        <p class="message-error">{{ message }}</p>
-                    {% elif message.tags == 'success' %}
-                        <p class="message-success">{{ message }}</p>
-                    {% endif %}
-                {% endfor %}
-                {% endif %}
                 <div class="card-body">
                     <form>
                         <div class="row mb-3">
@@ -161,4 +134,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

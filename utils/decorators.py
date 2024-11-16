@@ -1,15 +1,14 @@
 from django.shortcuts import redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 
 
 def admin_required(view_func):
-    @login_required(login_url='admin_login')
     def wrapper(request, *args, **kwargs):
         if request.user.is_superuser:
             return view_func(request, *args, **kwargs)
         else:
-            messages.error(
-                request, 'You are not authorized to access this page.')
-            return redirect('admin_login')
+            logout(request)
+            messages.error(request, 'You are not authorized to access this page.')
+            return redirect('login_to_account')
     return wrapper

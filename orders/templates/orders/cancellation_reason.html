@@ -1,0 +1,59 @@
+{% extends "base_user.html" %}
+
+{% block title %}Cancel Product{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <h1 class="mb-4">Cancel Product</h1>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ order_item.product_variant.product.name }}</h5>
+            <p class="card-text">Order #{{ order_item.order.order_number }}</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="cancellation_reason" class="form-label">Cancellation Reason</label>
+                    <select name="cancellation_reason" id="cancellation_reason" class="form-select" required>
+                        <option value="">Select a reason</option>
+                        {% for reason, label in cancellation_reasons %}
+                            <option value="{{ reason }}">{{ label }}</option>
+                        {% endfor %}
+                        <option value="custom">Other (please specify)</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="custom_reason_div" style="display: none;">
+                    <label for="custom_reason" class="form-label">Custom Reason</label>
+                    <textarea name="custom_reason" id="custom_reason" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">Cancel Product</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('cancellation_reason').addEventListener('change', function() {
+        var customReasonDiv = document.getElementById('custom_reason_div');
+        if (this.value === 'custom') {
+            customReasonDiv.style.display = 'block';
+        } else {
+            customReasonDiv.style.display = 'none';
+        }
+    });
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                title: '{{ message.tags|title }}',
+                text: '{{ message }}',
+                icon: '{{ message.tags }}',
+                confirmButtonText: 'OK'
+            }).then((result) => {
+                if (result.isConfirmed && '{{ message.tags }}' === 'success') {
+                    window.location.href = '{% url "my_orders" %}';
+                }
+            });
+        {% endfor %}
+    {% endif %}
+</script>
+{% endblock%}
