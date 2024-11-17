@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
+from django.db.models import Prefetch
 from django.db import transaction
 from django.contrib import messages
 from django.http import JsonResponse
@@ -43,8 +44,7 @@ def checkout(request):
             # Create order
             order = Order.objects.create(
                 user=request.user,
-                order_number=str(uuid.uuid4().hex[:10]),
-                status='Pending',
+                order_number=uuid.uuid4().hex[:12].upper(),
                 payment_method=payment_method,
                 payment_status=False,
                 subtotal=subtotal,
@@ -88,27 +88,30 @@ def order_success(request, order_id):
 @login_required(login_url='login_to_account')
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def my_orders(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    
+    orders = Order.objects.filter(user=request.user)
     search_query = request.GET.get('search', '')
     status_filter = request.GET.get('status', '')
-    
+
     if search_query:
         orders = orders.filter(order_number__icontains=search_query)
-    
+
+    order_items_query = OrderItem.objects.all()
     if status_filter:
-        orders = orders.filter(status=status_filter)
-    
-    status_choices = Order.STATUS_CHOICES
-    
-    context = {
+        order_items_query = order_items_query.filter(status=status_filter)
+    orders = orders.prefetch_related(
+        Prefetch('items', queryset=order_items_query, to_attr='filtered_items')
+    ).order_by('-created_at')
+    if status_filter:
+        orders = [order for order in orders if order.filtered_items]
+    status_choices = OrderItem.STATUS_CHOICES
+    data = {
         'orders': orders,
         'status_choices': status_choices,
         'search_query': search_query,
         'status_filter': status_filter,
     }
-    
-    return render(request, 'orders/my_orders.html', context)
+
+    return render(request, 'orders/my_orders.html', data)
 
 
 @login_required(login_url='login_to_account')
@@ -131,6 +134,7 @@ def cancel_product(request, item_id):
             order_item.cancellation_reason = reason
         
         order_item.is_cancelled = True
+        order_item.status = 'Cancelled'
         order_item.save()
         
         # Update product stock
@@ -138,7 +142,6 @@ def cancel_product(request, item_id):
         product_variant.quantity += order_item.quantity
         product_variant.save()
         
-        messages.success(request, 'Product has been cancelled successfully.')
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES

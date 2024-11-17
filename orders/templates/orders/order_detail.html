@@ -2,45 +2,130 @@
 
 {% block title %}Order Details{% endblock %}
 
+{% block style %}
+<style>
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #000;
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .list-group-item.active:hover {
+        background-color: #f0f1f2;
+    }
+    .card {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #333;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+    }
+</style>
+{% endblock %}
+
 {% block body %}
 <div class="container py-4">
-    <h1 class="mb-4">Order Details</h1>
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Order #{{ order.order_number }}</h5>
-            <p class="card-text">Date: {{ order.created_at|date:"F d, Y" }}</p>
-            <p class="card-text">Total: ₹{{ order.total_amount }}</p>
-            <p class="card-text">Status: 
-                <span class="
-                    {% if order.status == 'Delivered' %}text-success
-                    {% elif order.status == 'Cancelled' or order.status == 'Returned' %}text-danger
-                    {% else %}text-primary{% endif %}
-                ">
-                    {{ order.get_status_display }}
-                </span>
-            </p>
-            <h6 class="mt-4">Ordered Items:</h6>
-            {% for item in order.items.all %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover;">
-                            <div>
-                                <h6>{{ item.product_variant.product.name }}</h6>
-                                <p class="mb-0">Quantity: {{ item.quantity }}</p>
-                                <p class="mb-0">Price: ₹{{ item.price }}</p>
-                                <p class="mb-0">Color: {{ item.product_variant.color }}</p>
-                                <p class="mb-0">Size: {{ item.product_variant.size }}</p>
-                            </div>
-                        </div>
-                        {% if order.status == 'Delivered' %}
-                            <a href="{% url 'return_product' item.id %}" class="btn btn-warning mt-2">Return Product</a>
-                        {% elif not item.is_cancelled and order.status != 'Cancelled' %}
-                            <a href="{% url 'cancel_product' item.id %}" class="btn btn-danger mt-2">Cancel Product</a>
-                        {% endif %}
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'my_orders' %}">My Orders</a></li>
+            <li class="breadcrumb-item active">Order Details</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hi, {{ user.first_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-box me-2"></i> My Orders
+                        </a>
+                        <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-cart me-2"></i> Cart
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart me-2"></i> Wishlist
+                        </a>
+                        <a href="{% url 'manage_address' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> Manage Address
+                        </a>
+                        <a href="{% url 'logout_account' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log out
+                        </a>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="mb-3">Order Details</h1>
+                    <h5 class="card-title">Order #{{ order.order_number }}</h5>
+                    <p class="card-text">Date: {{ order.created_at|date:"F d, Y" }}</p>
+                    <p class="card-text">Total: ₹{{ order.total_amount }}</p>
+                    <h6 class="mt-4">Ordered Items:</h6>
+                    {% for item in order.items.all %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                        <div>
+                                            <h6>{{ item.product_variant.product.name }}</h6>
+                                            <p class="mb-0">Quantity: {{ item.quantity }}</p>
+                                            <p class="mb-0">Price: ₹{{ item.price }}</p>
+                                            <p class="mb-0">Color: {{ item.product_variant.color }}</p>
+                                            <p class="mb-0">Size: {{ item.product_variant.size }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if order.status == 'Delivered' and not item.is_returned %}
+                                            <a href="{% url 'return_product' item.id %}" class="btn btn-warning">Return Product</a>
+                                        {% elif order.status != 'Delivered' and order.status != 'Cancelled' and not item.is_cancelled %}
+                                            <a href="{% url 'cancel_product' item.id %}" class="btn btn-danger">Cancel Product</a>
+                                        {% elif item.is_cancelled %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        {% elif order.status == 'Returned' %}
+                                            <span class="badge bg-info">Returned</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

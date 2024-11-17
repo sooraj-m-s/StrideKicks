@@ -54,6 +54,17 @@
     .order-item:last-child {
         border-bottom: none;
     }
+    .order-details {
+        font-size: 0.9rem;
+    }
+    .order-status {
+        font-weight: bold;
+    }
+    .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+    }
 </style>
 {% endblock %}
 
@@ -100,7 +111,7 @@
         <!-- Main Content -->
         <div class="col-md-9">
             <div class="card shadow-sm">
-                <div class="container py-4">
+                <div class="card-body">
                     <h1 class="mb-4">My Orders</h1>
                 
                     <!-- Search and Filter Form -->
@@ -127,29 +138,23 @@
                         {% for order in orders %}
                             <div class="card mb-3">
                                 <div class="card-body">
-                                    <h5 class="card-title">Order #{{ order.order_number }}</h5>
-                                    <p class="card-text">Date: {{ order.created_at|date:"F d, Y" }}</p>
-                                    <p class="card-text">Total: ₹{{ order.total_amount }}</p>
-                                    <p class="card-text">Status: 
-                                        <span class="
-                                            {% if order.status == 'Delivered' %}text-success
-                                            {% elif order.status == 'Cancelled' or order.status == 'Returned' %}text-danger
-                                            {% else %}text-primary{% endif %}
-                                        ">
-                                            {{ order.get_status_display }}
-                                        </span>
-                                    </p>
-                                    {% for item in order.items.all %}
-                                        <div class="d-flex align-items-center mb-2">
-                                            <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="img-thumbnail me-3" style="width: 100px; height: 100px; object-fit: cover;">
-                                            <div>
-                                                <h6>{{ item.product_variant.product.name }}</h6>
-                                                <p class="mb-0">Quantity: {{ item.quantity }}</p>
-                                                <p class="mb-0">Price: ₹{{ item.price }}</p>
+                                    <div class="row">
+                                        <div class="col-md-6 order-details">
+                                            <h5 class="card-title">Order #{{ order.order_number }}</h5>
+                                            <p class="mb-1">Date: {{ order.created_at|date:"F d, Y" }}</p>
+                                            <p class="mb-1">Total: ₹{{ order.total_amount }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex flex-wrap justify-content-end">
+                                                {% for item in order.items.all %}
+                                                    <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="product-image img-thumbnail m-1">
+                                                {% endfor %}
+                                            </div>
+                                            <div class="text-end mt-2">
+                                                <a href="{% url 'order_detail' order.id %}" class="btn btn-primary">View Details</a>
                                             </div>
                                         </div>
-                                    {% endfor %}
-                                    <a href="{% url 'order_detail' order.id %}" class="btn btn-primary mt-3">View Details</a>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}

@@ -2,58 +2,230 @@
 
 {% block title %}Cancel Product{% endblock %}
 
+{% block style %}
+<style>
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #000;
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .list-group-item.active:hover {
+        background-color: #f0f1f2;
+    }
+    .card {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #333;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+    }
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    .is-invalid:focus {
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+    }
+</style>
+{% endblock %}
+
 {% block body %}
 <div class="container py-4">
-    <h1 class="mb-4">Cancel Product</h1>
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">{{ order_item.product_variant.product.name }}</h5>
-            <p class="card-text">Order #{{ order_item.order.order_number }}</p>
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="cancellation_reason" class="form-label">Cancellation Reason</label>
-                    <select name="cancellation_reason" id="cancellation_reason" class="form-select" required>
-                        <option value="">Select a reason</option>
-                        {% for reason, label in cancellation_reasons %}
-                            <option value="{{ reason }}">{{ label }}</option>
-                        {% endfor %}
-                        <option value="custom">Other (please specify)</option>
-                    </select>
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'my_orders' %}">My Orders</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'order_detail' order_item.order.id %}">Order Details</a></li>
+            <li class="breadcrumb-item active">Cancel Product</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hi, {{ user.first_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-box me-2"></i> My Orders
+                        </a>
+                        <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-cart me-2"></i> Cart
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart me-2"></i> Wishlist
+                        </a>
+                        <a href="{% url 'manage_address' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> Manage Address
+                        </a>
+                        <a href="{% url 'logout_account' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log out
+                        </a>
+                    </div>
                 </div>
-                <div class="mb-3" id="custom_reason_div" style="display: none;">
-                    <label for="custom_reason" class="form-label">Custom Reason</label>
-                    <textarea name="custom_reason" id="custom_reason" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="mb-4">Cancel Product</h1>
+                    <h5 class="card-title">{{ order_item.product_variant.product.name }}</h5>
+                    <p class="card-text">Order #{{ order_item.order.order_number }}</p>
+                    <form method="post" id="cancelForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="cancellation_reason" class="form-label">Cancellation Reason</label>
+                            <select name="cancellation_reason" id="cancellation_reason" class="form-select">
+                                <option value="">Select a reason</option>
+                                {% for reason, label in cancellation_reasons %}
+                                    <option value="{{ reason }}">{{ label }}</option>
+                                {% endfor %}
+                                <option value="custom">Other (please specify)</option>
+                            </select>
+                            <div id="cancellation_reason_error" class="error-message">Please select a reason for cancellation</div>
+                        </div>
+                        <div class="mb-3" id="custom_reason_div" style="display: none;">
+                            <label for="custom_reason" class="form-label">Custom Reason</label>
+                            <textarea name="custom_reason" id="custom_reason" class="form-control" rows="3"></textarea>
+                            <div id="custom_reason_error" class="error-message">Please provide a reason</div>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Cancel Product</button>
+                    </form>
                 </div>
-                <button type="submit" class="btn btn-danger">Cancel Product</button>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.getElementById('cancellation_reason').addEventListener('change', function() {
-        var customReasonDiv = document.getElementById('custom_reason_div');
-        if (this.value === 'custom') {
-            customReasonDiv.style.display = 'block';
-        } else {
-            customReasonDiv.style.display = 'none';
-        }
-    });
-    {% if messages %}
-        {% for message in messages %}
-            Swal.fire({
-                title: '{{ message.tags|title }}',
-                text: '{{ message }}',
-                icon: '{{ message.tags }}',
-                confirmButtonText: 'OK'
-            }).then((result) => {
-                if (result.isConfirmed && '{{ message.tags }}' === 'success') {
-                    window.location.href = '{% url "my_orders" %}';
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('cancelForm');
+        const reasonSelect = document.getElementById('cancellation_reason');
+        const customReasonDiv = document.getElementById('custom_reason_div');
+        const customReasonInput = document.getElementById('custom_reason');
+        
+        // Reset validation state when selecting a reason
+        reasonSelect.addEventListener('change', function() {
+            reasonSelect.classList.remove('is-invalid');
+            document.getElementById('cancellation_reason_error').style.display = 'none';
+            
+            if (this.value === 'custom') {
+                customReasonDiv.style.display = 'block';
+            } else {
+                customReasonDiv.style.display = 'none';
+                customReasonInput.classList.remove('is-invalid');
+                document.getElementById('custom_reason_error').style.display = 'none';
+            }
+        });
+
+        // Reset validation state when typing custom reason
+        customReasonInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+            document.getElementById('custom_reason_error').style.display = 'none';
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            let isValid = true;
+
+            // Reset previous validation states
+            reasonSelect.classList.remove('is-invalid');
+            customReasonInput.classList.remove('is-invalid');
+            document.getElementById('cancellation_reason_error').style.display = 'none';
+            document.getElementById('custom_reason_error').style.display = 'none';
+
+            // Validate reason selection
+            if (!reasonSelect.value) {
+                reasonSelect.classList.add('is-invalid');
+                document.getElementById('cancellation_reason_error').style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate custom reason if selected
+            if (reasonSelect.value === 'custom' && !customReasonInput.value.trim()) {
+                customReasonInput.classList.add('is-invalid');
+                document.getElementById('custom_reason_error').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isValid) {
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: 'Success',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '{% url "my_orders" %}';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'An error occurred',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'An error occurred while processing your request',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
                 }
-            });
-        {% endfor %}
-    {% endif %}
+            }
+        });
+    });
 </script>
-{% endblock%}
+{% endblock %}
