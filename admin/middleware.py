@@ -6,19 +6,20 @@ from django.contrib import messages
 from social_core.exceptions import AuthCanceled
 
 
-# class ActiveUserMiddleware:
-#     def __init__(self, get_response):
-#         self.get_response = get_response
+class ActiveUserMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-#     def __call__(self, request):
-#         excluded_paths = [reverse(''), '/']
-#         if request.path not in excluded_paths:
-#             if request.user.is_authenticated and not request.user.is_active:
-#                 logout(request)  
-#                 return redirect(settings.LOGIN_REDIRECT_URL)
-        
-#         response = self.get_response(request)
-#         return response
+    def __call__(self, request):
+        excluded_paths = [reverse('login_to_account')]
+        if request.path not in excluded_paths:
+            if request.user.is_authenticated and request.user.status == 'Blocked':
+                logout(request)
+                messages.error(request, 'Your account has been blocked. Please contact customer service.')
+                return redirect(settings.LOGIN_URL)
+
+        response = self.get_response(request)
+        return response
 
 
 class SocialAuthExceptionMiddleware:

@@ -19,9 +19,9 @@ from django.urls import path, include
 
 urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),
-    path('', include('users.urls')),
+    path('create', include('users.urls')),
     path('admin/', include('admin.urls')),
-    path('homepage/', include('homepage.urls')),
+    path('', include('homepage.urls')),
     path('category/', include('category.urls')),
     path('brand/', include('brand.urls')),
     path('product/', include('product.urls')),

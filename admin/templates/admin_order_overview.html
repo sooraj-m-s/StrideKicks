@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block style %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+.header {
+    background-color: #000000;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+.sidebar {
+    background-color: #1e1e1e;
+    height: calc(100vh - 50px);
+    width: 250px;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    padding-top: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.sidebar .nav-link {
+    color: #ffffff;
+    padding: 10px 15px;
+    margin: 2px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+.sidebar .nav-link i {
+    margin-right: 15px;
+    width: 20px;
+    font-size: 18px;
+}
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background-color: #2c2c2c;
+}
+.card{
+    /* color: white; */
+    background-color: #1e1e1e;
+}
+.main-content {
+    margin-left: 250px;
+    padding: 70px 20px 20px;
+}
+.sidebar-main-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.sidebar-footer-menu {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #2c2c2c;
+}
+.sidebar .nav-item {
+    margin-bottom: 0%;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<header class="header">
+    <h1 class="m-0">StrideKicks</h1>
+    <div class="d-flex align-items-center">
+        <span class="me-3">{{ first_name }}</span>
+        <i class="fas fa-user-circle fa-lg"></i>
+    </div>
+</header>
+
+<nav class="sidebar">
+    <div class="sidebar-main-menu">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'customers' %}">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'products' %}">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'orders' %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+            </li>        
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-image"></i>
+                    <span>Banner Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'brand' %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Brand</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'category' %}">
+                    <i class="fas fa-tags"></i>
+                    <span>Category</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="sidebar-footer-menu">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'settings' %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <form action="{% url 'admin_logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-content">
+    <div class="container-fluid">
+        <h2 class="text-white mb-4">Order Overview</h2>
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>User Name:</strong> {{ order.user.first_name }} {{ order.user.last_name }}</p>
+                        <p><strong>User ID:</strong> {{ order.user.user_id }}</p>
+                        <p><strong>Order ID:</strong> {{ order.order_number }}</p>
+                        <p><strong>Mobile Number:</strong> {{ order.user.mobile_no }}</p>
+                        <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Shipped Address:</strong> {{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
+                        <p><strong>Shipping Cost:</strong> ₹{{ order.shipping_cost }}</p>
+                        <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+                        <p><strong>Payment Status:</strong> N/A</p>
+                        <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="card bg-dark text-white mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Order Items</h5>
+                {% for item in order.items.all %}
+                <div class="card text-white mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2">{{ item.product_variant.product.name }} - {{ item.product_variant.variant_name }}</h6>
+                        <p class="card-text">
+                            Quantity: {{ item.quantity }} | Price: ₹{{ item.price }} | Total: ₹{{ item.total_price }}
+                        </p>
+                        <p><strong>Status:</strong> {{ item.get_status_display }}</p>
+                        {% if item.is_cancelled %}
+                        <p><strong>Cancellation Reason:</strong> {{ item.get_cancellation_reason_display }}</p>
+                        {% if item.custom_cancellation_reason %}
+                        <p><strong>Custom Reason:</strong> {{ item.custom_cancellation_reason }}</p>
+                        {% endif %}
+                        {% endif %}
+                        <form method="post" action="{% url 'update_order_item' item.id %}">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="status">Update Status:</label>
+                                <select name="status" id="status" class="form-control bg-dark text-white">
+                                    {% for status in status_choices %}
+                                    <option value="{{ status.0 }}" {% if status.0 == item.status %}selected{% endif %}>{{ status.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="admin_note">Admin Note:</label>
+                                <textarea name="admin_note" id="admin_note" class="form-control bg-dark text-white">{{ item.admin_note }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Update</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    
+        <!-- {% if other_orders %}
+        <div class="card bg-dark text-white mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Other Orders by This User</h5>
+                <ul class="list-group">
+                    {% for other_order in other_orders %}
+                    <li class="list-group-item bg-secondary">
+                        <a href="{% url 'admin_order_overview' other_order.id %}" class="text-white">
+                            Order #{{ other_order.order_number }} - {{ other_order.created_at|date:"F d, Y" }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %} -->
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

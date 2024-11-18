@@ -140,14 +140,17 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-6 order-details">
-                                            <h5 class="card-title">Order #{{ order.order_number }}</h5>
+                                            <h5 class="card-title">Order ID #{{ order.order_number }}</h5>
                                             <p class="mb-1">Date: {{ order.created_at|date:"F d, Y" }}</p>
-                                            <p class="mb-1">Total: ₹{{ order.total_amount }}</p>
+                                            <!-- <p class="mb-1">Total: ₹{{ order.subtotal }}</p> -->
+                                            <p class="mb-1">Payable: ₹{{ order.subtotal }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex flex-wrap justify-content-end">
                                                 {% for item in order.items.all %}
-                                                    <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="product-image img-thumbnail m-1">
+                                                    <a href="{% url 'product_detail' item.product_variant.product.id %}">
+                                                        <img src="{{ item.product_variant.product.images.first.image }}" alt="{{ item.product_variant.product.name }}" class="product-image img-thumbnail m-1">
+                                                    </a>
                                                 {% endfor %}
                                             </div>
                                             <div class="text-end mt-2">

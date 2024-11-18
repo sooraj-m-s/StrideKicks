@@ -93,7 +93,7 @@ def my_orders(request):
     status_filter = request.GET.get('status', '')
 
     if search_query:
-        orders = orders.filter(order_number__icontains=search_query)
+        orders = orders.filter(order_number__istartswith=search_query)
 
     order_items_query = OrderItem.objects.all()
     if status_filter:
@@ -133,6 +133,10 @@ def cancel_product(request, item_id):
         else:
             order_item.cancellation_reason = reason
         
+        # order = Order.objects.get(id=order_item.order_id)
+        # order.total_amount -= order_item.price
+        # order.save()
+
         order_item.is_cancelled = True
         order_item.status = 'Cancelled'
         order_item.save()

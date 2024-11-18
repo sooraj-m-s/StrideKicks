@@ -65,7 +65,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'admin.middleware.SocialAuthExceptionMiddleware',
-    # 'admin.middleware.ActiveUserMiddleware',
+    'admin.middleware.ActiveUserMiddleware',
 ]
 
 ROOT_URLCONF = 'StrideKicks.urls'

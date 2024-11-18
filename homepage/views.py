@@ -67,7 +67,7 @@ def product_listing(request):
     all_products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('-created_at')
     
     # Pagination
-    paginator = Paginator(all_products, 12)  # 12 products per page
+    paginator = Paginator(all_products, 12)
     page_number = request.GET.get('page', 1)
     products = paginator.get_page(page_number)
 
@@ -80,6 +80,7 @@ def product_listing(request):
     }
     
     return render(request, 'product_listing.html', data)
+
 
 def filter_products(request):
     # Get filter parameters
@@ -131,11 +132,11 @@ def filter_products(request):
     elif sort_by == 'rating':
         products = products.order_by('-rating')
 
-    # Remove duplicates that might occur due to multiple variants
+    # remove duplicates
     products = products.distinct()
 
     # Pagination
-    paginator = Paginator(products, 12)  # 12 products per page
+    paginator = Paginator(products, 12)
     page_obj = paginator.get_page(page)
 
     # Render only the products grid

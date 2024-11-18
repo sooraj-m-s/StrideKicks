@@ -124,7 +124,7 @@
             </div>
             <div class="col-md-4">
                 <select class="form-select sort-select" id="sortSelect">
-                    <option value="newest">New Arrivals</option>
+                    <option value="newest">Filter</option>
                     <option value="name_asc">Name (A to Z)</option>
                     <option value="name_desc">Name (Z to A)</option>
                     <option value="price_asc">Price (Low to High)</option>
@@ -238,9 +238,6 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -328,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ratings: ratings.join(','),
             min_price: priceRange[0],
             max_price: priceRange[1],
-            page: page
+            page: page,
         });
 
         try {

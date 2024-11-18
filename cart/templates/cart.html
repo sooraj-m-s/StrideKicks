@@ -47,10 +47,6 @@
     .item-details {
         flex: 1;
     }
-    .item-name {
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
     .item-meta {
         font-size: 14px;
         color: #666;
@@ -188,9 +184,13 @@
         <div class="cart-items">
             {% for item in cart.items.all %}
             <div class="cart-item">
-                <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="item-image">
+                <a href="{% url 'product_detail' item.product.id %}">
+                    <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="item-image">
+                </a>
                 <div class="item-details">
-                    <div class="item-name">{{ item.product.name }}</div>
+                    <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none text-dark">
+                        <div class="fw-bold">{{ item.product.name }}</div>
+                    </a>
                     <div class="item-meta">
                         <div>Color: {{ item.variant.color }}</div>
                         <div>Size: {{ item.variant.size }}</div>
