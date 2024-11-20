@@ -27,6 +27,9 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, related_name='shipping_orders')
     shipping_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=200, blank=True, null=True)
 
     def calculate_total(self):
         self.subtotal = sum(item.price * item.quantity for item in self.items.all())

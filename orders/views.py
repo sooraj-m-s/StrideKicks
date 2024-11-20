@@ -4,13 +4,18 @@ from django.views.decorators.cache import cache_control
 from django.db.models import Prefetch
 from django.db import transaction
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from django.conf import settings
+from .razorpay_client import client
 from .models import Order, OrderItem
 from cart.models import Cart
 from userpanel.models import Address
 import uuid
 
-
+import logging
+logger = logging.getLogger(__name__)
 # Create your views here.
 
 
@@ -26,7 +31,10 @@ def checkout(request):
     if request.method == 'POST':
         address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
-        
+
+        if payment_method == 'CC' or payment_method == 'PP' or payment_method == 'BT':
+            messages.error(request, "Current payment method is not available. Please try another payment method.")
+            return redirect('checkout')
         if not address_id or not payment_method:
             messages.error(request, "Please select both address and payment method.")
             return redirect('checkout')
@@ -41,6 +49,32 @@ def checkout(request):
                     return redirect('checkout')
             
             subtotal = sum(item.price * item.quantity for item in cart.items.all())
+            total_amount = cart.total_price
+            amount_in_paise = int(total_amount * 100)  # Convert to paise
+            # Create Razorpay order
+            if payment_method == 'RP':  # Razorpay
+                logger.info(f"Attempting to create Razorpay order for amount: {amount_in_paise}")
+                try:
+                    
+                    logger.info(f"Creating Razorpay order for amount: {amount_in_paise} paise")
+                    razorpay_order = client.order.create({
+                        'amount': amount_in_paise,
+                        'currency': 'INR',
+                        'payment_capture': 1,
+                        'notes': {
+                            'shipping_address': f"{address.full_name}, {address.address}",
+                            'contact': str(address.mobile_no)
+                        }
+                    })
+                    logger.info(f"Razorpay order created successfully: {razorpay_order['id']}")
+                    razorpay_order_id = razorpay_order['id']
+                except Exception as e:
+                    logger.error(f"Error creating Razorpay order: {str(e)}")
+                    messages.error(request, "Unable to create payment order. Please try again.")
+                    return redirect('checkout')
+            else:
+                razorpay_order_id = None
+            
             # Create order
             order = Order.objects.create(
                 user=request.user,
@@ -48,9 +82,10 @@ def checkout(request):
                 payment_method=payment_method,
                 payment_status=False,
                 subtotal=subtotal,
-                total_amount=cart.total_price,
+                total_amount=total_amount,
                 shipping_address=address,
                 shipping_cost=cart.delivery_charge or 0,
+                razorpay_order_id=razorpay_order_id,
             )
             
             # Create order items and update stock
@@ -68,8 +103,18 @@ def checkout(request):
             # Clear the cart
             cart.delete()
             
-            messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
-            return redirect('order_success', order_id=order.id)
+            if payment_method == 'RP':
+                context = {
+                    'order': order,
+                    'razorpay_order_id': razorpay_order_id,
+                    'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
+                    'callback_url': request.build_absolute_uri(reverse('razorpay_callback')),
+                    'amount': amount_in_paise,
+                }
+                return render(request, 'razorpay_checkout.html', context)
+            else:
+                messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
+                return redirect('order_success', order_id=order.id)
 
     context = {
         'cart': cart,
@@ -77,6 +122,41 @@ def checkout(request):
         'payment_methods': Order.PAYMENT_METHOD_CHOICES,
     }
     return render(request, 'checkout.html', context)
+
+
+@csrf_exempt
+def razorpay_callback(request):
+    if request.method == "POST":
+        logger.info("Received Razorpay callback")
+        logger.info(f"POST data: {request.POST}")
+        payment_id = request.POST.get('razorpay_payment_id', '')
+        razorpay_order_id = request.POST.get('razorpay_order_id', '')
+        signature = request.POST.get('razorpay_signature', '')
+
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        }
+
+        try:
+            order = Order.objects.get(razorpay_order_id=razorpay_order_id)
+        except Order.DoesNotExist:
+            return HttpResponse("404 Not Found", status=404)
+
+        # Verify the payment signature
+        try:
+            client.utility.verify_payment_signature(params_dict)
+        except:
+            return render(request, 'payment_fail.html')
+
+        order.razorpay_payment_id = payment_id
+        order.razorpay_signature = signature
+        order.payment_status = True
+        order.save()
+
+        return redirect('order_success', order_id=order.id)
+    return HttpResponse("Invalid Request", status=400)
 
 
 @login_required(login_url='login_to_account')

@@ -42,6 +42,17 @@
     .breadcrumb-item + .breadcrumb-item::before {
         content: ">";
     }
+    .badge.bg-pending { color: #ffc107; }
+    .badge.bg-payment_failed { color: #dc3545; }
+    .badge.bg-processing { color: #17a2b8; }
+    .badge.bg-on_hold { color: #6c757d; }
+    .badge.bg-shipped { color: #28a745; }
+    .badge.bg-on_the_way { color: #007bff; }
+    .badge.bg-delivered { color: #28a745; }
+    .badge.bg-cancelled { color: #dc3545; }
+    .badge.bg-returned { color: #17a2b8; }
+    .badge.bg-refunded { color: #28a745; }
+    .badge { font-size: 16px; }
 </style>
 {% endblock %}
 
@@ -112,17 +123,22 @@
                                             <p class="mb-0">Price: ₹{{ item.price }}</p>
                                             <p class="mb-0">Color: {{ item.product_variant.color }}</p>
                                             <p class="mb-0">Size: {{ item.product_variant.size }}</p>
+                                            <p class="mb-0">Status: <span class="badge bg-{{ item.status|lower }}">{{ item.get_status_display }}</span></p>
                                         </div>
                                     </div>
                                     <div class="text-end">
-                                        {% if order.status == 'Delivered' and not item.is_returned %}
+                                        {% if item.status == 'Delivered' and not item.is_cancelled %}
                                             <a href="{% url 'return_product' item.id %}" class="btn btn-warning">Return Product</a>
-                                        {% elif order.status != 'Delivered' and order.status != 'Cancelled' and not item.is_cancelled %}
+                                        {% elif item.status == 'Pending' or item.status == 'Processing' or item.status == 'On_Hold' %}
                                             <a href="{% url 'cancel_product' item.id %}" class="btn btn-danger">Cancel Product</a>
-                                        {% elif item.is_cancelled %}
+                                        {% elif item.status == 'Cancelled' %}
                                             <span class="badge bg-danger">Cancelled</span>
-                                        {% elif order.status == 'Returned' %}
+                                        {% elif item.status == 'Returned' %}
                                             <span class="badge bg-info">Returned</span>
+                                        {% elif item.status == 'Refunded' %}
+                                            <span class="badge bg-success">Refunded</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ item.get_status_display }}</span>
                                         {% endif %}
                                     </div>
                                 </div>

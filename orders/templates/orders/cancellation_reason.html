@@ -65,7 +65,11 @@
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
             <li class="breadcrumb-item"><a href="{% url 'my_orders' %}">My Orders</a></li>
             <li class="breadcrumb-item"><a href="{% url 'order_detail' order_item.order.id %}">Order Details</a></li>
-            <li class="breadcrumb-item active">Cancel Product</li>
+            {% if order_item.status == 'Delivered' %}
+            <li class="breadcrumb-item active">Return Product</li>
+            {% else %}
+                <li class="breadcrumb-item active">Cancel Product</li>
+            {% endif %}
         </ol>
     </nav>
 
@@ -103,7 +107,11 @@
         <div class="col-md-9">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h1 class="mb-4">Cancel Product</h1>
+                    {% if order_item.status == 'Delivered' %}
+                        <h1 class="mb-4">Return Product</h1>
+                    {% else %}
+                        <h1 class="mb-4">Cancel Product</h1>
+                    {% endif %}
                     <h5 class="card-title">{{ order_item.product_variant.product.name }}</h5>
                     <p class="card-text">Order #{{ order_item.order.order_number }}</p>
                     <form method="post" id="cancelForm">
@@ -124,7 +132,11 @@
                             <textarea name="custom_reason" id="custom_reason" class="form-control" rows="3"></textarea>
                             <div id="custom_reason_error" class="error-message">Please provide a reason</div>
                         </div>
-                        <button type="submit" class="btn btn-danger">Cancel Product</button>
+                        {% if order_item.status == 'Delivered' %}
+                            <button type="submit" class="btn btn-warning">Return Product</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-danger">Cancel Product</button>
+                        {% endif %}
                     </form>
                 </div>
             </div>

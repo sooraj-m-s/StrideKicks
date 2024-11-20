@@ -247,8 +247,8 @@ def edit_product(request, product_id):
             else:
                 try:
                     quantity = int(variant['quantity'])
-                    if quantity <= 0 or quantity > 1000:
-                        errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
+                    if quantity > 1000:
+                        errors[f'quantity{i+1}'] = 'Max quantity is 1000.'
                 except ValueError:
                     errors[f'quantity{i+1}'] = 'Quantity should be a valid number.'
             
@@ -274,8 +274,8 @@ def edit_product(request, product_id):
 
             variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
             existing_images = product.images.filter(variant__color=variant['color'], variant__size=variant['size']).count()
-            if len(variant_images) + existing_images < 3:
-                errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
+            # if len(variant_images) + existing_images < 3:
+            #     errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
 
         if errors:
             return JsonResponse({'success': False, 'errors': errors})
