@@ -12,7 +12,7 @@ from product.models import Product, ProductVariant
 # Create your views here.
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def view_cart(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
@@ -40,7 +40,7 @@ def view_cart(request):
     return render(request, 'cart.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def update_cart_item(request, item_id):
     if request.method == 'POST':
@@ -63,7 +63,7 @@ def update_cart_item(request, item_id):
     return redirect('view_cart')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def remove_from_cart(request, item_id):
     if request.method == 'POST':
@@ -79,7 +79,7 @@ def remove_from_cart(request, item_id):
     return redirect('view_cart')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_to_cart(request, product_id):
     if request.method == 'POST':

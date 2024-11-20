@@ -185,7 +185,7 @@ SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/users/account_overview/'
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
 
 
-LOGIN_URL = '/'
+LOGIN_URL = 'login_to_account'
 LOGOUT_URL = 'logout/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

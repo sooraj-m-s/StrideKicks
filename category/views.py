@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import cache_control
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 import json
@@ -10,7 +12,9 @@ from utils.decorators import admin_required
 # Create your views here.
 
 
+@login_required
 @admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def category_list(request):
     first_name = request.user.first_name.title()
     categories = Category.objects.filter(is_deleted=False)
@@ -21,7 +25,9 @@ def category_list(request):
     return render(request, 'category.html', data)
 
 
+@login_required
 @admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_category(request):
     if request.method == 'POST':
         try:
@@ -46,18 +52,14 @@ def add_category(request):
                 }
             })
         except ValidationError as e:
-            return JsonResponse({
-                'success': False,
-                'message': e.messages[0]
-            }, status=400)
+            return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 @admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_deleted=False)
     
@@ -85,18 +87,14 @@ def edit_category(request, category_id):
                 }
             })
         except ValidationError as e:
-            return JsonResponse({
-                'success': False,
-                'message': e.messages[0]
-            }, status=400)
+            return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 @admin_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def delete_category(request, category_id):
     if request.method == 'POST':
         try:
@@ -104,17 +102,12 @@ def delete_category(request, category_id):
             category.is_deleted = True
             category.deleted_at = timezone.now()
             category.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'Category deleted successfully'
-            })
+            return JsonResponse({'success': True, 'message': 'Category deleted successfully'})
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 @admin_required
 def toggle_category_status(request, category_id):
     if request.method == 'POST':
@@ -128,7 +121,4 @@ def toggle_category_status(request, category_id):
                 'is_listed': category.is_listed
             })
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)

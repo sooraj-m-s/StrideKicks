@@ -233,7 +233,7 @@ body {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'coupon' %}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Coupon Management</span>
                 </a>
@@ -378,12 +378,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
             <div class="variant-container mb-4">
                 <h4>Variant ${variantCount}</h4>
                 <div class="row mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="color${variantCount}" class="form-label">Color:</label>
                         <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}" required>
                         <div class="error-message" id="color${variantCount}_error"></div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="size${variantCount}" class="form-label">Size:</label>
                         <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}" required>
                             <option value="">Select Size</option>
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                         </select>
                         <div class="error-message" id="size${variantCount}_error"></div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="quantity${variantCount}" class="form-label">Quantity:</label>
                         <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}" required>
                         <div class="error-message" id="quantity${variantCount}_error"></div>

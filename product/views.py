@@ -18,7 +18,7 @@ from utils.decorators import admin_required
 # Create your views here.
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def products_view(request):
@@ -46,7 +46,7 @@ def products_view(request):
     return render(request, 'admin_product.html', data)
 
 
-@login_required(login_url='admin_login')
+@login_required
 @require_POST
 def delete_product(request, id):
     try:
@@ -62,7 +62,7 @@ def delete_product(request, id):
 
 
 @transaction.atomic
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_product(request):
@@ -206,7 +206,7 @@ def cancel_add_product(request):
 
 
 @admin_required
-@login_required(login_url='admin_login')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)

@@ -14,13 +14,13 @@ from .models import Address
 # Create your views here.
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def user_profile(request):
     return render(request, 'profile.html')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def update_profile(request):
     if request.method=='POST':
@@ -53,7 +53,7 @@ def update_profile(request):
     return render(request, 'update_profile.html')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def change_password(request):
     if request.method == 'POST':
@@ -100,14 +100,14 @@ def change_password(request):
     return render(request, 'change_password.html')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cancel_profile_update(request):
     messages.error(request, 'Update cancelled.')
     return redirect('profile')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def manage_address(request):
     addresses = Address.objects.filter(user_id=request.user, is_deleted=False)
@@ -119,7 +119,7 @@ def manage_address(request):
     return render(request, 'manage_address.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def delete_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, user_id=request.user)
@@ -133,7 +133,7 @@ def delete_address(request, address_id):
     return redirect('manage_address')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_address(request):
     context = {
@@ -174,7 +174,7 @@ def add_address(request):
     return render(request, 'add_address.html', context)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, user_id=request.user, is_deleted=False)
@@ -216,7 +216,7 @@ def edit_address(request, address_id):
     return render(request, 'edit_address.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def set_default_address(request, address_id):
     try:

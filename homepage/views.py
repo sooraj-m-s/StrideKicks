@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.template.loader import render_to_string
@@ -13,7 +13,7 @@ from brand.models import Brand
 # Create your views here.
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def home(request):
     latest_products = Product.objects.filter(is_deleted=False).order_by('-created_at')[:5]
@@ -29,7 +29,7 @@ def home(request):
     return render(request, 'home_page.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_detail(request, product_id):
     # product = get_object_or_404(Product, id=product_id)
@@ -44,13 +44,13 @@ def product_detail(request, product_id):
     return render(request, 'product_detail.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def about_us(request):
     return render(request, 'about.html')
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_listing(request):
     # Get all available categories and brands

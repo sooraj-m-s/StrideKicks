@@ -13,7 +13,6 @@ from django.urls import reverse
 from django.conf import settings
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
-from django.utils.timezone import now
 import re, random, json
 from .models import Users
 from .forms import CustomAuthenticationForm
@@ -290,7 +289,7 @@ def reset_password(request):
             messages.error(request, 'Invalid OTP.')
             return redirect('reset_password')
 
-        if now() > timezone.datetime.fromisoformat(user_data['otp_expiry']):
+        if timezone.now() > timezone.datetime.fromisoformat(user_data['otp_expiry']):
             messages.error(request, 'OTP has expired. Please request a new one.')
             return redirect('forgot_password')
 

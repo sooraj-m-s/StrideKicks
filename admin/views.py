@@ -38,7 +38,7 @@ def login_to_account(request):
         return render(request, 'admin_login.html', {'form': form})
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def dashboard_view(request):
@@ -49,11 +49,10 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', user)
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_orders(request):
-    # Get all order items with related order and user data
     order_items_list = OrderItem.objects.select_related('order__user', 'product_variant__product').order_by('-order__created_at')
     
     # Search functionality
@@ -86,7 +85,7 @@ def admin_orders(request):
     return render(request, 'admin_orders.html', data)
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_order_overview(request, order_id):
@@ -102,7 +101,7 @@ def admin_order_overview(request, order_id):
     return render(request, 'admin_order_overview.html', data)
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 def update_order_item(request, item_id):
     if request.method == 'POST':
@@ -113,7 +112,7 @@ def update_order_item(request, item_id):
         return redirect('admin_order_overview', order_id=item.order.id) 
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customers_view(request):
@@ -139,7 +138,7 @@ def customers_view(request):
     return render(request, 'customers.html', context)
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customer_status(request, email):
@@ -150,7 +149,7 @@ def customer_status(request, email):
     return redirect('customers')
 
 
-@login_required(login_url='admin_login')
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def settings_view(request):

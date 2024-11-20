@@ -11,6 +11,7 @@ from utils.decorators import admin_required
 # Create your views here.
 
 
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def brand_list(request):
@@ -23,6 +24,7 @@ def brand_list(request):
     return render(request, 'brand.html', brand)
 
 
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_brand(request):
@@ -54,12 +56,10 @@ def add_brand(request):
                 'message': e.messages[0]
             }, status=400)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_brand(request, brand_id):
@@ -94,29 +94,22 @@ def edit_brand(request, brand_id):
                 'message': e.messages[0]
             }, status=400)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @login_required
+@admin_required
 def delete_brand(request, brand_id):
     if request.method == 'POST':
         try:
             brand = get_object_or_404(Brand, id=brand_id, is_deleted=False)
             brand.soft_delete()
-            return JsonResponse({
-                'success': True,
-                'message': 'Brand deleted successfully'
-            })
+            return JsonResponse({'success': True, 'message': 'Brand deleted successfully'})
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
+@login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def toggle_brand_status(request, brand_id):
@@ -131,7 +124,4 @@ def toggle_brand_status(request, brand_id):
                 'is_listed': brand.is_listed
             })
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)

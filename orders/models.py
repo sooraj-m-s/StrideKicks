@@ -2,6 +2,7 @@ from django.db import models
 from users.models import Users
 from userpanel.models import Address
 from product.models import ProductVariant
+from coupon.models import Coupon
 
 
 # Create your models here.
@@ -18,6 +19,7 @@ class Order(models.Model):
 
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='orders')
     order_number = models.CharField(max_length=20, unique=True)
+    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(choices=PAYMENT_METHOD_CHOICES, max_length=4)

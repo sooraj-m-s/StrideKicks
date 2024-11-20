@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def checkout(request):
     cart = Cart.objects.filter(user=request.user).first()
@@ -159,13 +159,13 @@ def razorpay_callback(request):
     return HttpResponse("Invalid Request", status=400)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 def order_success(request, order_id):
     order = Order.objects.get(id=order_id, user=request.user)
     return render(request, 'order_success.html', {'order': order})
 
 
-@login_required(login_url='login_to_account')
+@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def my_orders(request):
     orders = Order.objects.filter(user=request.user)
@@ -194,13 +194,13 @@ def my_orders(request):
     return render(request, 'orders/my_orders.html', data)
 
 
-@login_required(login_url='login_to_account')
+@login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, 'orders/order_detail.html', {'order': order})
 
 
-@login_required(login_url='login_to_account')
+@login_required
 def cancel_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
     
@@ -235,7 +235,7 @@ def cancel_product(request, item_id):
     })
 
 
-@login_required(login_url='login_to_account')
+@login_required
 def return_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
     
