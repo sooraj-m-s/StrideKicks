@@ -1,11 +1,14 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
 import json
 from utils.decorators import admin_required
 from .models import Coupon, UserCoupon
+from cart.models import Cart
 
 
 # Create your views here.
@@ -173,15 +176,9 @@ def delete_coupon(request, coupon_id):
                 })
             else:
                 coupon.delete()
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Coupon deleted successfully'
-                })
+                return JsonResponse({'success': True, 'message': 'Coupon deleted successfully'})
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
 @login_required
@@ -199,7 +196,4 @@ def toggle_coupon_status(request, coupon_id):
                 'active': coupon.active
             })
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)

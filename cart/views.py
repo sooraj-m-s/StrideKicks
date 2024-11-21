@@ -4,8 +4,9 @@ from django.views.decorators.cache import cache_control
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
-from django.db.models import Sum
+from django.utils import timezone
 from .models import Cart, CartItem
+from coupon.models import Coupon, UserCoupon
 from product.models import Product, ProductVariant
 
 
@@ -16,18 +17,13 @@ from product.models import Product, ProductVariant
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def view_cart(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
-    # Calculate total price of items
     cart_total = sum(item.total_price for item in cart.items.all())
-    
-    # Calculate delivery charge
     delivery_charge = 0 if cart_total > 4999 else 99
-    
-    # Update cart
     cart.total_price = cart_total + delivery_charge
     cart.delivery_charge = delivery_charge
     cart.save()
 
-    total_discount = cart.items.aggregate(total_discount=Sum('discount'))['total_discount'] or 0
+    total_discount = cart.get_total_actual_price() - cart.total_price
     latest_products = Product.objects.filter(is_deleted=False).order_by('-created_at')[:5]
     total_actual_price = cart.get_total_actual_price()
     data = {
@@ -47,7 +43,6 @@ def update_cart_item(request, item_id):
         cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
         quantity = int(request.POST.get('quantity', 1))
         
-        # Validate quantity against stock
         max_quantity = min(5, cart_item.variant.quantity)
         if quantity <= max_quantity:
             cart_item.quantity = quantity
@@ -71,10 +66,7 @@ def remove_from_cart(request, item_id):
         cart_item.delete()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'cart_total': float(cart_item.cart.total_price)
-            })
+            return JsonResponse({'success': True, 'cart_total': float(cart_item.cart.total_price)})
     
     return redirect('view_cart')
 
@@ -135,3 +127,51 @@ def add_to_cart(request, product_id):
             })
     
     return redirect('view_cart')
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def apply_coupon(request, coupon_code):
+    if request.method == 'POST':
+        try:
+            coupon = get_object_or_404(Coupon, code=coupon_code)
+            cart = Cart.objects.get(user=request.user)
+            
+            if cart.coupon:
+                return JsonResponse({'success': False, 'message': 'A coupon has already been applied'})
+            
+            if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage or coupon.end_date > timezone.now():
+                return JsonResponse({'success': False, 'message': 'Coupon has expired'})
+            
+            if not coupon.active:
+                return JsonResponse({'success': False, 'message': 'Coupon is inactive'})
+            
+            if cart.total_price < coupon.min_cart_value:
+                return JsonResponse({'success': False, 'message': f'Minimum cart value of ₹{coupon.min_cart_value} required to apply this coupon.'})
+            
+            # Calculate discount
+            if coupon.discount_type == 'fixed':
+                discount = coupon.discount_value
+            else:
+                discount = (cart.total_price * coupon.discount_value) / 100
+                if coupon.max_discount:
+                    discount = min(discount, coupon.max_discount)
+            
+            cart.coupon = coupon
+            cart.total_price -= discount
+            cart.save()
+            
+            # Create UserCoupon instance
+            UserCoupon.objects.create(user=request.user, coupon=coupon)
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Coupon applied successfully!',
+                'discount_amount': float(discount),
+                'new_total': float(cart.total_price)
+            })
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"An unexpected error occurred: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
