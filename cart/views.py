@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.utils import timezone
+from decimal import Decimal
+import json
 from .models import Cart, CartItem
 from coupon.models import Coupon, UserCoupon
 from product.models import Product, ProductVariant
@@ -26,12 +28,23 @@ def view_cart(request):
     total_discount = cart.get_total_actual_price() - cart.total_price
     latest_products = Product.objects.filter(is_deleted=False).order_by('-created_at')[:5]
     total_actual_price = cart.get_total_actual_price()
+
+    coupon = request.session.get('coupon', {})
+    coupon_id = coupon.get('coupon_id')
+    discount_amount = coupon.get('discount_amount', 0)
+    coupon_code = None
+    if coupon:
+        coupon_code = Coupon.objects.get(id=coupon_id)
+    total_price_after_coupon_discount = cart.total_price - int(discount_amount) if int(discount_amount) > 0 else cart.total_price
     data = {
         'cart': cart,
         'total_discount': total_discount,
         'latest_products': latest_products,
         'max_quantity': 5,
         'total_actual_price': total_actual_price,
+        'coupon_code': coupon_code,
+        'discount_amount': discount_amount,
+        'total_price_after_coupon_discount': total_price_after_coupon_discount
     }
     return render(request, 'cart.html', data)
 
@@ -64,6 +77,11 @@ def remove_from_cart(request, item_id):
     if request.method == 'POST':
         cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
         cart_item.delete()
+        
+        coupon_data = request.session.get('coupon')
+        if coupon_data:
+            del request.session['coupon']
+            request.session.modified = True
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': True, 'cart_total': float(cart_item.cart.total_price)})
@@ -131,14 +149,24 @@ def add_to_cart(request, product_id):
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def available_coupons(request):
+    if request.method == 'GET':
+        coupons = Coupon.objects.filter(active=True)
+        coupon_list = [{'code': coupon.code, 'description': coupon.description} for coupon in coupons]
+        return JsonResponse({'coupons': coupon_list})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def apply_coupon(request, coupon_code):
     if request.method == 'POST':
         try:
             coupon = get_object_or_404(Coupon, code=coupon_code)
             cart = Cart.objects.get(user=request.user)
             
-            if cart.coupon:
-                return JsonResponse({'success': False, 'message': 'A coupon has already been applied'})
+            # if 'coupon' in request.session:
+            #     return JsonResponse({'success': False, 'message': 'A coupon has already been applied'})
             
             if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage or coupon.end_date > timezone.now():
                 return JsonResponse({'success': False, 'message': 'Coupon has expired'})
@@ -151,19 +179,18 @@ def apply_coupon(request, coupon_code):
             
             # Calculate discount
             if coupon.discount_type == 'fixed':
-                discount = coupon.discount_value
+                discount = float(coupon.discount_value)
             else:
-                discount = (cart.total_price * coupon.discount_value) / 100
+                discount = float(cart.total_price * coupon.discount_value / 100)
                 if coupon.max_discount:
-                    discount = min(discount, coupon.max_discount)
+                    discount = min(discount, float(coupon.max_discount))
             
-            cart.coupon = coupon
-            cart.total_price -= discount
-            cart.save()
-            
-            # Create UserCoupon instance
-            UserCoupon.objects.create(user=request.user, coupon=coupon)
-            
+            # cart.total_price -= discount
+            # cart.save()
+            request.session['coupon'] = {
+                'coupon_id': coupon.id,
+                'discount_amount': discount,
+            }
             return JsonResponse({
                 'success': True,
                 'message': 'Coupon applied successfully!',
@@ -173,5 +200,28 @@ def apply_coupon(request, coupon_code):
         
         except Exception as e:
             return JsonResponse({'success': False, 'message': f"An unexpected error occurred: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def remove_coupon(request):
+    if request.method == 'POST':
+        try:
+            cart = Cart.objects.get(user=request.user)
+            coupon_data = request.session.get('coupon')
+            
+            if coupon_data:
+                del request.session['coupon']
+                request.session.modified = True
+                
+                return JsonResponse({'success': True, 'message': 'Coupon removed successfully', 'new_total': float(cart.total_price)})
+            else:
+                return JsonResponse({'success': False, 'message': 'No coupon applied to remove'})
+        except Cart.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Cart not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)

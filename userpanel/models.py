@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from users.models import Users
+from product.models import ProductVariant
 
 
 # Create your models here.
@@ -70,3 +71,12 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.full_name}'s address in {self.city}"
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='wishlists')
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name='wishlisted_by')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Wishlist of {self.user.email}: {self.variant.product.name}"

@@ -35,7 +35,6 @@ class Order(models.Model):
 
     def calculate_total(self):
         self.subtotal = sum(item.price * item.quantity for item in self.items.all())
-        self.total_amount = self.subtotal + self.shipping_cost - self.discount
         self.save()
 
     def __str__(self):

@@ -208,30 +208,23 @@
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
                     {% if product.total_quantity > 0 %}
-                    <!-- <button class="btn btn-primary btn-lg me-2 flex-grow-1">Buy Now</button>
-                    <button class="btn btn-dark btn-lg me-2 flex-grow-1">Add to Cart</button>
-                    <button class="wishlist-btn" onclick="toggleWishlist(this)">
-                        <i class="fas fa-heart"></i>
-                    </button> -->
-
                     <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2">
                         {% csrf_token %}
                         <input type="hidden" name="variant" value="{{ product.variants.first.id }}">
                         <input type="hidden" name="quantity" value="1">
                         <button type="submit" class="btn btn-primary btn-lg flex-grow-1">Buy Now</button>
                         <button type="submit" class="btn btn-dark btn-lg flex-grow-1">Add to Cart</button>
-                        <button type="button" class="wishlist-btn" onclick="toggleWishlist(this)">
+                        <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" data-product-id="{{ product.id }}" onclick="toggleWishlist(this)">
                             <i class="fas fa-heart"></i>
                         </button>
                     </form>
-                  
                     {% else %}
                         <button class="btn btn-secondary btn-lg me-2 flex-grow-1" disabled>Sold Out</button>
-                        <button class="wishlist-btn" onclick="toggleWishlist(this)">
+                        <button class="wishlist-btn {% if is_wishlisted %}active{% endif %}" data-product-id="{{ product.id }}" onclick="toggleWishlist(this)">
                             <i class="fas fa-heart"></i>
                         </button>
                     {% endif %}
-                </div>
+                </div>    
 
                 <!-- Description -->
                 <div class="description">
@@ -355,7 +348,29 @@ function updateThumbnails() {
 }
 
 function toggleWishlist(button) {
-    button.classList.toggle('active');
+    const productId = button.dataset.productId;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/wishlist/toggle/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            button.classList.toggle('active');
+            showMessage(data.message, 'success');
+        } else {
+            showMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('An error occurred. Please try again.', 'error');
+    });
 }
 
 const mainImage = document.getElementById('mainImage');

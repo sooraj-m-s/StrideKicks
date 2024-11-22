@@ -82,6 +82,15 @@
         background-color: #333;
         color: #fff;
     }
+    .price-details-wrapper {
+        position: sticky;
+        top: 20px;
+    }
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
 </style>
 {% endblock %}
 
@@ -152,35 +161,44 @@
             </div>
 
             <div class="col-md-4">
-                <div class="checkout-section">
-                    <div class="section-header">
-                        <h2 class="h5 mb-0">Price Details</h2>
+                <div class="price-details-wrapper">
+                    <div class="checkout-section">
+                        <div class="section-header">
+                            <h2 class="h5 mb-0">Price Details</h2>
+                        </div>
+                        <div class="section-content price-details">
+                            <div class="price-row">
+                                <span>Price ({{ cart.items.count }} items)</span>
+                                <span>₹ {{ cart.get_total_actual_price }}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Saved</span>
+                                <span>₹ {{ total_discount }}</span>
+                            </div>
+                            {% if discount_amount > 0 %}
+                            <div class="summary-item">
+                                <span>Coupon Applied</span>
+                                <span>₹ {{ discount_amount }}</span>
+                            </div>
+                            {% else %}
+                            <div class="summary-item">
+                                <span>Coupon Applied</span>
+                                <span>₹ 0</span>
+                            </div>
+                            {% endif %}
+                            <div class="price-row">
+                                <span>Delivery Charges</span>
+                                <span>{% if cart.total_price > 4999 %}<span class="text-success">FREE</span>{% else %}₹ {{ cart.delivery_charge }}{% endif %}</span>
+                            </div>
+                            <div class="price-row price-total">
+                                <span>Total Amount</span>
+                                <span>₹{{ total_amount }}</span>
+                            </div>
+                            <p class="text-success mt-2 mb-0">Your Total Savings on this order ₹{{ cart.get_total_actual_price|subtract:cart.total_price|add:discount_amount }}</p>
+                        </div>
                     </div>
-                    <div class="section-content price-details">
-                        <div class="price-row">
-                            <span>Price ({{ cart.items.count }} items)</span>
-                            <span>₹{{ cart.get_total_actual_price }}</span>
-                        </div>
-                        <div class="price-row">
-                            <span>Delivery Charges</span>
-                            <span>{% if cart.total_price > 4999 %}<span class="text-success">FREE</span>{% else %}₹{{ cart.delivery_charge }}{% endif %}</span>
-                        </div>
-                        {% if cart.discount > 0 %}
-                        <div class="price-row text-success">
-                            <span>Discount</span>
-                            <span>-₹{{ cart.discount }}</span>
-                        </div>
-                        {% endif %}
-                        <div class="price-row price-total">
-                            <span>Total Amount</span>
-                            <span>₹{{ cart.total_price }}</span>
-                        </div>
-                        {% if cart.get_total_actual_price > cart.total_price %}
-                        <p class="text-success mt-2 mb-0">Your Total Savings on this order ₹{{ cart.get_total_actual_price|subtract:cart.total_price }}</p>
-                        {% endif %}
-                    </div>
+                    <button type="submit" class="btn btn-place-order w-100 mt-3">Place Order</button>
                 </div>
-                <button type="submit" class="btn btn-place-order w-100 mt-3">Place Order</button>
             </div>
         </div>
     </form>

@@ -11,8 +11,6 @@ class Cart(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='carts', null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     delivery_charge = models.IntegerField(null=True, blank=True)
-    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
-    discounted_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -23,20 +21,6 @@ class Cart(models.Model):
         self.total_price = sum(item.total_price for item in self.items.all() if item.quantity > 0)
         self.delivery_charge = 0 if self.total_price > 4999 else 99
         self.total_price += self.delivery_charge
-        self.save()
-
-    def apply_coupon(self):
-        if not self.coupon:
-            return 
-        coupon = Coupon.objects.get(code=self.coupon)
-        if coupon.discount_type == 'fixed':
-            discount = coupon.discount_value
-        else:
-            discount = (self.total_price * coupon.discount_value) / 100
-            if coupon.max_discount:
-                discount = min(discount, coupon.max_discount)
-        self.total_price -= discount
-        self.discounted_amount = discount
         self.save()
 
     def get_total_actual_price(self):

@@ -7,10 +7,12 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
+from decimal import Decimal
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem
 from cart.models import Cart
+from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
 import uuid
 
@@ -27,6 +29,17 @@ def checkout(request):
         return redirect('view_cart')
 
     addresses = Address.objects.filter(user_id=request.user, is_deleted=False)
+    coupon = request.session.get('coupon', {})
+    coupon_id = coupon.get('coupon_id')
+    discount_amount = Decimal(coupon.get('discount_amount', 0))
+    coupon_code = None
+    if coupon:
+        coupon_code = Coupon.objects.get(id=coupon_id)
+        total_price_after_coupon_discount = cart.total_price - int(discount_amount) if int(discount_amount) > 0 else cart.total_price
+        total_amount = cart.total_price - discount_amount
+    else:
+        total_price_after_coupon_discount = cart.total_price
+        total_amount = cart.total_price
     
     if request.method == 'POST':
         address_id = request.POST.get('address_id')
@@ -49,7 +62,6 @@ def checkout(request):
                     return redirect('checkout')
             
             subtotal = sum(item.price * item.quantity for item in cart.items.all())
-            total_amount = cart.total_price
             amount_in_paise = int(total_amount * 100)  # Convert to paise
             # Create Razorpay order
             if payment_method == 'RP':  # Razorpay
@@ -79,6 +91,8 @@ def checkout(request):
             order = Order.objects.create(
                 user=request.user,
                 order_number=uuid.uuid4().hex[:12].upper(),
+                coupon=coupon_code,
+                discount=discount_amount,
                 payment_method=payment_method,
                 payment_status=False,
                 subtotal=subtotal,
@@ -99,9 +113,15 @@ def checkout(request):
                 )
                 item.variant.quantity -= item.quantity
                 item.variant.save()
-            
-            # Clear the cart
+            if coupon_code:
+                UserCoupon.objects.create(
+                    user=request.user,
+                    coupon=coupon_code,
+                    order=order,
+                )
             cart.delete()
+            del request.session['coupon']
+            request.session.modified = True
             
             if payment_method == 'RP':
                 context = {
@@ -116,12 +136,18 @@ def checkout(request):
                 messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
                 return redirect('order_success', order_id=order.id)
 
-    context = {
+    total_discount = cart.get_total_actual_price() - cart.total_price
+    data = {
         'cart': cart,
         'addresses': addresses,
+        'total_amount': total_amount,
+        'total_discount': total_discount,
         'payment_methods': Order.PAYMENT_METHOD_CHOICES,
+        'coupon_code': coupon_code,
+        'discount_amount': discount_amount,
+        'total_price_after_coupon_discount': total_price_after_coupon_discount,
     }
-    return render(request, 'checkout.html', context)
+    return render(request, 'checkout.html', data)
 
 
 @csrf_exempt
@@ -191,13 +217,13 @@ def my_orders(request):
         'status_filter': status_filter,
     }
 
-    return render(request, 'orders/my_orders.html', data)
+    return render(request, 'my_orders.html', data)
 
 
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    return render(request, 'orders/order_detail.html', {'order': order})
+    return render(request, 'order_detail.html', {'order': order})
 
 
 @login_required
@@ -229,7 +255,7 @@ def cancel_product(request, item_id):
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES
-    return render(request, 'orders/cancellation_reason.html', {
+    return render(request, 'cancellation_reason.html', {
         'order_item': order_item,
         'cancellation_reasons': cancellation_reasons
     })

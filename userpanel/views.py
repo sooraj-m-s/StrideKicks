@@ -5,10 +5,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 import re
+from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import Users
-from .models import Address
+from product.models import Product
+from .models import Address, Wishlist
 
 
 # Create your views here.
@@ -228,3 +230,34 @@ def set_default_address(request, address_id):
     except Exception:
         messages.error(request, 'Address not found.')
     return redirect('manage_address')
+
+
+@login_required
+def toggle_wishlist(request, product_id):
+    print('id: ',product_id, type(product_id))
+    product = get_object_or_404(Product, id=product_id)
+    wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
+
+    if created:
+        message = "Product added to wishlist."
+    else:
+        wishlist_item.delete()
+        message = "Product removed from wishlist."
+
+    return JsonResponse({"success": True, "message": message})
+
+
+@login_required
+def is_wishlisted(request, product_id):
+    is_in_wishlist = Wishlist.objects.filter(user=request.user, product_id=product_id).exists()
+    return JsonResponse({"is_wishlisted": is_in_wishlist})
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def wishlist(request):
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
+    context = {
+        'wishlist_items': wishlist_items
+    }
+    return render(request, 'wishlist.html', context)
