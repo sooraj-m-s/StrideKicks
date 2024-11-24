@@ -6,11 +6,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="{% static 'favicon/favicon.png' %}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <title>{% block title %}{% endblock %}</title>
     {% block style %}{% endblock %}
 </head>
 <body>
     {% block body %}
     {% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        {% if messages %}
+        {% for message in messages %}
+        Toastify({
+            text: "{{ message }}",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "center",
+            backgroundColor: "{% if message.tags == 'error' %}red{% else %}green{% endif %}",
+        }).showToast();
+        {% endfor %}
+        {% endif %}
+    </script>
 </body>
 </html>

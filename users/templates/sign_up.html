@@ -64,24 +64,6 @@
     color: #757575;
     font-size: 14px;
 }
-.message-error {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 15px;
-    text-align: center;
-}
-.message-success {
-    color: #28a745;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 15px;
-    text-align: center;
-}
 .password-container {
     position: relative;
 }
@@ -113,12 +95,6 @@
 
     <div class="form-container">
         <h2 class="text-center mb-4">Create an Account</h2>
-
-        {% if messages %}
-            {% for message in messages %}
-                <p class="{% if message.tags == 'error' %}message-error{% else %}message-success{% endif %}">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
 
         <div class="d-grid mb-4">
             <a href="{{ google_auth_url }}" class="btn btn-google">

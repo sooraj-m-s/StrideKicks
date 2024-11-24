@@ -93,7 +93,7 @@ def signup_view(request):
             html_message=html_message,
         )
 
-        messages.info(request, 'Please check your email for the verification code.')
+        messages.success(request, 'Please check your email for the verification code.')
         return redirect('verify_email')
 
     google_auth_url = reverse('social:begin', args=['google-oauth2'])
@@ -219,6 +219,8 @@ def login_to_account(request):
             if user is not None:
                 login(request, user)
                 request.session['user_id'] = user.user_id
+                username = user.first_name.title()
+                messages.success(request, f"Login Successful. Welcome, {username}!")
                 return redirect('home')
             else:
                 messages.error(request, 'Authentication failed.')
@@ -267,6 +269,7 @@ def forgot_password(request):
                 'otp': otp,
                 'otp_expiry': otp_expiry,
             }
+            messages.success(request, 'Please check your email for the verification code.')
             return redirect('reset_password')
         except Users.DoesNotExist:
             messages.error(request, 'No account found with this email address.')

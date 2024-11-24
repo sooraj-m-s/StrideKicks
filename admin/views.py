@@ -37,7 +37,8 @@ def login_to_account(request):
                 messages.error(request, 'Only admin can login here.')
                 return render(request, 'admin_login.html', {'form': form})
             login(request, user)
-            messages.success(request, 'Login Successful.')
+            username = user.first_name.title()
+            messages.success(request, f"Login Successful. Welcome, {username}!")
             return redirect('admin_dashboard')
         else:
             for error in form.non_field_errors():
@@ -139,7 +140,7 @@ def customers_view(request):
 
     # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(users, 6)
+    paginator = Paginator(users, 5)
     try:
         users_page = paginator.page(page)
     except PageNotAnInteger:
@@ -225,7 +226,7 @@ def sales_report(request):
 
     # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(orders, 6)
+    paginator = Paginator(orders, 5)
     try:
         orders_page = paginator.page(page)
     except PageNotAnInteger:

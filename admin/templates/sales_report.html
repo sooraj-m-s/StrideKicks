@@ -210,15 +210,6 @@ body {
 </nav>
 
 <main class="main-content">
-{% block content %}
-{% if messages %}
-{% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
-        {{ message }}
-    </div>
-{% endfor %}
-{% endif %}
-{% endblock %}
 <div class="container-fluid">
     <div class="card bg-dark text-white">
         <div class="card-body">

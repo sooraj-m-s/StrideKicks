@@ -24,22 +24,12 @@
             <div class="w-75">
                 <h2 class="mb-4">Forgot Password</h2>
                 <p class="text-muted mb-4">Enter your email address to reset your password</p>
-                
-                {% if messages %}
-                <div class="mb-4">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
 
                 <form method="POST" action="{% url 'get_account' %}">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="email" class="form-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="text" class="form-control" id="email" name="email">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         Send Reset Link

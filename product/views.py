@@ -38,7 +38,7 @@ def products_view(request):
 
     # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(products, 6)
+    paginator = Paginator(products, 5)
     try:
         products_page = paginator.page(page)
     except PageNotAnInteger:
@@ -47,7 +47,7 @@ def products_view(request):
         products_page = paginator.page(paginator.num_pages)
     data = {
         'first_name': first_name,
-        'products': products,
+        'products': products_page,
         'variants': variants,
         'categories': categories,
         'search_query': search_query,

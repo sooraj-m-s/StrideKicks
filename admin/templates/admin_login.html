@@ -66,17 +66,6 @@
         background-color: #505050;
         color: white;
     }
-    .alert {
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-radius: 10px;
-    }
-    .alert.error {
-        background-color: #c93636;
-        color: white;
-        text-align: center;
-    }
-
 </style>
 {% endblock %}
 
@@ -88,13 +77,6 @@
 <div class="container">
     <div class="login-container">
         <h2 class="login-title">ADMIN LOGIN</h2>
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
         <form method="post">
             {% csrf_token %}
             <div class="mb-3">

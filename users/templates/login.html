@@ -116,31 +116,6 @@
 .btn-google:hover {
     background-color: #f8f9fa;
 }
-.popup {
-    position: fixed;
-    top: 20px;
-    left: 60%;
-    transform: translateX(-50%);
-    padding: 15px 20px;
-    color: #100766;
-    font-size: 16px;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    max-width: 80%;
-    text-align: center;
-}
-.popup.error {
-    background-color: #f44336;
-}
-.popup.warning {
-    background-color: #ff9800;
-}
-.popup.info {
-    background-color: #2196F3;
-}
 @keyframes fadeInOut {
     0%, 100% { opacity: 0; }
     10%, 90% { opacity: 1; }
@@ -203,16 +178,6 @@
         <div class="col-md-6 login-section">
             <div class="login-container">
                 <h2 class="login-title">Welcome Back</h2>
-
-                {% if messages %}
-                    <div id="popup" class="popup">
-                        {% for message in messages %}
-                            <div class="popup-message {{ message.tags }}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
 
                 <a href="{% url 'social:begin' 'google-oauth2' %}" class="btn btn-google">
                     <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo">
