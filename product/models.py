@@ -20,6 +20,7 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+
 class ProductVariant(models.Model):
     STATUS_CHOICES = [
         ('5', '5'), ('6', '6'), ('7', '7'), ('8', '8'), ('9', '9'), ('10', '10')
@@ -41,6 +42,7 @@ class ProductVariant(models.Model):
         super().save(*args, **kwargs)
         self.product.total_quantity = self.product.variants.aggregate(total=models.Sum('quantity'))['total'] or 0
         self.product.save()
+
 
 class ProductImage(models.Model):
     image = models.URLField(max_length=255)

@@ -14,9 +14,10 @@ class Order(models.Model):
         ('RP', 'Razor Pay'),
         ('PP', 'PayPal'),
         ('BT', 'Bank Transfer'),
+        ('WP', 'Wallet Pay'),
         ('COD', 'Cash on Delivery'),
     ]
-
+    
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='orders')
     order_number = models.CharField(max_length=20, unique=True)
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')

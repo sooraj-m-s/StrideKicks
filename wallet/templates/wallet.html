@@ -1,0 +1,181 @@
+{% extends "base_user.html" %}
+
+{% block title %}My Wallet{% endblock %}
+
+{% block style %}
+<style>
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 1rem;
+        color: #333;
+        transition: all 0.2s;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+    .list-group-item.active {
+        background-color: #f8f9fa;
+        color: #000;
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .list-group-item.active:hover {
+        background-color: #f0f1f2;
+    }
+    .card {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .card-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #333;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: ">";
+    }
+    .wallet-balance {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+    .transaction-table {
+        width: 100%;
+        margin-top: 2rem;
+    }
+    .transaction-table th {
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        font-weight: 600;
+    }
+    .transaction-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+    }
+    .transaction-credit {
+        color: #28a745;
+    }
+    .transaction-debit {
+        color: #dc3545;
+    }
+    .status-completed {
+        color: #28a745;
+    }
+    .status-pending {
+        color: #ffc107;
+    }
+    .status-failed {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item active">My Wallet</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Hi, {{ user.first_name }}</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'profile' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user me-2"></i> My Profile
+                        </a>
+                        <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-box me-2"></i> My Orders
+                        </a>
+                        <a href="{% url 'wallet' %}" class="list-group-item list-group-item-action active">
+                            <i class="fas fa-wallet me-2"></i> Wallet
+                        </a>
+                        <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-shopping-cart me-2"></i> Cart
+                        </a>
+                        <a href="{% url 'wishlist' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-heart me-2"></i> Wishlist
+                        </a>
+                        <a href="{% url 'manage_address' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-map-marker-alt me-2"></i> Manage Address
+                        </a>
+                        <a href="{% url 'logout_account' %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="mb-4">My Wallet</h1>
+                    
+                    <!-- Wallet Balance -->
+                    <div class="wallet-balance">
+                        ₹{{ wallet.balance }}
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <h4 class="mt-5 mb-3">Recent Transactions</h4>
+                    {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="transaction-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Transaction ID</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>
+                                        <span class="{% if transaction.transaction_type == 'Cr' %}transaction-credit{% else %}transaction-debit{% endif %}">
+                                            {{ transaction.get_transaction_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>₹{{ transaction.amount }}</td>
+                                    <td>{{ transaction.created_at|date:"M d, Y, g:i A" }}</td>
+                                    <td>{{ transaction.transaction_id }}</td>
+                                    <td>
+                                        <span class="status-{{ transaction.status|lower }}">
+                                            {{ transaction.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No transactions yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

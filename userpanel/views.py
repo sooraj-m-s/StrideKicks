@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import Users
-from product.models import Product
+from product.models import Product, ProductVariant
 from .models import Address, Wishlist
 
 
@@ -233,10 +233,9 @@ def set_default_address(request, address_id):
 
 
 @login_required
-def toggle_wishlist(request, product_id):
-    print('id: ',product_id, type(product_id))
-    product = get_object_or_404(Product, id=product_id)
-    wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
+def toggle_wishlist(request, product_id, product_size):
+    variant = get_object_or_404(ProductVariant, product_id=product_id, size=product_size)
+    wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, variant=variant)
 
     if created:
         message = "Product added to wishlist."
@@ -256,7 +255,7 @@ def is_wishlisted(request, product_id):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def wishlist(request):
-    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('variant__product', 'variant__product__brand')
     context = {
         'wishlist_items': wishlist_items
     }

@@ -1,11 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Min, Max, Q
-from product.models import Product
+from django.core.serializers.json import DjangoJSONEncoder
+import json
+from product.models import Product, ProductVariant
 from category.models import Category
 from brand.models import Brand
 
@@ -33,15 +35,51 @@ def home(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_detail(request, product_id):
     # product = get_object_or_404(Product, id=product_id)
-    product = Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images').get(id=product_id)
+    product = get_object_or_404(Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images'), id=product_id)
     # related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
     related_products = Product.objects.filter(is_deleted=False).exclude(id=product.id)[:4]
+    variants = product.variants.all()
+
+    available_variants = [
+        {
+            'id': variant.id,
+            'size': variant.size,
+            'color': variant.color,
+            'sale_price': str(variant.sale_price),
+            'actual_price': str(variant.actual_price),
+            'quantity': variant.quantity,
+        }
+        for variant in variants
+    ]
+    
     data = {
         'product': product,
         'related_products': related_products,
+        'available_variants': json.dumps(available_variants, cls=DjangoJSONEncoder),
     }
     
     return render(request, 'product_detail.html', data)
+
+
+@login_required
+def get_variant_details(request):
+    product_id = request.GET.get('product_id')
+    size = request.GET.get('size')
+    color = request.GET.get('color')
+    
+    try:
+        variant = ProductVariant.objects.get(product_id=product_id, size=size, color=color)
+        data = {
+            'id': variant.id,
+            'sale_price': str(variant.sale_price),
+            'actual_price': str(variant.actual_price),
+            'quantity': variant.quantity,
+            'found': True,
+        }
+    except ProductVariant.DoesNotExist:
+        data = {'found': False}
+    
+    return JsonResponse(data)
 
 
 @login_required
@@ -53,17 +91,12 @@ def about_us(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_listing(request):
-    # Get all available categories and brands
     categories = Category.objects.filter(is_deleted=False, is_listed=True)
     brands = Brand.objects.filter(is_deleted=False, is_listed=True)
-    
-    # Get price range
     price_range = Product.objects.filter(is_deleted=False).aggregate(
         min_price=Min('variants__sale_price'),
         max_price=Max('variants__sale_price')
     )
-
-    # Get all products for initial load
     all_products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('-created_at')
     
     # Pagination
@@ -83,7 +116,6 @@ def product_listing(request):
 
 
 def filter_products(request):
-    # Get filter parameters
     search_query = request.GET.get('search', '').strip()
     sort_by = request.GET.get('sort', 'newest')
     category_ids = request.GET.get('categories', '').split(',')
@@ -92,11 +124,8 @@ def filter_products(request):
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     page = request.GET.get('page', 1)
-
-    # Base queryset
     products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images')
 
-    # Apply filters
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
@@ -117,8 +146,6 @@ def filter_products(request):
             variants__sale_price__gte=min_price,
             variants__sale_price__lte=max_price
         )
-
-    # Apply sorting
     if sort_by == 'newest':
         products = products.order_by('-created_at')
     elif sort_by == 'name_asc':
@@ -131,15 +158,11 @@ def filter_products(request):
         products = products.order_by('-variants__sale_price')
     elif sort_by == 'rating':
         products = products.order_by('-rating')
-
-    # remove duplicates
     products = products.distinct()
 
     # Pagination
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(page)
-
-    # Render only the products grid
     html = render_to_string(
         'product_grid.html',
         {'products': page_obj},

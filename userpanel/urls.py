@@ -12,6 +12,6 @@ urlpatterns = [
     path('delete-address/<int:address_id>/', views.delete_address, name='delete_address'),
     path('set-default-address/<int:address_id>/', views.set_default_address, name='set_default_address'),
     path('wishlist/', views.wishlist, name='wishlist'),
-    path('toggle/<int:product_id>/', views.toggle_wishlist, name='toggle_wishlist'),
-    path('is_wishlisted/<int:product_id>/', views.is_wishlisted, name='is_wishlisted'),
+    path('toggle-wishlist/<int:product_id>/<str:product_size>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('is-wishlisted/<int:product_id>/', views.is_wishlisted, name='is_wishlisted'),
 ]

@@ -11,10 +11,11 @@ from decimal import Decimal
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem
+from wallet.models import Wallet, WalletTransaction
 from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
-import uuid
+import uuid, time
 
 import logging
 logger = logging.getLogger(__name__)
@@ -45,6 +46,20 @@ def checkout(request):
         address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
 
+        try:
+            user_id = request.user
+            if not user_id:
+                raise ValueError('Wallet not found')
+            wallet = Wallet.objects.get(user_id=user_id)
+            if not wallet.is_active:
+                raise ValueError('Wallet is inactive, please contact customer care.')
+        except Wallet.DoesNotExist:
+            messages.error(request, 'Wallet not created.')
+            return redirect('checkout')
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('checkout')
+
         if payment_method == 'CC' or payment_method == 'PP' or payment_method == 'BT':
             messages.error(request, "Current payment method is not available. Please try another payment method.")
             return redirect('checkout')
@@ -55,7 +70,6 @@ def checkout(request):
         address = Address.objects.get(id=address_id, user_id=request.user)
         
         with transaction.atomic():
-            # Check stock availability
             for item in cart.items.all():
                 if item.quantity > item.variant.quantity:
                     messages.error(request, f"Not enough stock for {item.product.name} - {item.variant}")
@@ -63,8 +77,7 @@ def checkout(request):
             
             subtotal = sum(item.price * item.quantity for item in cart.items.all())
             amount_in_paise = int(total_amount * 100)  # Convert to paise
-            # Create Razorpay order
-            if payment_method == 'RP':  # Razorpay
+            if payment_method == 'RP':
                 logger.info(f"Attempting to create Razorpay order for amount: {amount_in_paise}")
                 try:
                     
@@ -120,9 +133,31 @@ def checkout(request):
                     order=order,
                 )
             cart.delete()
-            del request.session['coupon']
-            request.session.modified = True
+            if 'coupon' in request.session:
+                del request.session['coupon']
+                request.session.modified = True
             
+            if payment_method == 'WP':
+                try:
+                    with transaction.atomic():
+                        if wallet.balance < total_amount:
+                            raise ValueError("Insufficient balance in wallet.")
+                        
+                        wallet.balance -= total_amount
+                        wallet.save()
+                        WalletTransaction.objects.create(
+                            wallet=wallet,
+                            transaction_type="Dr",
+                            amount=total_amount,
+                            status="Completed",
+                            transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                        )
+                except ValueError as e:
+                    messages.error(request, str(e))
+                    return redirect('checkout')
+                except Exception as e:
+                    messages.error(request, "An error occurred while processing your payment. Please try again.")
+                    return redirect('checkout')
             if payment_method == 'RP':
                 context = {
                     'order': order,
@@ -229,6 +264,7 @@ def order_detail(request, order_id):
 @login_required
 def cancel_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    order = order_item.order
     
     if request.method == 'POST':
         reason = request.POST.get('cancellation_reason')
@@ -247,11 +283,28 @@ def cancel_product(request, item_id):
         order_item.status = 'Cancelled'
         order_item.save()
         
-        # Update product stock
         product_variant = order_item.product_variant
         product_variant.quantity += order_item.quantity
         product_variant.save()
-        
+
+        # refund by proportion
+        discount_deduction = (order_item.price / order.total_amount) * order.discount
+        refund = order_item.price - discount_deduction
+        order.total_amount -= refund
+        order.subtotal -= order_item.original_price
+
+        if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
+            wallet, _ = Wallet.objects.get_or_create(user=order.user)
+            wallet.balance += refund
+            wallet.save()
+            WalletTransaction.objects.create(
+                            wallet=wallet,
+                            transaction_type="Cr",
+                            amount=refund,
+                            status="Completed",
+                            transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                        )
+            return JsonResponse({'status': 'success', 'message': 'Product successfully cancelled and the amount credited to your wallet.'})
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES
@@ -286,7 +339,7 @@ def return_product(request, item_id):
         return JsonResponse({'status': 'success', 'message': 'Product return request has been submitted successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES
-    return render(request, 'orders/cancellation_reason.html', {
+    return render(request, 'cancellation_reason.html', {
         'order_item': order_item,
         'cancellation_reasons': cancellation_reasons
     })

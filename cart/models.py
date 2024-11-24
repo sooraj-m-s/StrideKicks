@@ -1,7 +1,6 @@
 from django.db import models
 from users.models import Users
 from product.models import Product, ProductVariant
-from coupon.models import Coupon
 
 
 # Create your models here.

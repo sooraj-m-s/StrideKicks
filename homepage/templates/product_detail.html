@@ -182,49 +182,36 @@
                     {% endfor %}
                     ({{ product.rating }}.0)
                 </div>
-                <div class="sale-price">₹{{ product.variants.first.sale_price }}</div>
-                <div class="original-price">₹{{ product.variants.first.actual_price }}</div>
+                <div class="sale-price" id="salePrice">₹{{ product.variants.first.sale_price }}</div>
+                <div class="original-price" id="actualPrice">₹{{ product.variants.first.actual_price }}</div>
                 
                 <!-- Variant Selection -->
                 <div class="variant-select">
                     <div class="mb-3">
                         <label for="sizeSelect" class="form-label">Select Size</label>
-                        <select class="form-select" id="sizeSelect">
-                            {% for variant in product.variants.all %}
-                            <option value="{{ variant.size }}">{{ variant.size }}</option>
-                            {% endfor %}
-                        </select>
+                        <select class="form-select" id="sizeSelect"></select>
                     </div>
                     <div class="mb-3">
                         <label for="colorSelect" class="form-label">Select Color</label>
-                        <select class="form-select" id="colorSelect">
-                            {% for color in product.variants.all %}
-                            <option value="{{ color }}">{{ color.color }}</option>
-                            {% endfor %}
-                        </select>
+                        <select class="form-select" id="colorSelect"></select>
                     </div>
                 </div>
-
+    
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
-                    {% if product.total_quantity > 0 %}
                     <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2">
                         {% csrf_token %}
-                        <input type="hidden" name="variant" value="{{ product.variants.first.id }}">
+                        <input type="hidden" name="variant" id="variantId" value="{{ product.variants.first.id }}">
                         <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">Buy Now</button>
-                        <button type="submit" class="btn btn-dark btn-lg flex-grow-1">Add to Cart</button>
-                        <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" data-product-id="{{ product.id }}" onclick="toggleWishlist(this)">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="buyNowBtn">Buy Now</button>
+                        <button type="submit" class="btn btn-dark btn-lg flex-grow-1" id="addToCartBtn">Add to Cart</button>
+                        <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" 
+                                data-product-id="{{ product.id }}" 
+                                onclick="toggleWishlist(this, '{{ product.variants.first.size }}')">
                             <i class="fas fa-heart"></i>
                         </button>
                     </form>
-                    {% else %}
-                        <button class="btn btn-secondary btn-lg me-2 flex-grow-1" disabled>Sold Out</button>
-                        <button class="wishlist-btn {% if is_wishlisted %}active{% endif %}" data-product-id="{{ product.id }}" onclick="toggleWishlist(this)">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    {% endif %}
-                </div>    
+                </div>
 
                 <!-- Description -->
                 <div class="description">
@@ -347,11 +334,12 @@ function updateThumbnails() {
     });
 }
 
-function toggleWishlist(button) {
+function toggleWishlist(button, initialSize) {
     const productId = button.dataset.productId;
+    const productSize = document.getElementById('sizeSelect').value || initialSize;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    fetch(`/wishlist/toggle/${productId}/`, {
+    fetch(`/userpanel/toggle-wishlist/${productId}/${productSize}/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -372,6 +360,12 @@ function toggleWishlist(button) {
         showMessage('An error occurred. Please try again.', 'error');
     });
 }
+
+// Update wishlist button when size changes
+document.getElementById('sizeSelect').addEventListener('change', function() {
+    const wishlistButton = document.querySelector('.wishlist-btn');
+    wishlistButton.classList.remove('active');
+});
 
 const mainImage = document.getElementById('mainImage');
 const zoomResult = document.getElementById('imageZoomResult');
@@ -423,7 +417,96 @@ window.addEventListener('scroll', function() {
 document.addEventListener('DOMContentLoaded', function() {
     setActiveImage(0);
 });
+const availableVariants = {{ available_variants|safe }};
+let currentSize = null;
+let currentColor = null;
 
+function updateSizeOptions() {
+    const sizeSelect = document.getElementById('sizeSelect');
+    const availableSizes = [...new Set(availableVariants.map(v => v.size))];
+    
+    sizeSelect.innerHTML = '';
+    availableSizes.forEach(size => {
+        const option = document.createElement('option');
+        option.value = size;
+        option.textContent = size;
+        sizeSelect.appendChild(option);
+    });
+    
+    if (currentSize && availableSizes.includes(currentSize)) {
+        sizeSelect.value = currentSize;
+    } else {
+        currentSize = availableSizes[0];
+        sizeSelect.value = currentSize;
+    }
+}
+
+function updateColorOptions() {
+    const colorSelect = document.getElementById('colorSelect');
+    const availableColors = [...new Set(availableVariants.filter(v => v.size === currentSize).map(v => v.color))];
+    
+    colorSelect.innerHTML = '';
+    availableColors.forEach(color => {
+        const option = document.createElement('option');
+        option.value = color;
+        option.textContent = color;
+        colorSelect.appendChild(option);
+    });
+    
+    if (currentColor && availableColors.includes(currentColor)) {
+        colorSelect.value = currentColor;
+    } else {
+        currentColor = availableColors[0];
+        colorSelect.value = currentColor;
+    }
+}
+
+function updateVariantDetails() {
+    const variant = availableVariants.find(v => v.size === currentSize && v.color === currentColor);
+    
+    if (variant) {
+        document.getElementById('salePrice').textContent = `₹${variant.sale_price}`;
+        document.getElementById('actualPrice').textContent = `₹${variant.actual_price}`;
+        document.getElementById('variantId').value = variant.id;
+
+        const buyNowBtn = document.getElementById('buyNowBtn');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+
+        if (variant.quantity > 0) {
+            buyNowBtn.disabled = false;
+            addToCartBtn.disabled = false;
+            buyNowBtn.textContent = 'Buy Now';
+            addToCartBtn.textContent = 'Add to Cart';
+        } else {
+            buyNowBtn.disabled = true;
+            addToCartBtn.disabled = true;
+            buyNowBtn.textContent = 'Sold Out';
+            addToCartBtn.textContent = 'Sold Out';
+        }
+    } else {
+        console.error('Variant not found');
+    }
+}
+
+function handleSizeChange() {
+    currentSize = document.getElementById('sizeSelect').value;
+    updateColorOptions();
+    updateVariantDetails();
+}
+
+function handleColorChange() {
+    currentColor = document.getElementById('colorSelect').value;
+    updateVariantDetails();
+}
+
+document.getElementById('sizeSelect').addEventListener('change', handleSizeChange);
+document.getElementById('colorSelect').addEventListener('change', handleColorChange);
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateSizeOptions();
+    updateColorOptions();
+    updateVariantDetails();
+});
     
 
 //zoom effect

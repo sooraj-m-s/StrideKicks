@@ -66,6 +66,11 @@
     .remove-from-wishlist:hover {
         text-decoration: underline;
     }
+    #empty-wishlist-message {
+        font-size: 1.2rem;
+        color: #6c757d;
+        padding: 70px 0;
+    }
 </style>
 {% endblock %}
 
@@ -92,6 +97,9 @@
                         <a href="{% url 'my_orders' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-box me-2"></i> My Orders
                         </a>
+                        <a href="{% url 'wallet' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-wallet me-2"></i> Wallet
+                        </a>
                         <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action">
                             <i class="fas fa-shopping-cart me-2"></i> Cart
                         </a>
@@ -116,27 +124,38 @@
                     <h1 class="mb-4">My Wishlist</h1>
                 
                     {% if wishlist_items %}
+                    <div id="wishlist-container">
                         {% for item in wishlist_items %}
-                            <div class="wishlist-item">
+                            <div class="wishlist-item" data-product-id="{{ item.variant.product.id }}" data-product-size="{{ item.variant.size }}">
                                 <div class="row align-items-center">
                                     <div class="col-md-2">
-                                        <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="product-image img-thumbnail">
+                                        <img src="{{ item.variant.product.images.first.image }}" alt="{{ item.variant.product.name }}" class="product-image img-thumbnail">
                                     </div>
                                     <div class="col-md-6">
-                                        <h5>{{ item.product.name }}</h5>
-                                        <p class="text-muted mb-0">{{ item.product.brand.name }}</p>
-                                        <p class="mb-0">₹{{ item.product.variants.first.sale_price }}</p>
+                                        <h5>{{ item.variant.product.name }}</h5>
+                                        <p class="text-muted mb-0">{{ item.variant.product.brand.name }}</p>
+                                        <p class="mb-0">Size: {{ item.variant.size }}, Color: {{ item.variant.color }}</p>
+                                        <p class="mb-0">₹{{ item.variant.sale_price }}</p>
                                     </div>
                                     <div class="col-md-4 text-end">
-                                        <a href="{% url 'product_detail' item.product.id %}" class="btn btn-primary mb-2">View Product</a>
+                                        <a href="{% url 'product_detail' item.variant.product.id %}" class="btn btn-primary mb-2">View Product</a>
                                         <br>
-                                        <span class="remove-from-wishlist" onclick="removeFromWishlist({{ item.product.id }})">Remove from Wishlist</span>
+                                        <span class="remove-from-wishlist" onclick="removeFromWishlist({{ item.variant.product.id }}, '{{ item.variant.size }}')">Remove from Wishlist</span>
                                     </div>
                                 </div>
                             </div>
                         {% endfor %}
+                    </div>
                     {% else %}
-                        <p>Your wishlist is empty.</p>
+                    <div class="text-center">
+                        <p id="empty-wishlist-message" class="mt-5 mb-5" style="text-align: center;">
+                            Your wishlist is empty.
+                            <br>
+                            <a class="button-link bold-text" href="{% url 'product_listing' %}" style="display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 5px; color: rgb(51, 50, 50);">
+                                Shop Now
+                            </a>
+                        </p>                        
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -144,39 +163,42 @@
     </div>
 </div>
 
+{% csrf_token %}
 <script>
-function removeFromWishlist(productId) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    fetch(`{% url 'wishlist:toggle' 0 %}`.replace('0', productId), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove the wishlist item from the DOM
-            const wishlistItem = document.querySelector(`.wishlist-item:has([onclick="removeFromWishlist(${productId})"])`);
-            if (wishlistItem) {
-                wishlistItem.remove();
+    function removeFromWishlist(productId, productSize) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+        fetch(`/userpanel/toggle-wishlist/${productId}/${productSize}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                product_size: productSize
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const wishlistItem = document.querySelector(`.wishlist-item[data-product-id="${productId}"][data-product-size="${productSize}"]`);
+                if (wishlistItem) {
+                    wishlistItem.remove();
+                }
+                
+                const wishlistContainer = document.getElementById('wishlist-container');
+                if (wishlistContainer.children.length === 0) {
+                    wishlistContainer.style.display = 'none';
+                    document.getElementById('empty-wishlist-message').style.display = 'block';
+                }
+            } else {
+                console.error('Error removing item from wishlist:', data.message);
             }
-            // Show a success message
-            alert(data.message);
-            // Reload the page if the wishlist is now empty
-            if (document.querySelectorAll('.wishlist-item').length === 0) {
-                location.reload();
-            }
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
-}
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
 </script>
 {% endblock %}
