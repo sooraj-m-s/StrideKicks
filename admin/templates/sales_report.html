@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Report{% endblock %}
+
+{% block style %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+.header {
+    background-color: #000000;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+.sidebar {
+    background-color: #1e1e1e;
+    height: calc(100vh - 50px);
+    width: 250px;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    padding-top: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.sidebar .nav-link {
+    color: #ffffff;
+    padding: 10px 15px;
+    margin: 2px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+.sidebar .nav-link i {
+    margin-right: 15px;
+    width: 20px;
+    font-size: 18px;
+}
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background-color: #2c2c2c;
+}
+.main-content {
+    margin-left: 250px;
+    padding: 70px 20px 20px;
+}
+.sidebar-main-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.sidebar-footer-menu {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #2c2c2c;
+}
+.sidebar .nav-item {
+    margin-bottom: 0%;
+}
+.table {
+    margin-top: 1rem;
+}
+.table th {
+    background-color: #2c2c2c;
+}
+.table-dark {
+    background-color: #1e1e1e;
+}
+.btn-group .btn {
+    background-color: #2c2c2c;
+    border-color: #444;
+}
+.btn-group .btn.active {
+    background-color: #444;
+    border-color: #666;
+}
+.form-control {
+    background-color: #2c2c2c;
+    border-color: #444;
+    color: white;
+}
+.form-control:focus {
+    background-color: #2c2c2c;
+    border-color: #666;
+    color: white;
+    box-shadow: none;
+}
+.card {
+    background-color: #1e1e1e !important;
+    border-color: #444;
+}
+.pagination .page-link {
+    background-color: #2c2c2c;
+    border-color: #444;
+    color: #fff;
+}
+.pagination .page-item.active .page-link {
+    background-color: #444;
+    border-color: #666;
+}
+.pagination .page-link:hover {
+    background-color: #444;
+    border-color: #666;
+    color: #fff;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<header class="header">
+    <h1 class="m-0">StrideKicks</h1>
+    <div class="d-flex align-items-center">
+        <span class="me-3">Welcome {{ first_name }}</span>
+        <i class="fas fa-user-circle fa-lg"></i>
+    </div>
+</header>
+
+<nav class="sidebar">
+    <div class="sidebar-main-menu">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'customers' %}">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'products' %}">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'orders' %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+            </li>        
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-image"></i>
+                    <span>Banner Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'coupon' %}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{% url 'sales_report' %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'brand' %}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Brand</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'category' %}">
+                    <i class="fas fa-tags"></i>
+                    <span>Category</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="sidebar-footer-menu">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'settings' %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <form action="{% url 'admin_logout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-content">
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+{% endfor %}
+{% endif %}
+{% endblock %}
+<div class="container-fluid">
+    <div class="card bg-dark text-white">
+        <div class="card-body">
+            <h2 class="card-title mb-4">Sales Report</h2>
+
+            <!-- Report Settings -->
+            <div class="mb-4">
+                <h5>Report Settings</h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-secondary {% if report_type == 'daily' %}active{% endif %}" data-type="daily">Daily</button>
+                    <button type="button" class="btn btn-secondary {% if report_type == 'weekly' %}active{% endif %}" data-type="weekly">Weekly</button>
+                    <button type="button" class="btn btn-secondary {% if report_type == 'monthly' %}active{% endif %}" data-type="monthly">Monthly</button>
+                    <button type="button" class="btn btn-secondary {% if report_type == 'yearly' %}active{% endif %}" data-type="yearly">Yearly</button>
+                    <button type="button" class="btn btn-secondary {% if report_type == 'custom' %}active{% endif %}" data-type="custom">Custom</button>
+                </div>
+            </div>
+
+            <!-- Custom Date Range (hidden by default) -->
+            <div id="customDateRange" class="mb-4" style="display: {% if report_type == 'custom' %}block{% else %}none{% endif %}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" value="{{ start_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" value="{{ end_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary" id="applyDateRange">Apply</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Data Table -->
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Date</th>
+                            <th>Payment Method</th>
+                            <th>Products</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.user.first_name }} {{ order.user.last_name }}</td>
+                            <td>{{ order.created_at|date:"d/m/Y" }}</td>
+                            <td>{{ order.get_payment_method_display }}</td>
+                            <td>{{ order.items.count }}</td>
+                            <td>₹{{ order.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Total Order Amount:</strong></td>
+                            <td><strong>₹{{ total_amount }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Total Discount:</strong></td>
+                            <td><strong>₹{{ total_discount }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if report_type %}&type={{ report_type }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.previous_page_number }}{% if report_type %}&type={{ report_type }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in orders.paginator.page_range %}
+                        {% if orders.number == num %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                        {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if report_type %}&type={{ report_type }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.next_page_number }}{% if report_type %}&type={{ report_type }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.paginator.num_pages }}{% if report_type %}&type={{ report_type }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+            <!-- Download Buttons -->
+            <div class="mt-4">
+                <button class="btn btn-success" id="downloadPDF">
+                    <i class="fas fa-file-pdf"></i> Download as PDF
+                </button>
+                <button class="btn btn-primary ms-2" id="downloadExcel">
+                    <i class="fas fa-file-excel"></i> Download as Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const reportButtons = document.querySelectorAll('[data-type]');
+    const customDateRange = document.getElementById('customDateRange');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const applyDateRangeBtn = document.getElementById('applyDateRange');
+    const downloadPDFBtn = document.getElementById('downloadPDF');
+    const downloadExcelBtn = document.getElementById('downloadExcel');
+
+    // Handle report type selection
+    reportButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const type = this.dataset.type;
+            customDateRange.style.display = type === 'custom' ? 'block' : 'none';
+            
+            if (type !== 'custom') {
+                window.location.href = `?type=${type}`;
+            }
+        });
+    });
+
+    // Handle custom date range
+    applyDateRangeBtn.addEventListener('click', function() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        if (startDate && endDate) {
+            window.location.href = `?type=custom&start_date=${startDate}&end_date=${endDate}&page=1`;
+        }
+    });
+    if (type !== 'custom') {
+        window.location.href = `?type=${type}&page=1`;
+    }
+
+    // Handle downloads
+    downloadPDFBtn.addEventListener('click', function() {
+        const currentUrl = new URL(window.location.href);
+        const params = currentUrl.searchParams;
+        window.location.href = `download-pdf/?${params.toString()}`;
+    });
+
+    downloadExcelBtn.addEventListener('click', function() {
+        const currentUrl = new URL(window.location.href);
+        const params = currentUrl.searchParams;
+        window.location.href = `download-excel/?${params.toString()}`;
+    });
+});
+</script>
+{% endblock %}

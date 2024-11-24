@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import cloudinary, cloudinary.uploader
 import re, json
 from django.db import transaction, IntegrityError
@@ -35,6 +36,15 @@ def products_view(request):
         products = products.filter(category_id=category_id)
     products = products.annotate(min_sale_price=Min('variants__sale_price'))
 
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(products, 6)
+    try:
+        products_page = paginator.page(page)
+    except PageNotAnInteger:
+        products_page = paginator.page(1)
+    except EmptyPage:
+        products_page = paginator.page(paginator.num_pages)
     data = {
         'first_name': first_name,
         'products': products,

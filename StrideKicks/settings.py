@@ -172,8 +172,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 3600  #session expires after 1hr (3600sec)
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  #expire the session when the browser closes
+SESSION_COOKIE_AGE = 7200  # 2 hour (in seconds)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Kill the cookie when the browser is closed
 
 
 #google auth
