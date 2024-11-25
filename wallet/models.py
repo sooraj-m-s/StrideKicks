@@ -1,5 +1,8 @@
 from django.db import models
 from users.models import Users
+from product.models import Product
+from brand.models import Brand
+from category.models import Category
 
 
 # Create your models here.
@@ -37,3 +40,30 @@ class WalletTransaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type.capitalize()} - {self.amount}"
+
+
+class Offer(models.Model):
+    OFFER_TYPES = [
+        ('product', 'Product'),
+        ('brand', 'Brand'),
+        ('category', 'Category'),
+    ]
+
+    offer_name = models.CharField(max_length=255)
+    offer_type = models.CharField(max_length=10, choices=OFFER_TYPES, default='product')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    usage_limit = models.PositiveIntegerField(null=True, blank=True)
+    is_deleted = models.BooleanField(default=True)
+    is_exclusive = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.offer_name

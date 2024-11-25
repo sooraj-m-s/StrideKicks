@@ -35,7 +35,7 @@ def add_category(request):
             name = data.get('name', '').strip()
             is_listed = data.get('is_listed', True)
 
-            if Category.objects.filter(name__exact=name, is_deleted=False).exists():
+            if Category.objects.filter(name__iexact=name, is_deleted=False).exists():
                 raise ValidationError("A category with this exact name already exists.")
             
             category = Category(name=name, is_listed=is_listed)

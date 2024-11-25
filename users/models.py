@@ -20,4 +20,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
-    USERNAME_FIELD = 'email'  #specify the unique identifier for login
+    USERNAME_FIELD = 'email'
+    
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"

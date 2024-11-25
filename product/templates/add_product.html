@@ -183,9 +183,35 @@ body {
 .is-invalid {
     border-color: #dc3545;
 }
-#cropperModal .modal-body {
+#cropperModal .modal-dialog {
+    max-width: 90%;
+    height: 90vh;
+    margin: 20px auto;
+}
+#cropperModal .modal-content {
     height: 100%;
-    width: 100%;
+}
+#cropperModal .modal-body {
+    height: calc(100% - 120px);
+    padding: 0;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#cropperImage {
+    max-height: 100%;
+    max-width: 100%;
+}
+.cropper-view-box, .cropper-face {
+    border-radius: 0;
+}
+.cropper-container {
+    width: 100% !important;
+    height: 100% !important;
+}
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8);
 }
 </style>
 {% endblock %}
@@ -236,6 +262,12 @@ body {
                 <a class="nav-link" href="{% url 'coupon' %}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'offer_management' %}">
+                    <i class="fas fa-gift"></i>
+                    <span>Offer</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -291,14 +323,14 @@ body {
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Product Name:</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
+                    <input type="text" class="form-control" id="name" name="name">
                     <div class="error-message" id="name_error"></div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="category" class="form-label">Category:</label>
-                        <select class="form-select" id="category" name="category" required>
+                        <select class="form-select" id="category" name="category">
                             <option value="">Select Category</option>
                             {% for category in categories %}
                                 <option value="{{ category.id }}">{{ category.name }}</option>
@@ -308,7 +340,7 @@ body {
                     </div>
                     <div class="col-md-6">
                         <label for="brand" class="form-label">Brand:</label>
-                        <select class="form-select" id="brand" name="brand" required>
+                        <select class="form-select" id="brand" name="brand">
                             <option value="">Select Brand</option>
                             {% for brand in brands %}
                                 <option value="{{ brand.id }}">{{ brand.name }}</option>
@@ -320,7 +352,7 @@ body {
 
                 <div class="mb-3">
                     <label for="description" class="form-label">Description:</label>
-                    <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     <div class="error-message" id="description_error"></div>
                 </div>
 
@@ -341,14 +373,14 @@ body {
 
 <!-- Cropper Modal -->
 <div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content bg-dark text-white">
             <div class="modal-header">
                 <h5 class="modal-title" id="cropperModalLabel">Crop Image</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img id="cropperImage" src="" alt="Image to crop" style="max-width: 100%;">
+                <img id="cropperImage" src="" alt="Image to crop">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -380,12 +412,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="color${variantCount}" class="form-label">Color:</label>
-                        <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}" required>
+                        <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}">
                         <div class="error-message" id="color${variantCount}_error"></div>
                     </div>
                     <div class="col-md-3">
                         <label for="size${variantCount}" class="form-label">Size:</label>
-                        <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}" required>
+                        <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}">
                             <option value="">Select Size</option>
                             <option value="5">5</option>
                             <option value="6">6</option>
@@ -398,14 +430,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     </div>
                     <div class="col-md-3">
                         <label for="quantity${variantCount}" class="form-label">Quantity:</label>
-                        <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}" required>
+                        <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}">
                         <div class="error-message" id="quantity${variantCount}_error"></div>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="actual_price${variantCount}" class="form-label">Actual Price:</label>
-                        <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01" required>
+                        <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01">
                         <div class="error-message" id="actual_price${variantCount}_error"></div>
                     </div>
                     <div class="col-md-6">
@@ -416,7 +448,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 </div>
                 <div class="mb-3">
                     <label for="variant_image${variantCount}" class="form-label">Variant Images:</label>
-                    <input type="file" class="form-control file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple required>
+                    <input type="file" class="form-control file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple>
                     <div class="image-preview-container" id="imagePreview${variantCount}"></div>
                     <div class="error-message" id="variant_image${variantCount}_error"></div>
                 </div>
@@ -444,17 +476,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     function handleImageUpload(input, previewContainer, errorElement) {
         const files = Array.from(input.files);
-        
         previewContainer.innerHTML = '';
-        
-        if (files.length < 3) {
-            errorElement.textContent = 'Please select at least 3 images.';
-            input.classList.add('is-invalid');
-        } else {
-            errorElement.textContent = '';
-            input.classList.remove('is-invalid');
-        }
-
         files.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -495,11 +517,21 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (cropper) {
             cropper.destroy();
         }
-
-        cropper = new Cropper(image, {
-            aspectRatio: 1,
-            viewMode: 1,
-        });
+        document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
+            cropper = new Cropper(image, {
+                aspectRatio: 1,
+                viewMode: 1,
+                background: false,
+                modal: true,
+                dragMode: 'move',
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+        }, { once: true });
 
         currentFileInput = fileInput;
         currentImagePreview = imgPreview;
@@ -521,13 +553,30 @@ document.addEventListener('DOMContentLoaded', (event) => {
         };
     }
 
-    addVariantBtn.addEventListener('click', addVariant);
+    function clearErrors() {
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    }
 
-    // Add first variant by default
+    function displayErrors(errors) {
+        for (const [key, value] of Object.entries(errors)) {
+            const inputElement = document.getElementById(key);
+            const errorElement = document.getElementById(`${key}_error`);
+            if (inputElement) {
+                inputElement.classList.add('is-invalid');
+            }
+            if (errorElement) {
+                errorElement.textContent = value;
+            }
+        }
+    }
+
+    addVariantBtn.addEventListener('click', addVariant);
     addVariant();
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        clearErrors();
         
         const formData = new FormData(form);
         const variants = [];
@@ -566,28 +615,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     }
                 });
             } else {
-                // Clear previous error messages and invalid classes
-                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-                document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-                
                 if (data.errors) {
-                    for (const [key, value] of Object.entries(data.errors)) {
-                        const inputElement = document.getElementById(key);
-                        const errorElement = document.getElementById(`${key}_error`);
-                        if (inputElement) {
-                            inputElement.classList.add('is-invalid');
-                        }
-                        if (errorElement) {
-                            errorElement.textContent = value;
-                        }
-                    }
+                    displayErrors(data.errors);
                 }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Please correct the errors in the form.',
-                    confirmButtonText: 'OK'
-                });
+                // Swal.fire({
+                //     icon: 'error',
+                //     title: 'Error!',
+                //     text: 'Please correct the errors in the form.',
+                //     confirmButtonText: 'OK'
+                // });
             }
         })
         .catch(error => {

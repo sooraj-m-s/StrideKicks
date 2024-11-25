@@ -122,7 +122,7 @@ body {
 <header class="header">
     <h1 class="m-0">StrideKicks</h1>
     <div class="d-flex align-items-center">
-        <span class="me-3">Welcome {{ first_name }}</span>
+        <span class="me-3">{{ first_name }}</span>
         <i class="fas fa-user-circle fa-lg"></i>
     </div>
 </header>
@@ -164,6 +164,12 @@ body {
                 <a class="nav-link" href="{% url 'coupon' %}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'offer_management' %}">
+                    <i class="fas fa-gift"></i>
+                    <span>Offer</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -249,6 +255,7 @@ body {
                 <table class="table table-dark table-hover">
                     <thead>
                         <tr>
+                            <th>S.No</th>
                             <th>User</th>
                             <th>Date</th>
                             <th>Payment Method</th>
@@ -259,21 +266,26 @@ body {
                     <tbody>
                         {% for order in orders %}
                         <tr>
+                            <td>{{ forloop.counter }}</td>
                             <td>{{ order.user.first_name }} {{ order.user.last_name }}</td>
                             <td>{{ order.created_at|date:"d/m/Y" }}</td>
                             <td>{{ order.get_payment_method_display }}</td>
                             <td>{{ order.items.count }}</td>
                             <td>₹{{ order.total_amount }}</td>
                         </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No orders found.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" class="text-end"><strong>Total Order Amount:</strong></td>
+                            <td colspan="5" class="text-end"><strong>Total Order Amount:</strong></td>
                             <td><strong>₹{{ total_amount }}</strong></td>
                         </tr>
                         <tr>
-                            <td colspan="4" class="text-end"><strong>Total Discount:</strong></td>
+                            <td colspan="5" class="text-end"><strong>Total Discount:</strong></td>
                             <td><strong>₹{{ total_discount }}</strong></td>
                         </tr>
                     </tfoot>
@@ -323,12 +335,12 @@ body {
 
             <!-- Download Buttons -->
             <div class="mt-4">
-                <button class="btn btn-success" id="downloadPDF">
+                <a href="{% url 'download_report_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-success" id="downloadPDF">
                     <i class="fas fa-file-pdf"></i> Download as PDF
-                </button>
-                <button class="btn btn-primary ms-2" id="downloadExcel">
+                </a>
+                <a href="{% url 'download_report_excel' %}?{{ request.GET.urlencode }}" class="btn btn-primary ms-2" id="downloadExcel">
                     <i class="fas fa-file-excel"></i> Download as Excel
-                </button>
+                </a>
             </div>
         </div>
     </div>
@@ -352,8 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
     const applyDateRangeBtn = document.getElementById('applyDateRange');
-    const downloadPDFBtn = document.getElementById('downloadPDF');
-    const downloadExcelBtn = document.getElementById('downloadExcel');
 
     // Handle report type selection
     reportButtons.forEach(button => {
@@ -378,19 +388,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (type !== 'custom') {
         window.location.href = `?type=${type}&page=1`;
     }
-
-    // Handle downloads
-    downloadPDFBtn.addEventListener('click', function() {
-        const currentUrl = new URL(window.location.href);
-        const params = currentUrl.searchParams;
-        window.location.href = `download-pdf/?${params.toString()}`;
-    });
-
-    downloadExcelBtn.addEventListener('click', function() {
-        const currentUrl = new URL(window.location.href);
-        const params = currentUrl.searchParams;
-        window.location.href = `download-excel/?${params.toString()}`;
-    });
 });
 </script>
 {% endblock %}

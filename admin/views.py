@@ -66,7 +66,6 @@ def dashboard_view(request):
 def admin_orders(request):
     order_items_list = OrderItem.objects.select_related('order__user', 'product_variant__product').order_by('-order__created_at')
     
-    # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
         order_items_list = order_items_list.filter(
@@ -74,16 +73,19 @@ def admin_orders(request):
             Q(order__user__user_id__istartswith=search_query) |
             Q(product_variant__product__name__istartswith=search_query)
         )
-    
-    # Status filter
     status_filter = request.GET.get('status', '')
     if status_filter:
         order_items_list = order_items_list.filter(status=status_filter)
     
     # Pagination
-    paginator = Paginator(order_items_list, 10)
+    paginator = Paginator(order_items_list, 5)
     page = request.GET.get('page', 1)
-    order_items = paginator.get_page(page)
+    try:
+        order_items = paginator.page(page)
+    except PageNotAnInteger:
+        order_items = paginator.page(1)
+    except EmptyPage:
+        order_items = paginator.page(paginator.num_pages)
     
     first_name = request.user.first_name.title()
     data = {
@@ -192,12 +194,10 @@ def logout_account(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def sales_report(request):
-    # Get filter parameters
     report_type = request.GET.get('type', 'daily')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Calculate date range based on report type
     today = timezone.now().date()
     if report_type == 'daily':
         start_date = today
@@ -219,7 +219,6 @@ def sales_report(request):
             start_date = today
             end_date = today
 
-    # Query orders within date range
     orders = Order.objects.filter(
         created_at__date__range=[start_date, end_date]
     ).select_related('user').order_by('-created_at')
@@ -234,7 +233,6 @@ def sales_report(request):
     except EmptyPage:
         orders_page = paginator.page(paginator.num_pages)
 
-    # Calculate totals
     total_amount = orders.aggregate(total=Sum('total_amount'))['total'] or 0
     total_discount = orders.aggregate(total=Sum('discount'))['total'] or 0
 
@@ -250,35 +248,26 @@ def sales_report(request):
     
     return render(request, 'sales_report.html', context)
 
+
 @login_required
 def download_report_excel(request):
-    # Get filter parameters
     report_type = request.GET.get('type', 'daily')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    
-    # Query orders
     orders = Order.objects.filter(
         created_at__date__range=[start_date, end_date]
     ).select_related('user').prefetch_related('items__product_variant__product')
-
-    # Create the HttpResponse object
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="sales_report.xlsx"'
+    response['Content-Disposition'] = 'attachment; filename="StrideKicks_Sales_Report.xlsx"'
 
-    # Create workbook and worksheet
     output = BytesIO()
     workbook = xlsxwriter.Workbook(output)
     worksheet = workbook.add_worksheet()
-
-    # Add headers
     headers = [
         'Product Name', 'Quantity', 'Unit Price', 'Total Price', 'Discount',
         'Coupon Deduction', 'Final Amount', 'Order Date', 'Customer Name',
         'Payment Method', 'Delivery Status'
     ]
-    
-    # Define formats
     header_format = workbook.add_format({
         'bold': True,
         'border': 1,
@@ -289,12 +278,9 @@ def download_report_excel(request):
         'border': 1
     })
 
-    # Write headers
     for col, header in enumerate(headers):
         worksheet.write(0, col, header, header_format)
-        worksheet.set_column(col, col, 15)  # Set column width
-
-    # Write data
+        worksheet.set_column(col, col, 15)
     row = 1
     for order in orders:
         for item in order.items.all():
@@ -316,47 +302,33 @@ def download_report_excel(request):
     response.write(output.read())
     return response
 
+
 @login_required
 def download_report_pdf(request):
-    # Get filter parameters
     report_type = request.GET.get('type', 'daily')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    
-    # Query orders
     orders = Order.objects.filter(
         created_at__date__range=[start_date, end_date]
     ).select_related('user').prefetch_related('items__product_variant__product')
-
-    # Create the HttpResponse object
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="sales_report.pdf"'
-
-    # Create the PDF object
+    response['Content-Disposition'] = 'attachment; filename="StrideKicks_Sales_Report.pdf"'
     doc = SimpleDocTemplate(response, pagesize=letter)
     elements = []
 
-    # Add title
     styles = getSampleStyleSheet()
     title_style = styles['Title']
     elements.append(Paragraph("Sales Report", title_style))
     elements.append(Spacer(1, 20))
 
-    # Create report for each order
     for index, order in enumerate(orders, 1):
-        # Add report header
         elements.append(Paragraph(f"Report {index}", styles['Heading2']))
         elements.append(Spacer(1, 10))
-        
-        # Add order details
         elements.append(Paragraph(f"Order Date: {order.created_at.strftime('%d/%m/%Y')}", styles['Normal']))
         elements.append(Paragraph(f"Customer Name: {order.user.get_full_name()}", styles['Normal']))
         elements.append(Paragraph(f"Payment Method: {order.get_payment_method_display()}", styles['Normal']))
-        
-        # Add product details header
         elements.append(Paragraph("Product Details", styles['Heading3']))
         
-        # Create product details table
         product_data = [['Product Name', 'Order Status', 'Quantity', 'Unit Price (RS)', 'Total Price (RS)']]
         for item in order.items.all():
             product_data.append([
@@ -366,8 +338,6 @@ def download_report_pdf(request):
                 str(item.price),
                 str(item.total_price)
             ])
-        
-        # Style the table
         table_style = TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -386,18 +356,13 @@ def download_report_pdf(request):
         product_table.setStyle(table_style)
         elements.append(product_table)
         elements.append(Spacer(1, 10))
-        
-        # Add discount and final amount details
         elements.append(Paragraph(f"Final Coupon Discount: RS. {order.discount if order.discount else 0:.2f}", styles['Normal']))
-        elements.append(Paragraph(f"Final Product Discount: RS. {order.coupon.discount_amount if order.coupon else 0:.2f}", styles['Normal']))
+        elements.append(Paragraph(f"Final Product Discount: RS. {order.coupon.discount_value if order.coupon else 0:.2f}", styles['Normal']))
         elements.append(Paragraph(f"Final Amount: RS. {order.total_amount:.2f}", styles['Normal']))
         elements.append(Spacer(1, 20))
 
-    # Add total order amount at the end
     total_amount = sum(order.total_amount for order in orders)
     elements.append(Paragraph("Total Order amount:", styles['Heading3']))
     elements.append(Paragraph(f"RS. {total_amount:.2f}", styles['Normal']))
-
-    # Build the PDF document
     doc.build(elements)
     return response

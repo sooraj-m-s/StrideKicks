@@ -205,9 +205,35 @@ body {
 .is-invalid {
     border-color: #dc3545;
 }
+#cropperModal .modal-dialog {
+    max-width: 90%;
+    height: 90vh;
+    margin: 20px auto;
+}
+#cropperModal .modal-content {
+    height: 100%;
+}
 #cropperModal .modal-body {
-    height: 600px;
-    max-height: 80vh;
+    height: calc(100% - 120px);
+    padding: 0;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#cropperImage {
+    max-height: 100%;
+    max-width: 100%;
+}
+.cropper-view-box, .cropper-face {
+    border-radius: 0;
+}
+.cropper-container {
+    width: 100% !important;
+    height: 100% !important;
+}
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8);
 }
 </style>
 {% endblock %}
@@ -258,6 +284,12 @@ body {
                 <a class="nav-link" href="{% url 'coupon' %}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Coupon Management</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'offer_management' %}">
+                    <i class="fas fa-gift"></i>
+                    <span>Offer</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -313,14 +345,14 @@ body {
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Product Name:</label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ product.name }}" required>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ product.name }}">
                     <div class="error-message" id="name_error"></div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="category" class="form-label">Category:</label>
-                        <select class="form-select" id="category" name="category" required>
+                        <select class="form-select" id="category" name="category">
                             <option value="">Select Category</option>
                             {% for category in categories %}
                                 <option value="{{ category.id }}" {% if category.id == product.category.id %}selected{% endif %}>{{ category.name }}</option>
@@ -330,7 +362,7 @@ body {
                     </div>
                     <div class="col-md-6">
                         <label for="brand" class="form-label">Brand:</label>
-                        <select class="form-select" id="brand" name="brand" required>
+                        <select class="form-select" id="brand" name="brand">
                             <option value="">Select Brand</option>
                             {% for brand in brands %}
                                 <option value="{{ brand.id }}" {% if brand.id == product.brand.id %}selected{% endif %}>{{ brand.name }}</option>
@@ -342,23 +374,23 @@ body {
 
                 <div class="mb-3">
                     <label for="description" class="form-label">Description:</label>
-                    <textarea class="form-control" id="description" name="description" rows="3" required>{{ product.description }}</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ product.description }}</textarea>
                     <div class="error-message" id="description_error"></div>
                 </div>
 
                 <div id="variantsContainer">
                     {% for variant in product.variants.all %}
-                    <div class="variant-container mb-4" data-variant-id="{{ variant.id }}" data-images='{{ variant.images.all|stringformat:"s"|escapejs }}'>
+                    <div class="variant-container mb-4" data-variant-id="{{ variant.id }}">
                         <h4>Variant {{ forloop.counter }}</h4>
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="color{{ forloop.counter }}" class="form-label">Color:</label>
-                                <input type="text" class="form-control color-input" id="color{{ forloop.counter }}" name="color{{ forloop.counter }}" value="{{ variant.color }}" required>
+                                <input type="text" class="form-control color-input" id="color{{ forloop.counter }}" name="color{{ forloop.counter }}" value="{{ variant.color }}">
                                 <div class="error-message" id="color{{ forloop.counter }}_error"></div>
                             </div>
                             <div class="col-md-4">
                                 <label for="size{{ forloop.counter }}" class="form-label">Size:</label>
-                                <select class="form-select size-input" id="size{{ forloop.counter }}" name="size{{ forloop.counter }}" required>
+                                <select class="form-select size-input" id="size{{ forloop.counter }}" name="size{{ forloop.counter }}">
                                     <option value="">Select Size</option>
                                     {% for size in sizes %}
                                         <option value="{{ size }}" {% if size == variant.size %}selected{% endif %}>{{ size }}</option>
@@ -368,14 +400,14 @@ body {
                             </div>
                             <div class="col-md-4">
                                 <label for="quantity{{ forloop.counter }}" class="form-label">Quantity:</label>
-                                <input type="number" class="form-control" id="quantity{{ forloop.counter }}" name="quantity{{ forloop.counter }}" value="{{ variant.quantity }}" required>
+                                <input type="number" class="form-control" id="quantity{{ forloop.counter }}" name="quantity{{ forloop.counter }}" value="{{ variant.quantity }}">
                                 <div class="error-message" id="quantity{{ forloop.counter }}_error"></div>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="actual_price{{ forloop.counter }}" class="form-label">Actual Price:</label>
-                                <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" value="{{ variant.actual_price }}" step="0.01" required>
+                                <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" value="{{ variant.actual_price }}" step="0.01">
                                 <div class="error-message" id="actual_price{{ forloop.counter }}_error"></div>
                             </div>
                             <div class="col-md-6">
@@ -387,7 +419,14 @@ body {
                         <div class="mb-3">
                             <label for="variant_image{{ forloop.counter }}" class="form-label">Variant Images:</label>
                             <input type="file" class="form-control file-input" id="variant_image{{ forloop.counter }}" name="variant_image{{ forloop.counter }}[]" accept="image/*" multiple>
-                            <div class="image-preview-container" id="imagePreview{{ forloop.counter }}"></div>
+                            <div class="image-preview-container" id="imagePreview{{ forloop.counter }}">
+                                {% for image in product.images.all %}
+                                <div class="image-preview-item">
+                                    <img src="{{ image.image }}" alt="Existing Image">
+                                    <button type="button" class="btn btn-sm btn-danger remove-existing-image" data-image-id="{{ image.id }}">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
                             <div class="error-message" id="variant_image{{ forloop.counter }}_error"></div>
                         </div>
                         <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
@@ -408,16 +447,16 @@ body {
 
 <!-- Cropper Modal -->
 <div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog">
         <div class="modal-content bg-dark text-white">
-            <div class="modal-header border-bottom border-secondary">
+            <div class="modal-header">
                 <h5 class="modal-title" id="cropperModalLabel">Crop Image</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0" style="height: 600px; max-height: 80vh;">
-                <img id="cropperImage" src="" alt="Image to crop" style="max-width: 100%; max-height: 100%;">
+            <div class="modal-body">
+                <img id="cropperImage" src="" alt="Image to crop">
             </div>
-            <div class="modal-footer border-top border-secondary">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="cropImageBtn">Crop</button>
             </div>
@@ -447,12 +486,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="color${variantCount}" class="form-label">Color:</label>
-                        <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}" required>
+                        <input type="text" class="form-control color-input" id="color${variantCount}" name="color${variantCount}">
                         <div class="error-message" id="color${variantCount}_error"></div>
                     </div>
                     <div class="col-md-4">
                         <label for="size${variantCount}" class="form-label">Size:</label>
-                        <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}" required>
+                        <select class="form-select size-input" id="size${variantCount}" name="size${variantCount}">
                             <option value="">Select Size</option>
                             {% for size in sizes %}
                                 <option value="{{ size }}">{{ size }}</option>
@@ -462,14 +501,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     </div>
                     <div class="col-md-4">
                         <label for="quantity${variantCount}" class="form-label">Quantity:</label>
-                        <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}" required>
+                        <input type="number" class="form-control" id="quantity${variantCount}" name="quantity${variantCount}">
                         <div class="error-message" id="quantity${variantCount}_error"></div>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="actual_price${variantCount}" class="form-label">Actual Price:</label>
-                        <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01" required>
+                        <input type="number" class="form-control actual-price-input" id="actual_price${variantCount}" name="actual_price${variantCount}" step="0.01">
                         <div class="error-message" id="actual_price${variantCount}_error"></div>
                     </div>
                     <div class="col-md-6">
@@ -480,7 +519,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 </div>
                 <div class="mb-3">
                     <label for="variant_image${variantCount}" class="form-label">Variant Images:</label>
-                    <input type="file" class="form-control file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple required>
+                    <input type="file" class="form-control file-input" id="variant_image${variantCount}" name="variant_image${variantCount}[]" accept="image/*" multiple>
                     <div class="image-preview-container" id="imagePreview${variantCount}"></div>
                     <div class="error-message" id="variant_image${variantCount}_error"></div>
                 </div>
@@ -517,55 +556,44 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 }
             });
         });
+        variantContainer.querySelectorAll('.image-preview-item').forEach(item => {
+            const img = item.querySelector('img');
+            const removeBtn = item.querySelector('.remove-existing-image');
+            const cropBtn = document.createElement('button');
+            cropBtn.type = 'button';
+            cropBtn.className = 'btn btn-sm btn-primary crop-existing-image';
+            cropBtn.textContent = 'Crop';
+            cropBtn.style.position = 'absolute';
+            cropBtn.style.top = '5px';
+            cropBtn.style.left = '5px';
+            item.appendChild(cropBtn);
 
-        // Load existing Cloudinary images if any
-        const existingImages = variantContainer.dataset.images;
-        if (existingImages) {
-            try {
-                const images = JSON.parse(existingImages);
-                images.forEach((imageUrl, index) => {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'image-preview-item';
-                    previewItem.innerHTML = `
-                        <img src="${imageUrl}" alt="Existing Image">
-                        <button type="button" class="btn btn-sm btn-danger remove-existing-image" 
-                                data-variant="${variantNumber}" 
-                                data-image-id="${index}">×</button>
-                    `;
-                    imagePreview.appendChild(previewItem);
+            removeBtn.addEventListener('click', function() {
+                const imageId = this.dataset.imageId;
+                const deletedImagesInput = document.getElementById('deleted_images') || 
+                    document.createElement('input');
+                deletedImagesInput.type = 'hidden';
+                deletedImagesInput.id = 'deleted_images';
+                deletedImagesInput.name = 'deleted_images';
+                const currentDeleted = deletedImagesInput.value ? 
+                    JSON.parse(deletedImagesInput.value) : [];
+                currentDeleted.push(imageId);
+                deletedImagesInput.value = JSON.stringify(currentDeleted);
+                if (!document.getElementById('deleted_images')) {
+                    document.getElementById('editProductForm').appendChild(deletedImagesInput);
+                }
+                item.remove();
+            });
 
-                    previewItem.querySelector('.remove-existing-image').addEventListener('click', function() {
-                        const imageId = this.dataset.imageId;
-                        const variantId = this.dataset.variant;
-                        // Add to hidden input to track deleted images
-                        const deletedImagesInput = document.getElementById('deleted_images') || 
-                            document.createElement('input');
-                        deletedImagesInput.type = 'hidden';
-                        deletedImagesInput.id = 'deleted_images';
-                        deletedImagesInput.name = 'deleted_images';
-                        const currentDeleted = deletedImagesInput.value ? 
-                            JSON.parse(deletedImagesInput.value) : [];
-                        currentDeleted.push({
-                            variant: variantId,
-                            image: imageId
-                        });
-                        deletedImagesInput.value = JSON.stringify(currentDeleted);
-                        if (!document.getElementById('deleted_images')) {
-                            document.getElementById('editProductForm').appendChild(deletedImagesInput);
-                        }
-                        previewItem.remove();
-                    });
-                });
-            } catch (e) {
-                console.error('Error loading existing images:', e);
-            }
-        }
+            cropBtn.addEventListener('click', function() {
+                openCropper(img.src, null, img, null, true);
+            });
+        });
     }
 
     function handleImageUpload(input, previewContainer, errorElement) {
         const files = Array.from(input.files);
         
-        // Clear the preview container only if new files are being added
         if (files.length > 0) {
             previewContainer.innerHTML = '';
         }
@@ -617,7 +645,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
-    function openCropper(imageSrc, fileInput, imgPreview, fileIndex) {
+    function openCropper(imageSrc, fileInput, imgPreview, fileIndex, isExisting = false) {
         const modal = new bootstrap.Modal(document.getElementById('cropperModal'));
         const image = document.getElementById('cropperImage');
         image.src = imageSrc;
@@ -626,41 +654,51 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if (cropper) {
             cropper.destroy();
         }
-
-        cropper = new Cropper(image, {
-            aspectRatio: 1,
-            viewMode: 1,
-            dragMode: 'move',
-            background: false,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            toggleDragModeOnDblclick: false,
-            autoCropArea: 0.8,
-            responsive: true,
-            minCropBoxWidth: 300,
-            minCropBoxHeight: 300,
-            ready: function() {
-                // Removed the zoomTo and setCropBoxData calls to let the image display at its natural size
-            }
-        });
+        document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
+            cropper = new Cropper(image, {
+                aspectRatio: 1,
+                viewMode: 1,
+                background: false,
+                modal: true,
+                dragMode: 'move',
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+        }, { once: true });
 
         currentFileInput = fileInput;
         currentImagePreview = imgPreview;
 
         document.getElementById('cropImageBtn').onclick = function() {
             const croppedCanvas = cropper.getCroppedCanvas();
-            croppedCanvas.toBlob(function(blob) {
-                const file = new File([blob], `cropped_image_${fileIndex}.jpg`, { type: 'image/jpeg' });
-                const dataTransfer = new DataTransfer();
-                Array.from(currentFileInput.files)
-                    .filter((_, i) => i != fileIndex)
-                    .forEach(file => dataTransfer.items.add(file));
-                dataTransfer.items.add(file);
-                currentFileInput.files = dataTransfer.files;
-
+            if (isExisting) {
                 currentImagePreview.src = croppedCanvas.toDataURL('image/jpeg');
-                modal.hide();
-            }, 'image/jpeg');
+                const croppedImageInput = document.createElement('input');
+                croppedImageInput.type = 'hidden';
+                croppedImageInput.name = 'cropped_existing_images';
+                croppedImageInput.value = JSON.stringify({
+                    id: currentImagePreview.closest('.image-preview-item').querySelector('.remove-existing-image').dataset.imageId,
+                    data: croppedCanvas.toDataURL('image/jpeg')
+                });
+                document.getElementById('editProductForm').appendChild(croppedImageInput);
+            } else {
+                croppedCanvas.toBlob(function(blob) {
+                    const file = new File([blob], `cropped_image_${fileIndex}.jpg`, { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    Array.from(currentFileInput.files)
+                        .filter((_, i) => i != fileIndex)
+                        .forEach(file => dataTransfer.items.add(file));
+                    dataTransfer.items.add(file);
+                    currentFileInput.files = dataTransfer.files;
+
+                    currentImagePreview.src = croppedCanvas.toDataURL('image/jpeg');
+                }, 'image/jpeg');
+            }
+            modal.hide();
         };
     }
 
@@ -668,8 +706,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelectorAll('.variant-container').forEach((container, index) => {
             const newNumber = index + 1;
             container.querySelector('h4').textContent = `Variant ${newNumber}`;
-            
-            // Update all input IDs and names
             container.querySelectorAll('[id^="color"], [id^="size"], [id^="quantity"], [id^="actual_price"], [id^="sale_price"], [id^="variant_image"]')
                 .forEach(element => {
                     const oldId = element.id;
@@ -677,24 +713,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     element.id = newId;
                     element.name = newId;
                 });
-                
-            // Update all error message IDs
             container.querySelectorAll('[id$="_error"]').forEach(element => {
                 const oldId = element.id;
                 const newId = oldId.replace(/\d+/, newNumber);
                 element.id = newId;
             });
-            
-            // Update data attributes if they exist
-            container.querySelectorAll('[data-variant]').forEach(element => {
-                element.dataset.variant = newNumber;
-            });
         });
     }
 
     addVariantBtn.addEventListener('click', addVariant);
-
-    // Initialize existing variants on page load
     document.querySelectorAll('.variant-container').forEach((container, index) => {
         initializeVariant(index + 1);
     });
@@ -715,7 +742,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         
         const formData = new FormData(form);
         const variantsData = [];
-        formData.append('deleted_images', document.getElementById('deleted_images')?.value || '[]');
 
         document.querySelectorAll('.variant-container').forEach((container, index) => {
             const variantNumber = index + 1;
@@ -729,6 +755,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
 
         formData.append('variants', JSON.stringify(variantsData));
+        formData.append('deleted_images', document.getElementById('deleted_images')?.value || '[]');
 
         fetch('{% url "edit_product" product.id %}', {
             method: 'POST',
@@ -751,7 +778,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     }
                 });
             } else {
-                // Clear previous error messages and invalid classes
                 document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
                 document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
                 
@@ -767,12 +793,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
                         }
                     }
                 }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Please correct the errors in the form.',
-                    confirmButtonText: 'OK'
-                });
             }
         })
         .catch(error => {

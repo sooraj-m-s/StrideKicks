@@ -117,7 +117,7 @@ def add_product(request):
                     if quantity <= 0 or quantity > 1000:
                         errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
                 except ValueError:
-                    errors[f'quantity{i+1}'] = 'Quantity should be a valid number.'
+                    errors[f'quantity{i+1}'] = 'Quantity should be a valid number and cannot be empty.'
             
             if variant.get('actual_price') is None:
                 errors[f'actual_price{i+1}'] = 'Actual price is required.'
@@ -219,9 +219,10 @@ def cancel_add_product(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images'), id=product_id)
     categories = Category.objects.filter(is_deleted=False, is_listed=True)
     brands = Brand.objects.filter(is_deleted=False, is_listed=True)
+    sizes = ProductVariant.STATUS_CHOICES
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -229,6 +230,7 @@ def edit_product(request, product_id):
         brand_id = request.POST.get('brand')
         description = request.POST.get('description', '').strip()
         variants = json.loads(request.POST.get('variants', '[]'))
+        deleted_images = json.loads(request.POST.get('deleted_images', '[]'))
 
         errors = {}
 
@@ -257,8 +259,8 @@ def edit_product(request, product_id):
             else:
                 try:
                     quantity = int(variant['quantity'])
-                    if quantity > 1000:
-                        errors[f'quantity{i+1}'] = 'Max quantity is 1000.'
+                    if quantity <= 0 or quantity > 1000:
+                        errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
                 except ValueError:
                     errors[f'quantity{i+1}'] = 'Quantity should be a valid number.'
             
@@ -281,11 +283,6 @@ def edit_product(request, product_id):
                         errors[f'sale_price{i+1}'] = 'Sale price must be less than actual price.'
                 except ValueError:
                     errors[f'sale_price{i+1}'] = 'Please enter a valid sale price.'
-
-            variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
-            existing_images = product.images.filter(variant__color=variant['color'], variant__size=variant['size']).count()
-            # if len(variant_images) + existing_images < 3:
-            #     errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
 
         if errors:
             return JsonResponse({'success': False, 'errors': errors})
@@ -324,6 +321,12 @@ def edit_product(request, product_id):
                     for variant in existing_variants[len(variants):]:
                         variant.delete()
 
+                # Delete images
+                for image_id in deleted_images:
+                    image = ProductImage.objects.get(id=image_id)
+                    cloudinary.uploader.destroy(image.image.public_id)
+                    image.delete()
+
                 # Process new images
                 for i, variant_data in enumerate(variants):
                     variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
@@ -357,5 +360,6 @@ def edit_product(request, product_id):
         'product': product,
         'categories': categories,
         'brands': brands,
+        'sizes': [size[0] for size in sizes],
     }
     return render(request, 'edit_product.html', data)
