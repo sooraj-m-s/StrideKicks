@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'orders',
     'coupon',
     'reviews',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,7 @@ MIDDLEWARE = [
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'admin.middleware.SocialAuthExceptionMiddleware',
     'admin.middleware.ActiveUserMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'StrideKicks.urls'
@@ -218,3 +220,10 @@ RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
 
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+CORS_ALLOWED_ORIGINS = [
+    "https://checkout.razorpay.com",  # Razorpay domain
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]

@@ -6,7 +6,6 @@ from django.core.exceptions import ValidationError
 from django.contrib import messages
 from django.utils import timezone
 from decimal import Decimal
-import json
 from .models import Cart, CartItem
 from coupon.models import Coupon, UserCoupon
 from product.models import Product, ProductVariant
@@ -31,7 +30,7 @@ def view_cart(request):
 
     coupon = request.session.get('coupon', {})
     coupon_id = coupon.get('coupon_id')
-    discount_amount = coupon.get('discount_amount', 0)
+    discount_amount = Decimal(coupon.get('discount_amount', '0'))
     coupon_code = None
     if coupon:
         coupon_code = Coupon.objects.get(id=coupon_id)
@@ -95,20 +94,17 @@ def add_to_cart(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(Product, id=product_id)
         variant_id = request.POST.get('variant')
-        quantity = 1  # Default quantity
+        quantity = 1
         
-        # Get or create cart
         cart, created = Cart.objects.get_or_create(user=request.user)
         variant = get_object_or_404(ProductVariant, id=variant_id) if variant_id else None
         
         try:
-            # Calculate discount
             if variant and variant.sale_price:
                 discount = (variant.actual_price - variant.sale_price) * quantity
             else:
                 discount = 0
             
-            # Get or create cart item
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 product=product,
@@ -120,10 +116,9 @@ def add_to_cart(request, product_id):
                 }
             )
             
-            # Update quantity
             new_quantity = cart_item.quantity + quantity
             cart_item.quantity = new_quantity
-            cart_item.save()  # This will trigger validation in the model
+            cart_item.save()
 
             # Recalculate discount based on new quantity
             # if variant and variant.sale_price:
@@ -165,19 +160,16 @@ def apply_coupon(request, coupon_code):
             coupon = get_object_or_404(Coupon, code=coupon_code)
             cart = Cart.objects.get(user=request.user)
             
-            # if 'coupon' in request.session:
-            #     return JsonResponse({'success': False, 'message': 'A coupon has already been applied'})
-            
-            if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage or coupon.end_date > timezone.now():
+            if UserCoupon.objects.filter(user=request.user, coupon=coupon).exists():
+                return JsonResponse({'success': False, 'message': 'You have already used this coupon'})
+            if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage:
+                return JsonResponse({'success': False, 'message': 'Coupon usage limit reached'})
+            if coupon.end_date < timezone.now():
                 return JsonResponse({'success': False, 'message': 'Coupon has expired'})
-            
             if not coupon.active:
                 return JsonResponse({'success': False, 'message': 'Coupon is inactive'})
-            
             if cart.total_price < coupon.min_cart_value:
                 return JsonResponse({'success': False, 'message': f'Minimum cart value of ₹{coupon.min_cart_value} required to apply this coupon.'})
-            
-            # Calculate discount
             if coupon.discount_type == 'fixed':
                 discount = float(coupon.discount_value)
             else:
@@ -185,17 +177,19 @@ def apply_coupon(request, coupon_code):
                 if coupon.max_discount:
                     discount = min(discount, float(coupon.max_discount))
             
-            # cart.total_price -= discount
-            # cart.save()
             request.session['coupon'] = {
                 'coupon_id': coupon.id,
                 'discount_amount': discount,
             }
+            
+            # Create UserCoupon instance
+            # UserCoupon.objects.create(user=request.user, coupon=coupon)
             return JsonResponse({
                 'success': True,
                 'message': 'Coupon applied successfully!',
-                'discount_amount': float(discount),
-                'new_total': float(cart.total_price)
+                'discount_amount': str(discount),
+                'new_total': cart.total_price - Decimal(discount),
+                'coupon_code': coupon.code
             })
         
         except Exception as e:

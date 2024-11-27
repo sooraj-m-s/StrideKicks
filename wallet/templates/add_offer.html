@@ -267,11 +267,11 @@ body {
                     <div class="row g-3">
                         <div class="col-md-4 mb-3">
                             <label for="offerName" class="form-label text-white mb-2">Offer Name</label>
-                            <input type="text" class="form-control bg-dark text-white" id="offerName" name="offer_name" required>
+                            <input type="text" class="form-control bg-dark text-white" id="offerName" name="offer_name">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="offerType" class="form-label text-white mb-2">Type</label>
-                            <select class="form-select bg-dark text-white" id="offerType" name="offer_type" required>
+                            <select class="form-select bg-dark text-white" id="offerType" name="offer_type">
                                 <option value="">Select Type</option>
                                 {% for value, display in offer_types %}
                                 <option value="{{ value }}">{{ display }}</option>
@@ -280,15 +280,15 @@ body {
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="discountValue" class="form-label text-white mb-2">Discount Value</label>
-                            <input type="number" class="form-control bg-dark text-white" id="discountValue" name="discount_value" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" id="discountValue" name="discount_value" step="0.01">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="minPurchaseAmount" class="form-label text-white mb-2">Min Purchase Amount</label>
-                            <input type="number" class="form-control bg-dark text-white" id="minPurchaseAmount" name="min_purchase_amount" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" id="minPurchaseAmount" name="min_purchase_amount" step="0.01">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="maxDiscountAmount" class="form-label text-white mb-2">Max Discount Amount</label>
-                            <input type="number" class="form-control bg-dark text-white" id="maxDiscountAmount" name="max_discount_amount" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" id="maxDiscountAmount" name="max_discount_amount" step="0.01">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="usageLimit" class="form-label text-white mb-2">Usage Limit</label>
@@ -296,15 +296,15 @@ body {
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="startDate" class="form-label text-white mb-2">Start Date</label>
-                            <input type="datetime-local" class="form-control bg-dark text-white" id="startDate" name="start_date" required>
+                            <input type="datetime-local" class="form-control bg-dark text-white" id="startDate" name="start_date">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="endDate" class="form-label text-white mb-2">End Date</label>
-                            <input type="datetime-local" class="form-control bg-dark text-white" id="endDate" name="end_date" required>
+                            <input type="datetime-local" class="form-control bg-dark text-white" id="endDate" name="end_date">
                         </div>
                         <div class="col-md-4 mb-3">
                             <div class="form-check mt-4">
-                                <input type="checkbox" class="form-check-input" name="is_exclusive" id="is_exclusive">
+                                <input type="checkbox" class="form-check-input" name="is_exclusive" id="is_exclusive" value="True">
                                 <label class="form-check-label text-white" for="is_exclusive">Exclusive Offer</label>
                             </div>
                         </div>
@@ -333,11 +333,11 @@ body {
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Offer Name</label>
-                            <input type="text" class="form-control bg-dark text-white" name="offer_name" id="editOfferName" required>
+                            <input type="text" class="form-control bg-dark text-white" name="offer_name" id="editOfferName">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Type</label>
-                            <select class="form-select bg-dark text-white" name="offer_type" id="editOfferType" required>
+                            <select class="form-select bg-dark text-white" name="offer_type" id="editOfferType">
                                 {% for value, display in offer_types %}
                                 <option value="{{ value }}">{{ display }}</option>
                                 {% endfor %}
@@ -345,15 +345,15 @@ body {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Discount Value</label>
-                            <input type="number" class="form-control bg-dark text-white" name="discount_value" id="editDiscountValue" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" name="discount_value" id="editDiscountValue" step="0.01">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Min Purchase Amount</label>
-                            <input type="number" class="form-control bg-dark text-white" name="min_purchase_amount" id="editMinPurchaseAmount" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" name="min_purchase_amount" id="editMinPurchaseAmount" step="0.01">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Max Discount Amount</label>
-                            <input type="number" class="form-control bg-dark text-white" name="max_discount_amount" id="editMaxDiscountAmount" step="0.01" required>
+                            <input type="number" class="form-control bg-dark text-white" name="max_discount_amount" id="editMaxDiscountAmount" step="0.01">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Usage Limit</label>
@@ -361,15 +361,15 @@ body {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Start Date</label>
-                            <input type="datetime-local" class="form-control bg-dark text-white" name="start_date" id="editStartDate" required>
+                            <input type="datetime-local" class="form-control bg-dark text-white" name="start_date" id="editStartDate">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">End Date</label>
-                            <input type="datetime-local" class="form-control bg-dark text-white" name="end_date" id="editEndDate" required>
+                            <input type="datetime-local" class="form-control bg-dark text-white" name="end_date" id="editEndDate">
                         </div>
                         <div class="col-md-6">
                             <div class="form-check mt-4">
-                                <input type="checkbox" class="form-check-input" name="is_exclusive" id="editIsExclusive">
+                                <input type="checkbox" class="form-check-input" name="is_exclusive" id="editIsExclusive" value="True">
                                 <label class="form-check-label" for="editIsExclusive">Exclusive Offer</label>
                             </div>
                         </div>

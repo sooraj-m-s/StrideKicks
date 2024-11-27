@@ -1,4 +1,5 @@
 {% extends "base_user.html" %}
+{% load status_filters %}
 
 {% block title %}Order Details{% endblock %}
 
@@ -126,7 +127,8 @@
                                             <p class="mb-0">Price: ₹{{ item.price }}</p>
                                             <p class="mb-0">Color: {{ item.product_variant.color }}</p>
                                             <p class="mb-0">Size: {{ item.product_variant.size }}</p>
-                                            <p class="mb-0">Status: <span class="badge bg-{{ item.status|lower }}">{{ item.get_status_display }}</span></p>
+                                            <p class="mb-0">Payment Status: <span class="badge {{ item.item_payment_status|lower|status_text_color }}">{{ item.item_payment_status|capfirst }}</span></p>
+                                            <p class="mb-0">Order Status: <span class="badge bg-{{ item.status|lower }}">{{ item.get_status_display }}</span></p>
                                         </div>
                                     </div>
                                     <div class="text-end">

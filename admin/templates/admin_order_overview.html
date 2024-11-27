@@ -190,7 +190,6 @@ body {
                         <p><strong>Shipped Address:</strong> {{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}</p>
                         <p><strong>Shipping Cost:</strong> ₹{{ order.shipping_cost }}</p>
                         <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
-                        <p><strong>Payment Status:</strong> N/A</p>
                         <p><strong>Total Amount:</strong> ₹{{ order.total_amount }}</p>
                     </div>
                 </div>
@@ -203,17 +202,24 @@ body {
                 {% for item in order.items.all %}
                 <div class="card text-white mb-3">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2">{{ item.product_variant.product.name }} - {{ item.product_variant.variant_name }}</h6>
-                        <p class="card-text">
-                            Quantity: {{ item.quantity }} | Price: ₹{{ item.price }} | Total: ₹{{ item.total_price }}
-                        </p>
-                        <p><strong>Status:</strong> {{ item.get_status_display }}</p>
-                        {% if item.is_cancelled %}
-                        <p><strong>Cancellation Reason:</strong> {{ item.get_cancellation_reason_display }}</p>
-                        {% if item.custom_cancellation_reason %}
-                        <p><strong>Custom Reason:</strong> {{ item.custom_cancellation_reason }}</p>
-                        {% endif %}
-                        {% endif %}
+                        <h5 class="card-subtitle mb-2"><strong>{{ item.product_variant.product.name }} - {{ item.product_variant.variant_name }}</strong></h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="card-text">
+                                    <strong>Quantity:</strong> {{ item.quantity }} | Price: ₹{{ item.price }} | Total: ₹{{ item.total_price }}
+                                </p>
+                                {% if item.is_cancelled %}
+                                <p><strong>Cancellation Reason:</strong> {{ item.get_cancellation_reason_display }}</p>
+                                {% if item.custom_cancellation_reason %}
+                                <p><strong>Custom Reason:</strong> {{ item.custom_cancellation_reason }}</p>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Order Status:</strong> {{ item.get_status_display }}</p>
+                                <p><strong>Payment Status:</strong> {{ item.item_payment_status }}</p>
+                            </div>
+                        </div>
                         <form method="post" action="{% url 'update_order_item' item.id %}">
                             {% csrf_token %}
                             <div class="form-group">

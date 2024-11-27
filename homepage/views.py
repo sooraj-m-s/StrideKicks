@@ -10,6 +10,7 @@ import json
 from product.models import Product, ProductVariant
 from category.models import Category
 from brand.models import Brand
+from userpanel.models import Wishlist
 
 
 # Create your views here.
@@ -51,11 +52,12 @@ def product_detail(request, product_id):
         }
         for variant in variants
     ]
-    
+    is_wishlisted = Wishlist.objects.filter(user=request.user, variant__product=product).exists()
     data = {
         'product': product,
         'related_products': related_products,
         'available_variants': json.dumps(available_variants, cls=DjangoJSONEncoder),
+        'is_wishlisted': is_wishlisted,
     }
     
     return render(request, 'product_detail.html', data)

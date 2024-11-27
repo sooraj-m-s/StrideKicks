@@ -36,7 +36,7 @@ def checkout(request):
     coupon_code = None
     if coupon:
         coupon_code = Coupon.objects.get(id=coupon_id)
-        total_price_after_coupon_discount = cart.total_price - int(discount_amount) if int(discount_amount) > 0 else cart.total_price
+        total_price_after_coupon_discount = cart.total_price - discount_amount if discount_amount > 0 else cart.total_price
         total_amount = cart.total_price - discount_amount
     else:
         total_price_after_coupon_discount = cart.total_price
@@ -76,6 +76,9 @@ def checkout(request):
                     return redirect('checkout')
             
             subtotal = sum(item.price * item.quantity for item in cart.items.all())
+            if payment_method == 'COD' and subtotal > 10000:
+                messages.error(request, 'COD not available on order above 10,000 rs.')
+                return redirect('checkout')
             amount_in_paise = int(total_amount * 100)  # Convert to paise
             if payment_method == 'RP':
                 logger.info(f"Attempting to create Razorpay order for amount: {amount_in_paise}")
@@ -99,8 +102,6 @@ def checkout(request):
                     return redirect('checkout')
             else:
                 razorpay_order_id = None
-            
-            # Create order
             order = Order.objects.create(
                 user=request.user,
                 order_number=uuid.uuid4().hex[:12].upper(),
@@ -115,13 +116,13 @@ def checkout(request):
                 razorpay_order_id=razorpay_order_id,
             )
             
-            # Create order items and update stock
             for item in cart.items.all():
                 OrderItem.objects.create(
                     order=order,
                     product_variant=item.variant,
                     quantity=item.quantity,
                     price=item.price,
+                    item_payment_status='unpaid',
                     original_price=item.variant.actual_price,
                 )
                 item.variant.quantity -= item.quantity
@@ -152,6 +153,9 @@ def checkout(request):
                             status="Completed",
                             transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                         )
+                        for order_item in order.orderitem_set.all():
+                            order_item.item_payment_status = 'paid'
+                            order_item.save()
                 except ValueError as e:
                     messages.error(request, str(e))
                     return redirect('checkout')
@@ -188,8 +192,8 @@ def checkout(request):
 @csrf_exempt
 def razorpay_callback(request):
     if request.method == "POST":
-        logger.info("Received Razorpay callback")
-        logger.info(f"POST data: {request.POST}")
+        logger.info("callback")
+        logger.info(f"post data: {request.POST}")
         payment_id = request.POST.get('razorpay_payment_id', '')
         razorpay_order_id = request.POST.get('razorpay_order_id', '')
         signature = request.POST.get('razorpay_signature', '')
@@ -205,11 +209,10 @@ def razorpay_callback(request):
         except Order.DoesNotExist:
             return HttpResponse("404 Not Found", status=404)
 
-        # Verify the payment signature
         try:
             client.utility.verify_payment_signature(params_dict)
         except:
-            return render(request, 'payment_fail.html')
+            return render(request, 'ckeckout.html')
 
         order.razorpay_payment_id = payment_id
         order.razorpay_signature = signature
@@ -221,6 +224,7 @@ def razorpay_callback(request):
 
 
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def order_success(request, order_id):
     order = Order.objects.get(id=order_id, user=request.user)
     return render(request, 'order_success.html', {'order': order})
@@ -256,12 +260,14 @@ def my_orders(request):
 
 
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, 'order_detail.html', {'order': order})
 
 
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cancel_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
     order = order_item.order
@@ -315,6 +321,7 @@ def cancel_product(request, item_id):
 
 
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def return_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
     
@@ -330,7 +337,6 @@ def return_product(request, item_id):
         order_item.order.status = 'Returned'
         order_item.order.save()
         
-        # Update product stock
         product_variant = order_item.product_variant
         product_variant.quantity += order_item.quantity
         product_variant.save()

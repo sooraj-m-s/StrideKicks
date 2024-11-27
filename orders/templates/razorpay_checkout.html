@@ -129,28 +129,29 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Razorpay key:", "{{ razorpay_merchant_key }}");
-    console.log("Razorpay order ID:", "{{ razorpay_order_id }}");
-    console.log("Amount in paise:", "{{ amount }}");
+    console.log("razorpay key:", "{{ razorpay_merchant_key }}");
+    console.log("razorpay order id:", "{{ razorpay_order_id }}");
+    console.log("amount in paise:", "{{ amount }}");
     var options = {
         "key": "{{ razorpay_merchant_key }}",
-        "amount": "{{ amount }}", // amount in paise
+        "amount": "{{ amount }}",
         "currency": "INR",
         "name": "StrideKicks",
         "description": "Order #{{ order.order_number }}",
         "order_id": "{{ razorpay_order_id }}",
         "handler": function (response) {
-            console.log("Payment successful", response);
+            console.log("payment successful", response);
             document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
             document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
             document.getElementById('razorpay_signature').value = response.razorpay_signature;
             document.getElementById('razorpay-form').submit();
+            console.log("form submitted");
         },
         "modal": {
         "ondismiss": function() {
-            console.log("Checkout form closed by the user");
-            console.log("Razorpay modal state:", rzp1);
-            console.log("Amount in paise:", "{{ amount }}");
+            console.log("checkout form closed");
+            console.log("razorpay modal state:", rzp1);
+            console.log("amount in paise:", "{{ amount }}");
         }
     },
         "prefill": {
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var rzp1 = new Razorpay(options);
     document.getElementById('rzp-button1').onclick = function(e) {
-        console.log("Opening Razorpay modal with options:", options);
+        console.log("opening razorpay modal with options:", options);
         rzp1.open();
         e.preventDefault();
     }

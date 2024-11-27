@@ -129,10 +129,14 @@
                             <div class="wishlist-item" data-product-id="{{ item.variant.product.id }}" data-product-size="{{ item.variant.size }}">
                                 <div class="row align-items-center">
                                     <div class="col-md-2">
-                                        <img src="{{ item.variant.product.images.first.image }}" alt="{{ item.variant.product.name }}" class="product-image img-thumbnail">
+                                        <a href="{% url 'product_detail' item.variant.product.id %}">
+                                            <img src="{{ item.variant.product.images.first.image }}" alt="{{ item.variant.product.name }}" class="product-image img-thumbnail">
+                                        </a>
                                     </div>
                                     <div class="col-md-6">
-                                        <h5>{{ item.variant.product.name }}</h5>
+                                        <a href="{% url 'product_detail' item.variant.product.id %}" class="text-decoration-none text-dark">
+                                            <h5>{{ item.variant.product.name }}</h5>
+                                        </a>
                                         <p class="text-muted mb-0">{{ item.variant.product.brand.name }}</p>
                                         <p class="mb-0">Size: {{ item.variant.size }}, Color: {{ item.variant.color }}</p>
                                         <p class="mb-0">₹{{ item.variant.sale_price }}</p>

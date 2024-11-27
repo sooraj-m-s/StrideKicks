@@ -192,7 +192,6 @@
         border-radius: 4px;
         cursor: pointer;
     }
-
     .coupon-list-button {
         background: none;
         border: none;
@@ -230,6 +229,28 @@
         color: black;
         text-decoration: none;
         cursor: pointer;
+    }
+    .popup {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    .popup.show {
+        opacity: 1;
+    }
+    .popup.success {
+        background-color: #28a745;
+    }
+    .popup.error {
+        background-color: #f04455;
     }
 </style>
 {% endblock %}
@@ -449,26 +470,26 @@
                 applyCoupon(couponCode);
             });
         }
-    
+
         if (couponListButton) {
             couponListButton.addEventListener('click', function() {
                 fetchAvailableCoupons();
                 couponModal.style.display = "block";
             });
         }
-    
+
         if (closeModal) {
             closeModal.addEventListener('click', function() {
                 couponModal.style.display = "none";
             });
         }
-    
+
         if (removeCouponButton) {
             removeCouponButton.addEventListener('click', function() {
                 removeCoupon();
             });
         }
-    
+
         window.addEventListener('click', function(event) {
             if (event.target == couponModal) {
                 couponModal.style.display = "none";
@@ -487,7 +508,7 @@
             .then(data => {
                 if (data.success) {
                     showMessage('Coupon applied successfully!', 'success');
-                    updateOrderSummary(data);
+                    location.reload();
                 } else {
                     showMessage(data.message, 'error');
                 }
@@ -550,18 +571,28 @@
         }
     
         function updateOrderSummary(data) {
-            document.querySelector('.summary-total span:last-child').textContent = `₹${data.new_total}`;
+            document.querySelector('.summary-total span:last-child').textContent = `₹${parseFloat(data.new_total).toFixed(2)}`;
             const summaryItems = document.querySelector('.order-summary');
-            const existingCouponItem = summaryItems.querySelector('.summary-item:nth-last-child(2)');
-            if (existingCouponItem && existingCouponItem.textContent.includes('Coupon Applied')) {
-                existingCouponItem.querySelector('span:last-child').textContent = `-₹${data.discount_amount}`;
+            let couponItem = summaryItems.querySelector('.summary-item:nth-last-child(2)');
+            if (couponItem && couponItem.textContent.includes('Coupon Applied')) {
+                couponItem.querySelector('span:last-child').textContent = `-₹${parseFloat(data.discount_amount).toFixed(2)}`;
             } else {
-                const couponItem = document.createElement('div');
+                couponItem = document.createElement('div');
                 couponItem.className = 'summary-item';
-                couponItem.innerHTML = `<span>Coupon Applied</span><span>-₹${data.discount_amount}</span>`;
+                couponItem.innerHTML = `<span>Coupon Applied</span><span>-₹${parseFloat(data.discount_amount).toFixed(2)}</span>`;
                 summaryItems.insertBefore(couponItem, summaryItems.querySelector('.summary-total'));
             }
-            location.reload();
+            const couponSection = document.querySelector('.coupon-section');
+            const appliedCouponDiv = document.createElement('div');
+            appliedCouponDiv.innerHTML = `
+                <div>
+                    <span>Applied Coupon: <strong>${data.coupon_code}</strong></span>
+                    <button id="removeCouponButton" class="coupon-button">Remove Coupon</button>
+                </div>
+            `;
+            couponSection.innerHTML = '';
+            couponSection.appendChild(appliedCouponDiv);
+            document.getElementById('removeCouponButton').addEventListener('click', removeCoupon);
         }
     
         function showMessage(message, type) {

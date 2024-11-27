@@ -57,6 +57,12 @@ def create_offer(request):
         start_date = timezone.make_aware(timezone.datetime.fromisoformat(data['start_date']))
         end_date = timezone.make_aware(timezone.datetime.fromisoformat(data['end_date']))
 
+        offer_name = data['offer_name']
+        if len(offer_name.strip()) < 4:
+            raise ValueError('Enter a valid offer name.')
+        if Offer.objects.filter(offer_name__iexact=offer_name).exists():
+            raise ValidationError('An offer with this name already exists.')
+
         new_offer = Offer.objects.create(
             offer_name=data['offer_name'],
             offer_type=data['offer_type'],

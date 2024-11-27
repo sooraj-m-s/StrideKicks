@@ -254,6 +254,26 @@ def download_report_excel(request):
     report_type = request.GET.get('type', 'daily')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+
+    today = timezone.now().date()
+    if report_type == 'daily':
+        start_date = end_date = today
+    elif report_type == 'weekly':
+        start_date = today - timedelta(days=7)
+        end_date = today
+    elif report_type == 'monthly':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif report_type == 'yearly':
+        start_date = today.replace(month=1, day=1)
+        end_date = today
+    elif report_type == 'custom':
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            start_date = end_date = today
+    
     orders = Order.objects.filter(
         created_at__date__range=[start_date, end_date]
     ).select_related('user').prefetch_related('items__product_variant__product')
@@ -289,7 +309,7 @@ def download_report_excel(request):
             worksheet.write(row, 2, float(item.price), cell_format)
             worksheet.write(row, 3, float(item.total_price), cell_format)
             worksheet.write(row, 4, float(order.discount) if order.discount else 0, cell_format)
-            worksheet.write(row, 5, float(order.coupon.discount_amount) if order.coupon else 0, cell_format)
+            worksheet.write(row, 5, float(order.discount) if order.coupon else 0, cell_format)
             worksheet.write(row, 6, float(order.total_amount), cell_format)
             worksheet.write(row, 7, order.created_at.strftime('%d/%m/%Y'), cell_format)
             worksheet.write(row, 8, order.user.get_full_name(), cell_format)
@@ -308,6 +328,26 @@ def download_report_pdf(request):
     report_type = request.GET.get('type', 'daily')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+
+    today = timezone.now().date()
+    if report_type == 'daily':
+        start_date = end_date = today
+    elif report_type == 'weekly':
+        start_date = today - timedelta(days=7)
+        end_date = today
+    elif report_type == 'monthly':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif report_type == 'yearly':
+        start_date = today.replace(month=1, day=1)
+        end_date = today
+    elif report_type == 'custom':
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            start_date = end_date = today
+
     orders = Order.objects.filter(
         created_at__date__range=[start_date, end_date]
     ).select_related('user').prefetch_related('items__product_variant__product')

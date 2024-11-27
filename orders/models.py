@@ -17,10 +17,10 @@ class Order(models.Model):
         ('WP', 'Wallet Pay'),
         ('COD', 'Cash on Delivery'),
     ]
-    
+
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='orders')
-    order_number = models.CharField(max_length=20, unique=True)
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+    order_number = models.CharField(max_length=20, unique=True)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(choices=PAYMENT_METHOD_CHOICES, max_length=4)
@@ -69,12 +69,22 @@ class OrderItem(models.Model):
         ('SCI', 'Size/Color Issue'),
     ]
 
+    ITEM_PAYMENT_STATUS_CHOICES = [
+        ('Pending', 'pending'),
+        ('Paid', 'paid'),
+        ('Unpaid', 'unpaid'),
+        ('Failed', 'failed'),
+        ('Refunded', 'refunded'),
+        ('Processing', 'processing')
+    ]
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product_variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, related_name='order_items')
     quantity = models.PositiveIntegerField()
     original_price = models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(choices=STATUS_CHOICES, max_length=24, default='Pending')
+    item_payment_status = models.CharField(choices=ITEM_PAYMENT_STATUS_CHOICES, max_length=10, default='pending')
     cancellation_reason = models.CharField(choices=CANCELLATION_REASON_CHOICES, max_length=4, blank=True, null=True)
     custom_cancellation_reason = models.TextField(blank=True, null=True)
     admin_note = models.TextField(blank=True, null=True)
