@@ -128,6 +128,12 @@
     color: #6c757d;
     font-size: 0.9em;
 }
+.out-of-stock {
+    background-color: #868e96;
+    color: #f8f9fa;
+    border: 1px solid #868e96;
+    font-weight: 500;
+}
 </style>
 {% endblock %}
 
@@ -137,7 +143,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-            <li class="breadcrumb-item"><a href="#">Products</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'product_listing' %}">Products</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
         </ol>
     </nav>
@@ -147,12 +153,6 @@
         <!-- Product Gallery -->
         <div class="col-md-6">
             <div class="product-gallery">
-                <!-- <div class="product-image-container">
-                    <img src="{{ product.images.first.image }}" class="product-image" id="mainImage" alt="{{ product.name }}">
-                    <div class="image-zoom-result" id="imageZoomResult"></div>
-                    <button class="image-nav-button prev" onclick="changeImage(-1)">&#10094;</button>
-                    <button class="image-nav-button next" onclick="changeImage(1)">&#10095;</button>
-                </div> -->
                 <div class="product-image-container img-magnifier-container">
                     <img src="{{ product.images.first.image }}" class="product-image" id="mainImage" alt="{{ product.name }}">
                     <div class="image-zoom-result" id="imageZoomResult"></div>
@@ -173,14 +173,16 @@
             <div class="product-info">
                 <h1>{{ product.name }}</h1>
                 <div class="product-rating">
-                    {% for i in "12345"|make_list %}
-                        {% if forloop.counter <= product.rating %}
-                            ★
+                    {% with ''|center:5 as range %}
+                    {% for _ in range %}
+                        {% if forloop.counter <= avg_rating|floatformat:0|add:"0" %}
+                            <span class="star filled">★</span>
                         {% else %}
-                            ☆
+                            <span class="star">☆</span>
                         {% endif %}
                     {% endfor %}
-                    ({{ product.rating }}.0)
+                    {% endwith %}
+                    <span class="review-count">({{ review_count }} reviews)</span>
                 </div>
                 <div class="sale-price" id="salePrice">₹{{ product.variants.first.sale_price }}</div>
                 <div class="original-price" id="actualPrice">₹{{ product.variants.first.actual_price }}</div>
@@ -199,12 +201,12 @@
     
                 <!-- Buy Now and Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
-                    <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2">
+                    <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2" id="addToCartForm">
                         {% csrf_token %}
                         <input type="hidden" name="variant" id="variantId" value="{{ product.variants.first.id }}">
                         <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="buyNowBtn">Buy Now</button>
-                        <button type="submit" class="btn btn-dark btn-lg flex-grow-1" id="addToCartBtn">Add to Cart</button>
+                        <div class="w-100 d-flex gap-2" id="productActions">
+                        </div>
                         <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" 
                                 data-product-id="{{ product.id }}" 
                                 onclick="toggleWishlist(this, '{{ product.variants.first.size }}')">
@@ -232,16 +234,18 @@
                     <a href="{% url 'product_detail' related_product.id %}" class="text-decoration-none">
                         <img src="{{ related_product.images.first.image }}" class="card-img-top" alt="{{ related_product.name }}">
                         <div class="card-body">
-                            <h5 class="card-title">{{ related_product.name }}</h5>
+                            <h5 class="card-title">{{ related_product.name|truncatechars:15 }}</h5>
                             <div class="product-rating">
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= product.rating %}
-                                        ★
-                                    {% else %}
-                                        ☆
-                                    {% endif %}
-                                {% endfor %}
-                                ({{ product.rating }}.0)
+                                {% with ''|center:5 as range %}
+                            {% for _ in range %}
+                                {% if forloop.counter <= related_product.avg_rating|floatformat:0|add:"0" %}
+                                    <span class="star filled">★</span>
+                                {% else %}
+                                    <span class="star">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                            <span class="review-count">({{ related_product.review_count }})</span>
                             </div>
                             <div class="d-flex align-items-center">
                                 <span class="original-price">₹{{ related_product.variants.first.sale_price }}</span>
@@ -257,47 +261,35 @@
 
     <!-- Customer Reviews Section -->
     <section class="my-5">
-        <h2 class="mb-4">Customer Reviews</h2>
+        <h2 class="mb-4"><strong>Customer Reviews</strong></h2>
         <div class="row">
-            <!-- Review 1 -->
-            <div class="col-md-6 mb-4">
-                <div class="review p-3 border rounded">
-                    <h5>John Doe</h5>
-                    <p class="text-muted">⭐⭐⭐⭐☆</p>
-                    <p>"This product exceeded my expectations! The quality is excellent, and it arrived on time. Highly recommended!"</p>
-                    <small class="text-muted">Reviewed on October 10, 2024</small>
-                </div>
-            </div>
-            
-            <!-- Review 2 -->
-            <div class="col-md-6 mb-4">
-                <div class="review p-3 border rounded">
-                    <h5>Jane Smith</h5>
-                    <p class="text-muted">⭐⭐⭐⭐⭐</p>
-                    <p>"Absolutely love it! Great value for the price. Will definitely buy again."</p>
-                    <small class="text-muted">Reviewed on September 22, 2024</small>
-                </div>
-            </div>
-
-            <!-- Review 3 -->
-            <div class="col-md-6 mb-4">
-                <div class="review p-3 border rounded">
-                    <h5>Michael Brown</h5>
-                    <p class="text-muted">⭐⭐⭐☆☆</p>
-                    <p>"Good product but could use some improvements. The delivery was delayed, but overall satisfied."</p>
-                    <small class="text-muted">Reviewed on August 15, 2024</small>
-                </div>
-            </div>
-
-            <!-- Review 4 -->
-            <div class="col-md-6 mb-4">
-                <div class="review p-3 border rounded">
-                    <h5>Emily White</h5>
-                    <p class="text-muted">⭐⭐⭐⭐⭐</p>
-                    <p>"Perfect! Exactly as described. The customer service was also fantastic."</p>
-                    <small class="text-muted">Reviewed on July 30, 2024</small>
-                </div>
-            </div>
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div class="review-item">
+                        <div class="review-header">
+                            <h5><span class="review-author"><strong>{{ review.user.first_name }} {{ review.user.last_name }}</strong></span></h5><br>
+                            <span class="review-date">{{ review.created_at|date:"F d, Y" }}</span>
+                        </div>
+                        <div class="review-rating">
+                            {% with ''|center:5 as range %}
+                            {% for _ in range %}
+                                {% if forloop.counter <= review.rating %}
+                                    <span class="star filled">★</span>
+                                {% else %}
+                                    <span class="star">☆</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% endwith %}
+                        </div>
+                        {% if review.title %}
+                            <h5 class="review-title">{{ review.title }}</h5>
+                        {% endif %}
+                        <p>{{ review.comment }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No reviews yet. Be the first to review this product!</p>
+            {% endif %}
         </div>
     </section>
 </div>
@@ -463,30 +455,44 @@ function updateColorOptions() {
 
 function updateVariantDetails() {
     const variant = availableVariants.find(v => v.size === currentSize && v.color === currentColor);
+    const productActions = document.getElementById('productActions');
     
     if (variant) {
         document.getElementById('salePrice').textContent = `₹${variant.sale_price}`;
         document.getElementById('actualPrice').textContent = `₹${variant.actual_price}`;
         document.getElementById('variantId').value = variant.id;
 
-        const buyNowBtn = document.getElementById('buyNowBtn');
-        const addToCartBtn = document.getElementById('addToCartBtn');
+        // Clear previous content
+        productActions.innerHTML = '';
 
-        if (variant.quantity > 0) {
-            buyNowBtn.disabled = false;
-            addToCartBtn.disabled = false;
-            buyNowBtn.textContent = 'Buy Now';
-            addToCartBtn.textContent = 'Add to Cart';
+        if (parseInt(variant.quantity) > 0) {
+            // In stock - show action buttons
+            productActions.innerHTML = `
+                <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="buyNowBtn">Buy Now</button>
+                <button type="submit" class="btn btn-dark btn-lg flex-grow-1" id="addToCartBtn">Add to Cart</button>
+            `;
         } else {
-            buyNowBtn.disabled = true;
-            addToCartBtn.disabled = true;
-            buyNowBtn.textContent = 'Sold Out';
-            addToCartBtn.textContent = 'Sold Out';
+            // Out of stock - show message
+            productActions.innerHTML = `
+                <div class="out-of-stock w-100 text-center py-2 px-3 rounded">
+                    Out of Stock
+                </div>
+            `;
         }
     } else {
         console.error('Variant not found');
+        productActions.innerHTML = `
+            <div class="out-of-stock w-100 text-center py-2 px-3 rounded">
+                Variant Not Available
+            </div>
+        `;
     }
 }
+document.addEventListener('DOMContentLoaded', function() {
+    updateSizeOptions();
+    updateColorOptions();
+    updateVariantDetails();
+});
 
 function handleSizeChange() {
     currentSize = document.getElementById('sizeSelect').value;

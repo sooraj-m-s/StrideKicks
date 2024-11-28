@@ -259,8 +259,8 @@ def edit_product(request, product_id):
             else:
                 try:
                     quantity = int(variant['quantity'])
-                    if quantity <= 0 or quantity > 1000:
-                        errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
+                    if quantity > 1000:
+                        errors[f'quantity{i+1}'] = "Can't add Quantity more than 1000."
                 except ValueError:
                     errors[f'quantity{i+1}'] = 'Quantity should be a valid number.'
             

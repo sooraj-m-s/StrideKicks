@@ -30,5 +30,5 @@ urlpatterns = [
     path('orders/', include('orders.urls')),
     path('coupon/', include('coupon.urls')),
     path('wallet/', include('wallet.urls')),
-    # path('reviews/', include('reviews.urls')),
+    path('reviews/', include('reviews.urls')),
 ]

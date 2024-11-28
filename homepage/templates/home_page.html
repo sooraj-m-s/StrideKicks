@@ -101,14 +101,16 @@
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <div class="product-rating">
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= product.rating %}
-                                        ★
+                                {% with ''|center:5 as range %}
+                                {% for _ in range %}
+                                    {% if forloop.counter <= product.avg_rating|floatformat:0|add:"0" %}
+                                        <span class="star filled">★</span>
                                     {% else %}
-                                        ☆
+                                        <span class="star">☆</span>
                                     {% endif %}
                                 {% endfor %}
-                                ({{ product.rating }}.0)
+                                {% endwith %}
+                                ({{ product.avg_rating }})
                             </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
@@ -141,14 +143,16 @@
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <div class="product-rating">
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= product.rating %}
-                                        ★
+                                {% with ''|center:5 as range %}
+                                {% for _ in range %}
+                                    {% if forloop.counter <= product.avg_rating|floatformat:0|add:"0" %}
+                                        <span class="star filled">★</span>
                                     {% else %}
-                                        ☆
+                                        <span class="star">☆</span>
                                     {% endif %}
                                 {% endfor %}
-                                ({{ product.rating }}.0)
+                                {% endwith %}
+                                ({{ product.avg_rating }})
                             </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
@@ -181,18 +185,19 @@
                         <div class="card-body">
                             <h5 class="card-title h6">{{ product.name|truncatechars:15 }}</h5>
                             <div class="product-rating">
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= product.rating %}
-                                        ★
+                                {% with ''|center:5 as range %}
+                                {% for _ in range %}
+                                    {% if forloop.counter <= product.avg_rating|floatformat:0|add:"0" %}
+                                        <span class="star filled">★</span>
                                     {% else %}
-                                        ☆
+                                        <span class="star">☆</span>
                                     {% endif %}
                                 {% endfor %}
-                                ({{ product.rating }}.0)
+                                {% endwith %}
+                                ({{ product.avg_rating }})
                             </div>
                             {% with variant=product.variants.first %}
                             <div class="d-flex align-items-center">
-                                <!-- <span class="price">₹{{ variant.actual_price }}</span> -->
                                 <span class="original-price">₹{{ variant.actual_price }}</span>
                                 <span class="sale-price">₹{{ variant.sale_price }}</span>
                             </div>

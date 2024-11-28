@@ -4,13 +4,14 @@ from django.views.decorators.cache import cache_control
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.core.paginator import Paginator
-from django.db.models import Min, Max, Q
+from django.db.models import Min, Max, Q, Avg, Count
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 from product.models import Product, ProductVariant
 from category.models import Category
 from brand.models import Brand
 from userpanel.models import Wishlist
+from reviews.models import ProductReview
 
 
 # Create your views here.
@@ -23,6 +24,11 @@ def home(request):
     featured_products = Product.objects.filter(is_deleted=False, variants__sale_price__isnull=False).distinct()[:5]
     trending_products = Product.objects.filter(is_deleted=False).order_by('-total_quantity')[:5]
     
+    # get review
+    for product_list in [latest_products, featured_products, trending_products]:
+        for product in product_list:
+            product.avg_rating = ProductReview.objects.filter(product=product).aggregate(Avg('rating'))['rating__avg'] or 0
+            product.review_count = ProductReview.objects.filter(product=product).count()
     data = {
         'latest_products': latest_products,
         'featured_products': featured_products,
@@ -53,11 +59,21 @@ def product_detail(request, product_id):
         for variant in variants
     ]
     is_wishlisted = Wishlist.objects.filter(user=request.user, variant__product=product).exists()
+
+    # get review
+    reviews = ProductReview.objects.filter(product=product).order_by('-created_at')
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    review_count = reviews.count()
+    related_products = related_products.annotate(avg_rating=Avg('reviews__rating'), review_count=Count('reviews'))
+    
     data = {
         'product': product,
         'related_products': related_products,
         'available_variants': json.dumps(available_variants, cls=DjangoJSONEncoder),
         'is_wishlisted': is_wishlisted,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'review_count': review_count,
     }
     
     return render(request, 'product_detail.html', data)
@@ -101,6 +117,11 @@ def product_listing(request):
     )
     all_products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('-created_at')
     
+    # get review
+    for product in all_products:
+        product.avg_rating = ProductReview.objects.filter(product=product).aggregate(Avg('rating'))['rating__avg'] or 0
+        product.review_count = ProductReview.objects.filter(product=product).count()
+    
     # Pagination
     paginator = Paginator(all_products, 12)
     page_number = request.GET.get('page', 1)
@@ -126,7 +147,7 @@ def filter_products(request):
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     page = request.GET.get('page', 1)
-    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images')
+    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images', 'reviews')
 
     if search_query:
         products = products.filter(
@@ -159,17 +180,17 @@ def filter_products(request):
     elif sort_by == 'price_desc':
         products = products.order_by('-variants__sale_price')
     elif sort_by == 'rating':
-        products = products.order_by('-rating')
+        # products = products.order_by('-rating')
+        products = products.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
     products = products.distinct()
+
+    # get review
+    products = products.annotate(avg_rating=Avg('reviews__rating'), review_count=Count('reviews'))
 
     # Pagination
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(page)
-    html = render_to_string(
-        'product_grid.html',
-        {'products': page_obj},
-        request=request
-    )
+    html = render_to_string('product_grid.html', {'products': page_obj}, request=request)
 
     return JsonResponse({
         'success': True,

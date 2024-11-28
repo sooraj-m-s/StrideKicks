@@ -223,7 +223,7 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://checkout.razorpay.com",  # Razorpay domain
+    "https://checkout.razorpay.com",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
