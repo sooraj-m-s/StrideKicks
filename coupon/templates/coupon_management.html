@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Coupon Management{% endblock %}
 
@@ -6,106 +7,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background-color: #1e1e1e;
-    color: #ffffff;
-    margin: 0;
-    padding: 0;
-}
-.header {
-    background-color: #000000;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-.sidebar {
-    background-color: #1e1e1e;
-    height: calc(100vh - 50px);
-    width: 250px;
-    position: fixed;
-    top: 50px;
-    left: 0;
-    padding-top: 10px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-.sidebar .nav-link {
-    color: #ffffff;
-    padding: 10px 15px;
-    margin: 2px 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    transition: background-color 0.3s ease;
-}
-.sidebar .nav-link i {
-    margin-right: 15px;
-    width: 20px;
-    font-size: 18px;
-}
-.sidebar .nav-link:hover, .sidebar .nav-link.active {
-    background-color: #2c2c2c;
-}
-.main-content {
-    margin-left: 250px;
-    padding: 70px 20px 20px;
-}
-.btn-add-coupon {
-    background-color: #00c853;
-    border-color: #00c853;
-    color: white;
-}
-.btn-add-coupon:hover {
-    background-color: #00a844;
-    border-color: #00a844;
-}
-.table-dark {
-    background-color: #1e1e1e;
-}
-.table-dark th {
-    background-color: #2c2c2c;
-}
-.form-control, .form-select {
-    background-color: #2c2c2c;
-    border-color: #444;
-    color: white;
-}
-.form-control:focus, .form-select:focus {
-    background-color: #2c2c2c;
-    border-color: #666;
-    color: white;
-}
-.modal-content {
-    background-color: #2c2c2c;
-    color: #ffffff;
-}
-.modal-header, .modal-footer {
-    border-color: #444;
-}
-.btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-.sidebar-main-menu {
-    flex-grow: 1;
-    overflow-y: auto;
-}
-.sidebar-footer-menu {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid #2c2c2c;
-}
-.sidebar .nav-item {
-    margin-bottom: 0%;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/coupon_management.css' %}">
 {% endblock %}
 
 {% block body %}
@@ -143,9 +45,9 @@ body {
                     <i class="fas fa-shopping-cart"></i>
                     <span>Orders</span>
                 </a>
-            </li>        
+            </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{% url 'banner_management' %}">
                     <i class="fas fa-image"></i>
                     <span>Banner Management</span>
                 </a>
@@ -159,7 +61,7 @@ body {
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'offer_management' %}">
                     <i class="fas fa-gift"></i>
-                    <span>Offer</span>
+                    <span>Offer Management</span>
                 </a>
             </li>
             <li class="nav-item">

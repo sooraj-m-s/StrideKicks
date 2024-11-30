@@ -366,12 +366,17 @@ def edit_product(request, product_id):
     return render(request, 'edit_product.html', data)
 
 
-@admin_required
 @login_required
+@admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def banner_management(request):
+    first_name = request.user.first_name.title()
     banners = Banner.objects.filter(is_deleted=False)
-    return render(request, 'banner_management.html', {'banners': banners})
+    data = {
+        'first_name': first_name,
+        'banners': banners,
+    }
+    return render(request, 'banner_management.html', data)
 
 
 @require_POST

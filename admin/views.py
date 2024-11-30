@@ -9,9 +9,11 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from django.http import HttpResponse
 from io import BytesIO
+import uuid, time
 from users.forms import CustomAuthenticationForm
 from users.models import Users
 from orders.models import Order, OrderItem
+from wallet.models import Wallet, WalletTransaction
 from utils.decorators import admin_required
 
 from reportlab.lib.styles import getSampleStyleSheet
@@ -102,11 +104,13 @@ def admin_orders(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_order_overview(request, order_id):
+    first_name = request.user.first_name.title()
     order = get_object_or_404(Order, id=order_id)
     other_orders = Order.objects.filter(user=order.user).exclude(id=order_id)
     status_choices = OrderItem.STATUS_CHOICES
 
     data = {
+        'first_name': first_name,
         'order': order,
         'other_orders': other_orders,
         'status_choices': status_choices,
@@ -117,11 +121,31 @@ def admin_order_overview(request, order_id):
 @login_required
 @admin_required
 def update_order_item(request, item_id):
+    order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    order = order_item.order
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         item.status = request.POST.get('status')
         item.admin_note = request.POST.get('admin_note')
         item.save()
+
+        # refund by proportion
+        discount_deduction = (order_item.price / order.total_amount) * order.discount
+        refund = order_item.price - discount_deduction
+        order.total_amount -= refund
+        order.subtotal -= order_item.original_price
+        if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
+            if order_item.item_payment_status == 'Paid':
+                wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                wallet.balance += refund
+                wallet.save()
+                WalletTransaction.objects.create(
+                                wallet=wallet,
+                                transaction_type="Cr",
+                                amount=refund,
+                                status="Completed",
+                                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                            )
         return redirect('admin_order_overview', order_id=item.order.id) 
 
 

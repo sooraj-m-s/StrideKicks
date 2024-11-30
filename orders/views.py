@@ -8,7 +8,6 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from decimal import Decimal
-from django.template.loader import render_to_string
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem
@@ -295,16 +294,17 @@ def cancel_product(request, item_id):
         order.subtotal -= order_item.original_price
 
         if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
-            wallet, _ = Wallet.objects.get_or_create(user=order.user)
-            wallet.balance += refund
-            wallet.save()
-            WalletTransaction.objects.create(
-                            wallet=wallet,
-                            transaction_type="Cr",
-                            amount=refund,
-                            status="Completed",
-                            transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
-                        )
+            if order_item.item_payment_status == 'Paid':
+                wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                wallet.balance += refund
+                wallet.save()
+                WalletTransaction.objects.create(
+                                wallet=wallet,
+                                transaction_type="Cr",
+                                amount=refund,
+                                status="Completed",
+                                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                            )
             return JsonResponse({'status': 'success', 'message': 'Product successfully cancelled and the amount credited to your wallet.'})
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     

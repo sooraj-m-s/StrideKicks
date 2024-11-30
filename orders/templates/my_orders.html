@@ -1,71 +1,13 @@
 {% extends "base_user.html" %}
+{% load static %}
 
 {% block title %}My Orders{% endblock %}
+
 {% block link %}
+<link rel="stylesheet" href="{% static 'css/my_orders.css' %}">
 {% endblock %}
 
-{% block style %}
-<style>
-    .list-group-item {
-        border: none;
-        padding: 0.75rem 1rem;
-        color: #333;
-        transition: all 0.2s;
-    }
-    .list-group-item:hover {
-        background-color: #f8f9fa;
-        color: #000;
-    }
-    .list-group-item.active {
-        background-color: #f8f9fa;
-        color: #000;
-        border-color: transparent;
-        font-weight: 600;
-    }
-    .list-group-item.active:hover {
-        background-color: #f0f1f2;
-    }
-    .card {
-        border-radius: 0.5rem;
-        border: 1px solid rgba(0,0,0,0.1);
-    }
-    .card-header {
-        border-bottom: 1px solid rgba(0,0,0,0.1);
-    }
-    .breadcrumb {
-        background: transparent;
-        padding: 0;
-        margin-bottom: 1.5rem;
-    }
-    .breadcrumb-item a {
-        color: #6c757d;
-        text-decoration: none;
-    }
-    .breadcrumb-item.active {
-        color: #333;
-    }
-    .breadcrumb-item + .breadcrumb-item::before {
-        content: ">";
-    }
-    .order-item {
-        border-bottom: 1px solid #eee;
-        padding: 1rem 0;
-    }
-    .order-item:last-child {
-        border-bottom: none;
-    }
-    .order-details {
-        font-size: 0.9rem;
-    }
-    .order-status {
-        font-weight: bold;
-    }
-    .product-image {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-    }
-</style>
+{% block style %}\
 {% endblock %}
 
 {% block body %}

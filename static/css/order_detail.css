@@ -1,0 +1,102 @@
+.list-group-item {
+    border: none;
+    padding: 0.75rem 1rem;
+    color: #333;
+    transition: all 0.2s;
+}
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    color: #000;
+}
+.list-group-item.active {
+    background-color: #f8f9fa;
+    color: #000;
+    border-color: transparent;
+    font-weight: 600;
+}
+.list-group-item.active:hover {
+    background-color: #f0f1f2;
+}
+.card {
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+.breadcrumb-item a {
+    color: #6c757d;
+    text-decoration: none;
+}
+.breadcrumb-item.active {
+    color: #333;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+}
+.rate-button {
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.rate-button:hover {
+    background-color: #ffdb58;
+}
+.rate-button {
+    background-color: white;
+    color: black;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+}
+.rate-button:hover {
+    background-color: #f8f9fa;
+}
+.modal-header {
+    border-bottom: none;
+}
+.modal-footer {
+    border-top: none;
+}
+.star-rating {
+    font-size: 24px;
+    color: #ffc107;
+}
+.star-rating .fa-star {
+    cursor: pointer;
+}
+.error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+.invoice-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.invoice-button:hover {
+    background-color: #218838;
+}
+.badge.bg-pending { color: #ffc107; }
+.badge.bg-payment_failed { color: #dc3545; }
+.badge.bg-processing { color: #17a2b8; }
+.badge.bg-on_hold { color: #6c757d; }
+.badge.bg-shipped { color: #28a745; }
+.badge.bg-on_the_way { color: #007bff; }
+.badge.bg-delivered { color: #28a745; }
+.badge.bg-cancelled { color: #dc3545; }
+.badge.bg-returned { color: #17a2b8; }
+.badge.bg-refunded { color: #28a745; }
+.badge { font-size: 16px; }
