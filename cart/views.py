@@ -119,14 +119,6 @@ def add_to_cart(request, product_id):
             new_quantity = cart_item.quantity + quantity
             cart_item.quantity = new_quantity
             cart_item.save()
-
-            # Recalculate discount based on new quantity
-            # if variant and variant.sale_price:
-            #     cart_item.discount = (variant.actual_price - variant.sale_price) * new_quantity
-            # else:
-            #     cart_item.discount = 0
-            # cart_item.save()
-            
             messages.success(request, 'Product added to cart successfully')
             
         except ValidationError as e:
@@ -146,7 +138,7 @@ def add_to_cart(request, product_id):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def available_coupons(request):
     if request.method == 'GET':
-        coupons = Coupon.objects.filter(active=True)
+        coupons = Coupon.objects.filter(active=True, is_deleted=False)
         coupon_list = [{'code': coupon.code, 'description': coupon.description} for coupon in coupons]
         return JsonResponse({'coupons': coupon_list})
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
@@ -164,7 +156,7 @@ def apply_coupon(request, coupon_code):
                 return JsonResponse({'success': False, 'message': 'You have already used this coupon'})
             if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage:
                 return JsonResponse({'success': False, 'message': 'Coupon usage limit reached'})
-            if coupon.end_date < timezone.now():
+            if coupon.end_date > timezone.now():
                 return JsonResponse({'success': False, 'message': 'Coupon has expired'})
             if not coupon.active:
                 return JsonResponse({'success': False, 'message': 'Coupon is inactive'})
@@ -181,9 +173,6 @@ def apply_coupon(request, coupon_code):
                 'coupon_id': coupon.id,
                 'discount_amount': discount,
             }
-            
-            # Create UserCoupon instance
-            # UserCoupon.objects.create(user=request.user, coupon=coupon)
             return JsonResponse({
                 'success': True,
                 'message': 'Coupon applied successfully!',

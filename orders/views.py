@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from decimal import Decimal
+from django.template.loader import render_to_string
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem
@@ -16,9 +17,9 @@ from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
 import uuid, time
+from .invoice_utils import generate_barcode, calculate_tax_details, generate_invoice_pdf
 
-import logging
-logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 
@@ -46,20 +47,6 @@ def checkout(request):
         address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
 
-        try:
-            user_id = request.user
-            if not user_id:
-                raise ValueError('Wallet not found')
-            wallet = Wallet.objects.get(user_id=user_id)
-            if not wallet.is_active:
-                raise ValueError('Wallet is inactive, please contact customer care.')
-        except Wallet.DoesNotExist:
-            messages.error(request, 'Wallet not created.')
-            return redirect('checkout')
-        except ValueError as e:
-            messages.error(request, str(e))
-            return redirect('checkout')
-
         if payment_method == 'CC' or payment_method == 'PP' or payment_method == 'BT':
             messages.error(request, "Current payment method is not available. Please try another payment method.")
             return redirect('checkout')
@@ -81,10 +68,7 @@ def checkout(request):
                 return redirect('checkout')
             amount_in_paise = int(total_amount * 100)  # Convert to paise
             if payment_method == 'RP':
-                logger.info(f"Attempting to create Razorpay order for amount: {amount_in_paise}")
                 try:
-                    
-                    logger.info(f"Creating Razorpay order for amount: {amount_in_paise} paise")
                     razorpay_order = client.order.create({
                         'amount': amount_in_paise,
                         'currency': 'INR',
@@ -94,10 +78,8 @@ def checkout(request):
                             'contact': str(address.mobile_no)
                         }
                     })
-                    logger.info(f"Razorpay order created successfully: {razorpay_order['id']}")
                     razorpay_order_id = razorpay_order['id']
                 except Exception as e:
-                    logger.error(f"Error creating Razorpay order: {str(e)}")
                     messages.error(request, "Unable to create payment order. Please try again.")
                     return redirect('checkout')
             else:
@@ -122,7 +104,7 @@ def checkout(request):
                     product_variant=item.variant,
                     quantity=item.quantity,
                     price=item.price,
-                    item_payment_status='unpaid',
+                    item_payment_status='Unpaid',
                     original_price=item.variant.actual_price,
                 )
                 item.variant.quantity -= item.quantity
@@ -141,6 +123,17 @@ def checkout(request):
             if payment_method == 'WP':
                 try:
                     with transaction.atomic():
+                        try:
+                            user_id = request.user
+                            if not user_id:
+                                raise ValueError('Wallet not found')
+                            wallet = Wallet.objects.get(user_id=user_id)
+                            if not wallet.is_active:
+                                raise ValueError('Wallet is inactive, please contact customer care.')
+                        except Wallet.DoesNotExist:
+                            raise ValueError('Wallet not created.')
+                        except ValueError as e:
+                            raise ValueError(str(e))
                         if wallet.balance < total_amount:
                             raise ValueError("Insufficient balance in wallet.")
                         
@@ -192,8 +185,6 @@ def checkout(request):
 @csrf_exempt
 def razorpay_callback(request):
     if request.method == "POST":
-        logger.info("callback")
-        logger.info(f"post data: {request.POST}")
         payment_id = request.POST.get('razorpay_payment_id', '')
         razorpay_order_id = request.POST.get('razorpay_order_id', '')
         signature = request.POST.get('razorpay_signature', '')
@@ -206,6 +197,7 @@ def razorpay_callback(request):
 
         try:
             order = Order.objects.get(razorpay_order_id=razorpay_order_id)
+            order_items = OrderItem.objects.filter(order_id=order.id)
         except Order.DoesNotExist:
             return HttpResponse("404 Not Found", status=404)
 
@@ -218,6 +210,9 @@ def razorpay_callback(request):
         order.razorpay_signature = signature
         order.payment_status = True
         order.save()
+        for item in order_items:
+            item.item_payment_status = 'Paid'
+            item.save()
 
         return redirect('order_success', order_id=order.id)
     return HttpResponse("Invalid Request", status=400)
@@ -349,3 +344,17 @@ def return_product(request, item_id):
         'order_item': order_item,
         'cancellation_reasons': cancellation_reasons
     })
+
+
+@login_required
+def download_invoice(request, item_id):
+    order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    if order_item.status != 'Delivered':
+        return HttpResponse("Invoice not available for this item", status=400)
+    if not order_item.invoice_number:
+        order_item.save()
+    
+    pdf = generate_invoice_pdf(order_item)
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{order_item.invoice_number}.pdf"'
+    return response

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from users.models import Users
 from userpanel.models import Address
 from product.models import ProductVariant
@@ -89,6 +90,19 @@ class OrderItem(models.Model):
     custom_cancellation_reason = models.TextField(blank=True, null=True)
     admin_note = models.TextField(blank=True, null=True)
     is_cancelled = models.BooleanField(default=False)
+    is_bill_generated = models.BooleanField(default=False)
+    invoice_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
+
+    def generate_bill(self):
+        if self.status == 'Delivered' and not self.is_bill_generated:
+            self.invoice_number = f"INV-{self.id}{timezone.now().strftime('%Y%m%d%H%M%S')}"
+            self.is_bill_generated = True
+            self.save()
+
+    def save(self, *args, **kwargs):
+        if self.status == 'Delivered' and not self.is_bill_generated:
+            self.generate_bill()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product_variant.product.name} - {self.quantity} pcs at ${self.price}"

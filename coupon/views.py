@@ -19,7 +19,7 @@ from cart.models import Cart
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def coupon_list(request):
     first_name = request.user.first_name.title()
-    coupons = Coupon.objects.all().order_by('-created_at')
+    coupons = Coupon.objects.filter(is_deleted=False).order_by('-created_at')
     data = {
         'first_name': first_name,
         'coupons': coupons,
@@ -88,7 +88,6 @@ def edit_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     
     if request.method == 'GET':
-        # Return the coupon data for editing
         return JsonResponse({
             'success': True,
             'coupon': {
@@ -144,20 +143,11 @@ def edit_coupon(request, coupon_id):
                 }
             })
         except ValidationError as e:
-            return JsonResponse({
-                'success': False,
-                'message': e.messages[0]
-            }, status=400)
+            return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
     else:
-        return JsonResponse({
-            'success': False,
-            'message': 'Invalid request method'
-        }, status=405)
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 
 @login_required
@@ -166,9 +156,9 @@ def delete_coupon(request, coupon_id):
     if request.method == 'POST':
         try:
             coupon = get_object_or_404(Coupon, id=coupon_id)
-            # Check if the coupon has been used
             if UserCoupon.objects.filter(coupon=coupon).exists():
-                coupon.active = False
+                coupon.is_deleted = True
+                coupon.deleted_at = timezone.now()
                 coupon.save()
                 return JsonResponse({
                     'success': True,

@@ -18,10 +18,7 @@ from utils.decorators import admin_required
 def category_list(request):
     first_name = request.user.first_name.title()
     categories = Category.objects.filter(is_deleted=False)
-    data = {
-        'first_name': first_name,
-        'categories': categories,
-    }
+    data = {'first_name': first_name, 'categories': categories,}
     return render(request, 'category.html', data)
 
 

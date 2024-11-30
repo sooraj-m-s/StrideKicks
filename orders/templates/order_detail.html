@@ -84,6 +84,18 @@
         font-size: 0.875em;
         margin-top: 0.25rem;
     }
+    .invoice-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .invoice-button:hover {
+        background-color: #218838;
+    }
     .badge.bg-pending { color: #ffc107; }
     .badge.bg-payment_failed { color: #dc3545; }
     .badge.bg-processing { color: #17a2b8; }
@@ -175,6 +187,9 @@
                                     <div class="text-end d-flex flex-column align-items-end">
                                         {% if item.status == 'Delivered' and not item.is_cancelled %}
                                             <a href="{% url 'return_product' item.id %}" class="btn btn-warning">Return Product</a>
+                                            <a href="{% url 'download_invoice' item.id %}" class="invoice-button mt-2">
+                                                <i class="fas fa-file-invoice"></i> Download Invoice
+                                            </a>
                                         {% elif item.status == 'Pending' or item.status == 'Processing' or item.status == 'On_Hold' %}
                                             <a href="{% url 'cancel_product' item.id %}" class="btn btn-danger">Cancel Product</a>
                                         {% elif item.status == 'Cancelled' %}

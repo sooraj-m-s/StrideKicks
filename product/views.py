@@ -10,7 +10,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import cloudinary, cloudinary.uploader
 import re, json
 from django.db import transaction, IntegrityError
-from .models import Product, ProductVariant, ProductImage
+from .models import Product, ProductVariant, ProductImage, Banner
+from .forms import BannerForm
 from brand.models import Brand
 from category.models import Category
 from utils.decorators import admin_required
@@ -363,3 +364,97 @@ def edit_product(request, product_id):
         'sizes': [size[0] for size in sizes],
     }
     return render(request, 'edit_product.html', data)
+
+
+@admin_required
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def banner_management(request):
+    banners = Banner.objects.filter(is_deleted=False)
+    return render(request, 'banner_management.html', {'banners': banners})
+
+
+@require_POST
+def add_banner(request):
+    try:
+        title = request.POST.get('title')
+        is_active = request.POST.get('is_active') == 'true'
+        image_file = request.FILES.get('image')
+
+        # Validate required fields
+        errors = {}
+        if not title:
+            errors['title'] = ['This field is required.']
+        if not image_file:
+            errors['image'] = ['This field is required.']
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors})
+
+        # Upload image to Cloudinary
+        if image_file:
+            cloudinary_response = cloudinary.uploader.upload(
+                image_file,
+                folder="banner_images",
+                public_id=f"banner_{title.lower().replace(' ', '_')}",
+                overwrite=True,
+                format="webp",
+                quality=85
+            )
+            image_url = cloudinary_response['secure_url']
+        
+            # Create banner
+            banner = Banner.objects.create(
+                title=title,
+                image=image_url,
+                is_active=is_active
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Banner added successfully',
+                'banner': {
+                    'id': banner.id,
+                    'title': banner.title,
+                    'image': banner.image,
+                    'is_active': banner.is_active
+                }
+            })
+    except Exception as e:
+        return JsonResponse({'success': False, 'errors': {'general': [str(e)]}})
+
+
+def get_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id, is_deleted=False)
+    return JsonResponse({'id': banner.id, 'title': banner.title, 'image': banner.image, 'is_active': banner.is_active})
+
+
+@require_POST
+def update_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id, is_deleted=False)
+    form = BannerForm(request.POST, request.FILES, instance=banner)
+    if form.is_valid():
+        banner = form.save(commit=False)
+        if 'image' in request.FILES:
+            image = request.FILES['image']
+            cloudinary_response = cloudinary.uploader.upload(
+                image,
+                folder="banner_images",
+                public_id=f"banner_{banner.id}",
+                overwrite=True,
+                format="webp",
+                quality=85
+            )
+            banner.image = cloudinary_response['secure_url']
+        banner.save()
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'errors': form.errors})
+
+
+@require_POST
+def delete_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id, is_deleted=False)
+    banner.is_deleted = True
+    banner.save()
+    return JsonResponse({'success': True})

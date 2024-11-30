@@ -19,6 +19,8 @@ class Coupon(models.Model):
     max_usage = models.PositiveIntegerField(default=1)
     max_usage_per_user = models.PositiveIntegerField(default=1)
     active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
