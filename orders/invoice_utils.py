@@ -1,12 +1,10 @@
 import barcode
 from barcode.writer import ImageWriter
 from io import BytesIO
-import base64
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from decimal import Decimal
-from .models import OrderItem
 from reportlab.lib.utils import ImageReader
 from django.utils import timezone
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -51,8 +49,8 @@ def generate_invoice_pdf(order_item):
     p.drawString(1*inch, height - 1*inch, "StrideKicks")
     p.setFont("Helvetica", 10)
     p.drawString(1*inch, height - 1.2*inch, "Shop from Address:")
-    p.drawString(1*inch, height - 1.4*inch, "123 Main Street, Tech Park")
-    p.drawString(1*inch, height - 1.6*inch, "Bangalore, Karnataka, India - 560001")
+    p.drawString(1*inch, height - 1.4*inch, "123 Main Street, Ranni")
+    p.drawString(1*inch, height - 1.6*inch, "Pathanamthitta, Kerala, India - 689711")
     p.drawString(1*inch, height - 1.8*inch, "GSTIN: 29AAGCK4304E3ZP")
 
     # Invoice details (right side)

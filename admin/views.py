@@ -153,12 +153,13 @@ def admin_order_overview(request, order_id):
 @login_required
 @admin_required
 def update_order_item(request, item_id):
-    order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    order_item = get_object_or_404(OrderItem, id=item_id)
     order = order_item.order
     if request.method == 'POST':
         item = get_object_or_404(OrderItem, id=item_id)
         item.status = request.POST.get('status')
         item.admin_note = request.POST.get('admin_note')
+        item.is_cancelled = 'True'
         item.save()
 
         # refund by proportion
@@ -195,6 +196,8 @@ def customers_view(request):
             Q(email__istartswith=search_query) |
             Q(mobile_no__istartswith=search_query)
         )
+    if status_filter:
+        users = users.filter(status=status_filter)
 
     # Pagination
     page = request.GET.get('page', 1)
@@ -205,8 +208,6 @@ def customers_view(request):
         users_page = paginator.page(1)
     except EmptyPage:
         users_page = paginator.page(paginator.num_pages)
-    if status_filter:
-        users = users.filter(status=status_filter)
 
     first_name = request.user.first_name.title()
     context = {
@@ -236,14 +237,6 @@ def settings_view(request):
         'first_name': first_name
     }
     return render(request, 'admin_settings.html', user)
-
-
-@never_cache
-def logout_account(request):
-    if request.method == 'POST':
-        logout(request)
-        messages.success(request, 'You have been logged out.')
-        return redirect('admin_login')
 
 
 @login_required

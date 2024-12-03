@@ -4,10 +4,163 @@
 {% block title %}About StrideKicks{% endblock %}
 
 {% block link %}
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 {% endblock %}
 
 {% block style %}
+<style>
+    .about-header {
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{% static "images/about-header.jpg" %}') no-repeat center center;
+        background-size: cover;
+        height: 50vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+    }
+    .about-section {
+        padding: 5rem 0;
+    }
+    .about-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease-in-out;
+    }
+    .about-card:hover {
+        transform: translateY(-10px);
+    }
+    .about-card img {
+        height: 250px;
+        object-fit: cover;
+    }
+    .value-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    .team-member img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-bottom: 1rem;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
+<header class="about-header">
+    <div class="container">
+        <h1 class="display-2 fw-bold mb-4">About StrideKicks</h1>
+        <p class="lead">Revolutionizing footwear, one step at a time</p>
+    </div>
+</header>
+
+<section class="about-section bg-light">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6" data-aos="fade-right">
+                <h2 class="mb-4">Our Story</h2>
+                <p>Founded in 2024, StrideKicks emerged from a passion for combining style, comfort, and innovation in footwear. Our journey began in the heart of Pathanamthitta, where a team of shoe enthusiasts came together with a shared vision: to create footwear that not only looks great but also enhances the wearer's performance and comfort.</p>
+                <p>Today, we're proud to offer a wide range of high-quality shoes that cater to various lifestyles and preferences, all while maintaining our commitment to sustainability and ethical production practices.</p>
+            </div>
+            <div class="col-md-6" data-aos="fade-left">
+                <img src="{% static 'images/store-main.webp' %}" alt="StrideKicks Story" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="about-section">
+    <div class="container">
+        <h2 class="text-center mb-5">Our Values</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card about-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shoe-prints value-icon text-primary"></i>
+                        <h3 class="card-title">Innovation</h3>
+                        <p class="card-text">We constantly push the boundaries of footwear technology to bring you the most advanced and comfortable shoes.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card about-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-leaf value-icon text-success"></i>
+                        <h3 class="card-title">Sustainability</h3>
+                        <p class="card-text">Our commitment to the environment drives us to use eco-friendly materials and sustainable production methods.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card about-card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users value-icon text-info"></i>
+                        <h3 class="card-title">Community</h3>
+                        <p class="card-text">We believe in fostering a strong community of shoe lovers and supporting local initiatives.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="about-section bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Our Location</h2>
+        <div class="row align-items-center">
+            <div class="col-md-6" data-aos="fade-right">
+                <div class="card about-card">
+                    <div class="card-body">
+                        <h3 class="card-title">StrideKicks Headquarters</h3>
+                        <p class="card-text">
+                            123 Main Street, Ranni<br>
+                            Pathanamthitta, Kerala, India - 689711
+                        </p>
+                        <p class="card-text">
+                            <strong>GSTIN:</strong> 29AAGCK4304E3ZP
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6" data-aos="fade-left">
+                <img src="{% static 'images/store.webp' %}" alt="StrideKicks Store" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="about-section">
+    <div class="container">
+        <h2 class="text-center mb-5">Meet Our Team</h2>
+        <div class="row">
+            <div class="col-md-4 text-center mb-4" data-aos="fade-up" data-aos-delay="100">
+                <img src="{% static 'images/team-member-1.jpg' %}" alt="Team Member 1" class="img-fluid">
+                <h4 class="mt-3">Sooraj M S</h4>
+                <p>Founder & CEO</p>
+            </div>
+            <div class="col-md-4 text-center mb-4" data-aos="fade-up" data-aos-delay="200">
+                <img src="{% static 'images/team-member-2.jpg' %}" alt="Team Member 2" class="img-fluid">
+                <h4 class="mt-3">Jane Smith</h4>
+                <p>Head of Design</p>
+            </div>
+            <div class="col-md-4 text-center mb-4" data-aos="fade-up" data-aos-delay="300">
+                <img src="{% static 'images/team-member-3.jpg' %}" alt="Team Member 3" class="img-fluid">
+                <h4 class="mt-3">Mike Johnson</h4>
+                <p>Chief Technology Officer</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true,
+    });
+</script>
 {% endblock %}

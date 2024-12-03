@@ -322,7 +322,7 @@ body {
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="#">
-                    <form action="{% url 'admin_logout' %}" method="post">
+                    <form action="{% url 'logout_account' %}" method="post">
                         {% csrf_token %}
                         <button class="btn btn-outline-primary">
                             <i class="fas fa-sign-out-alt"></i>

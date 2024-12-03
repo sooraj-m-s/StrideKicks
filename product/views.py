@@ -196,8 +196,6 @@ def add_product(request):
         except IntegrityError as e:
             return JsonResponse({'success': False, 'message': 'A database integrity error occurred. Please try again.'})
         except Exception as e:
-            # import traceback
-            # traceback.print_exc()
             return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
     first_name = request.user.first_name.title()
@@ -212,7 +210,7 @@ def add_product(request):
 
 
 def cancel_add_product(request):
-    messages.info(request, 'Cancelled')
+    messages.error(request, 'Cancelled')
     return redirect('products')
 
 

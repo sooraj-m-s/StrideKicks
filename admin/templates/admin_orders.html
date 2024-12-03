@@ -44,7 +44,7 @@
                     <i class="fas fa-shopping-cart"></i>
                     <span>Orders</span>
                 </a>
-            </li>        
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'banner_management' %}">
                     <i class="fas fa-image"></i>
@@ -93,7 +93,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="#">
-                    <form action="{% url 'admin_logout' %}" method="post">
+                    <form action="{% url 'logout_account' %}" method="post">
                         {% csrf_token %}
                         <button class="btn btn-outline-primary">
                             <i class="fas fa-sign-out-alt"></i>

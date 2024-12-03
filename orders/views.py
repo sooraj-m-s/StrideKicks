@@ -155,14 +155,14 @@ def checkout(request):
                     messages.error(request, "An error occurred while processing your payment. Please try again.")
                     return redirect('checkout')
             if payment_method == 'RP':
-                context = {
+                data = {
                     'order': order,
                     'razorpay_order_id': razorpay_order_id,
                     'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
                     'callback_url': request.build_absolute_uri(reverse('razorpay_callback')),
                     'amount': amount_in_paise,
                 }
-                return render(request, 'razorpay_checkout.html', context)
+                return render(request, 'razorpay_checkout.html', data)
             else:
                 messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
                 return redirect('order_success', order_id=order.id)
@@ -262,6 +262,42 @@ def order_detail(request, order_id):
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def razorpay_checkout(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    if order.payment_status or (order.payment_method == 'RP' and order.razorpay_payment_id):
+        messages.error(request, "This order has already been paid for.")
+        return redirect('order_detail', order_id=order.id)
+
+    amount_in_paise = int(order.total_amount * 100)  # Convert to paise
+    try:
+        razorpay_order = client.order.create({
+            'amount': amount_in_paise,
+            'currency': 'INR',
+            'payment_capture': 1,
+            'notes': {
+                'order_id': order.id,
+                'shipping_address': f"{order.shipping_address.full_name}, {order.shipping_address.address}",
+                'contact': str(order.shipping_address.mobile_no)
+            }
+        })
+        order.razorpay_order_id = razorpay_order['id']
+        order.save()
+    except Exception as e:
+        messages.error(request, "Unable to create payment order. Please try again.")
+        return redirect('order_detail', order_id=order.id)
+
+    data = {
+        'order': order,
+        'razorpay_order_id': razorpay_order['id'],
+        'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
+        'callback_url': request.build_absolute_uri(reverse('razorpay_callback')),
+        'amount': amount_in_paise,
+    }
+    return render(request, 'razorpay_checkout.html', data)
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cancel_product(request, item_id):
     order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
     order = order_item.order
@@ -275,14 +311,18 @@ def cancel_product(request, item_id):
         else:
             order_item.cancellation_reason = reason
         
-        # order = Order.objects.get(id=order_item.order_id)
-        # order.total_amount -= order_item.price
-        # order.save()
+        # payment status
+        if order_item.item_payment_status == 'Paid':
+            order_item.item_payment_status = 'Refunded'
+        else:
+            order_item.item_payment_status = 'Processing'
 
+        # order status
         order_item.is_cancelled = True
         order_item.status = 'Cancelled'
         order_item.save()
         
+        # qty
         product_variant = order_item.product_variant
         product_variant.quantity += order_item.quantity
         product_variant.save()

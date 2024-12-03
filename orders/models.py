@@ -100,8 +100,10 @@ class OrderItem(models.Model):
             self.save()
 
     def save(self, *args, **kwargs):
-        if self.status == 'Delivered' and not self.is_bill_generated:
-            self.generate_bill()
+        if self.status == 'Delivered':
+            if not self.is_bill_generated:
+                self.generate_bill()
+            self.item_payment_status = 'Paid'
         super().save(*args, **kwargs)
 
     def __str__(self):
