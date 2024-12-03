@@ -9,7 +9,9 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from django.http import HttpResponse
 from io import BytesIO
-import uuid, time
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
+import json, uuid, time
 from users.forms import CustomAuthenticationForm
 from users.models import Users
 from orders.models import Order, OrderItem
@@ -55,11 +57,42 @@ def login_to_account(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def dashboard_view(request):
+    total_users = Users.objects.count()
+    total_orders = Order.objects.count()
+    total_sales = Order.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+    time_period = request.GET.get('period', 'day')
+    trunc_func = {
+        'day': TruncDay,
+        'week': TruncWeek,
+        'month': TruncMonth,
+        'year': TruncYear,
+    }[time_period]
+
+    sales_data = Order.objects.annotate(date=trunc_func('created_at')).values('date').annotate(total=Sum('total_amount'), count=Count('id')).order_by('date')
+    sales_labels = [item['date'].strftime('%Y-%m-%d') for item in sales_data]
+    sales_values = [float(item['total']) for item in sales_data]
+    best_categories = OrderItem.objects.values('product_variant__product__category__name').annotate(total_sales=Count('id')).order_by('-total_sales')[:5]
+    category_labels = [item['product_variant__product__category__name'] for item in best_categories]
+    category_values = [item['total_sales'] for item in best_categories]
+    best_products = OrderItem.objects.values('product_variant__product__name').annotate(total_sales=Count('id')).order_by('-total_sales')[:5]
+    product_labels = [item['product_variant__product__name'] for item in best_products]
+    product_values = [item['total_sales'] for item in best_products]
+
     first_name = request.user.first_name.title()
-    user = {
-        'first_name': first_name
+    data = {
+        'first_name': first_name,
+        'total_users': total_users,
+        'total_orders': total_orders,
+        'total_sales': total_sales,
+        'sales_labels': json.dumps(sales_labels),
+        'sales_values': json.dumps(sales_values),
+        'category_labels': json.dumps(category_labels),
+        'category_values': json.dumps(category_values),
+        'product_labels': json.dumps(product_labels),
+        'product_values': json.dumps(product_values),
+        'current_period': time_period,
     }
-    return render(request, 'dashboard.html', user)
+    return render(request, 'dashboard.html', data)
 
 
 @login_required
@@ -67,7 +100,6 @@ def dashboard_view(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def admin_orders(request):
     order_items_list = OrderItem.objects.select_related('order__user', 'product_variant__product').order_by('-order__created_at')
-    
     search_query = request.GET.get('search', '')
     if search_query:
         order_items_list = order_items_list.filter(

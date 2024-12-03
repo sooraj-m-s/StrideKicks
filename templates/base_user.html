@@ -200,16 +200,16 @@
             }
         });
         {% if messages %}
-        {% for message in messages %}
-        Toastify({
-            text: "{{ message }}",
-            duration: 3000,
-            close: true,
-            gravity: "top",
-            position: "center",
-            backgroundColor: "{% if message.tags == 'error' %}red{% else %}green{% endif %}",
-        }).showToast();
-        {% endfor %}
+            {% for message in messages %}
+                Toastify({
+                    text: "{{ message }}",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "{% if message.tags == 'error' %}red{% else %}green{% endif %}",
+                }).showToast();
+            {% endfor %}
         {% endif %}
     </script>
 </body>

@@ -16,7 +16,7 @@ from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
 import uuid, time
-from .invoice_utils import generate_barcode, calculate_tax_details, generate_invoice_pdf
+from .invoice_utils import generate_invoice_pdf
 
 
 # Create your views here.
@@ -146,7 +146,7 @@ def checkout(request):
                             transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                         )
                         for order_item in order.orderitem_set.all():
-                            order_item.item_payment_status = 'paid'
+                            order_item.item_payment_status = 'Paid'
                             order_item.save()
                 except ValueError as e:
                     messages.error(request, str(e))

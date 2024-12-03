@@ -20,7 +20,7 @@
     
     <div class="cart-content">
         <div class="cart-items">
-            {% for item in cart.items.all %}
+            {% for item in cart_items %}
             <div class="cart-item">
                 <a href="{% url 'product_detail' item.product.id %}">
                     <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="item-image">
@@ -33,7 +33,7 @@
                         <div>Color: {{ item.variant.color }}</div>
                         <div>Size: {{ item.variant.size }}</div>
                         <div>
-                            {% if item.product.total_quantity > 0 %}
+                            {% if item.in_stock > 0 %}
                                 <span style="color: green;">In Stock</span>
                             {% else %}
                                 <span style="color: red;">Out of Stock</span>
@@ -78,6 +78,7 @@
                     <button class="coupon-button" type="submit">Apply</button>
                 </form>
                 <button id="couponListButton" class="coupon-list-button">View available coupons</button>
+                <div id="couponResult" class="coupon-result"></div>
                 {% else %}
                 <div>
                     <span>Applied Coupon: <strong>{{ coupon_code.code }}</strong></span>
@@ -263,15 +264,36 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showMessage('Coupon applied successfully!', 'success');
+                    Toastify({
+                        text: data.message,
+                        duration: 3000,
+                        close: true,
+                        gravity: "top",
+                        position: "center",
+                        backgroundColor: "green",
+                    }).showToast();
                     location.reload();
                 } else {
-                    showMessage(data.message, 'error');
+                    Toastify({
+                        text: data.message,
+                        duration: 3000,
+                        close: true,
+                        gravity: "top",
+                        position: "center",
+                        backgroundColor: "red",
+                    }).showToast();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showMessage('An error occurred while applying the coupon. Please try again.', 'error');
+                Toastify({
+                    text: "An error occurred while applying the coupon. Please try again.",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    backgroundColor: "red",
+                }).showToast();
             });
         }
     

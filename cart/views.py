@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.http import JsonResponse
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib import messages
 from django.utils import timezone
 from decimal import Decimal
@@ -18,6 +18,10 @@ from product.models import Product, ProductVariant
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def view_cart(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.items.all().select_related('product', 'variant')
+    for item in cart_items:
+        item.in_stock = item.variant.quantity >= item.quantity if item.variant else False
+
     cart_total = sum(item.total_price for item in cart.items.all())
     delivery_charge = 0 if cart_total > 4999 else 99
     cart.total_price = cart_total + delivery_charge
@@ -37,13 +41,14 @@ def view_cart(request):
     total_price_after_coupon_discount = cart.total_price - int(discount_amount) if int(discount_amount) > 0 else cart.total_price
     data = {
         'cart': cart,
+        'cart_items': cart_items,
         'total_discount': total_discount,
         'latest_products': latest_products,
         'max_quantity': 5,
         'total_actual_price': total_actual_price,
         'coupon_code': coupon_code,
         'discount_amount': discount_amount,
-        'total_price_after_coupon_discount': total_price_after_coupon_discount
+        'total_price_after_coupon_discount': total_price_after_coupon_discount,
     }
     return render(request, 'cart.html', data)
 
@@ -149,14 +154,17 @@ def available_coupons(request):
 def apply_coupon(request, coupon_code):
     if request.method == 'POST':
         try:
-            coupon = get_object_or_404(Coupon, code=coupon_code)
+            try:
+                coupon = Coupon.objects.get(code=coupon_code)
+            except ObjectDoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Invalid coupon, please enter a valid coupon code'})
             cart = Cart.objects.get(user=request.user)
             
             if UserCoupon.objects.filter(user=request.user, coupon=coupon).exists():
                 return JsonResponse({'success': False, 'message': 'You have already used this coupon'})
             if UserCoupon.objects.filter(coupon=coupon).count() >= coupon.max_usage:
                 return JsonResponse({'success': False, 'message': 'Coupon usage limit reached'})
-            if coupon.end_date > timezone.now():
+            if coupon.end_date < timezone.now():
                 return JsonResponse({'success': False, 'message': 'Coupon has expired'})
             if not coupon.active:
                 return JsonResponse({'success': False, 'message': 'Coupon is inactive'})
