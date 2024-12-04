@@ -6,6 +6,7 @@ from utils.decorators import admin_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ValidationError
 import json
 from .models import Wallet, WalletTransaction, Offer
@@ -20,13 +21,21 @@ def wallet_view(request):
     wallet, created = Wallet.objects.get_or_create(user=request.user)
     transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
     
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(transactions, 5)
+    try:
+        transactions = paginator.page(page)
+    except PageNotAnInteger:
+        transactions = paginator.page(1)
+    except EmptyPage:
+        transactions = paginator.page(paginator.num_pages)
+
     context = {
         'wallet': wallet,
         'transactions': transactions,
     }
-    
     return render(request, 'wallet.html', context)
-
 
 
 @login_required

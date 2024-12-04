@@ -57,7 +57,7 @@ def login_to_account(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def dashboard_view(request):
-    total_users = Users.objects.count()
+    total_users = Users.objects.filter(is_superuser=False).count()
     total_orders = Order.objects.count()
     total_sales = Order.objects.aggregate(total=Sum('total_amount'))['total'] or 0
     time_period = request.GET.get('period', 'day')

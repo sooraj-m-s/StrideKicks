@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from decimal import Decimal
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem
@@ -242,6 +243,17 @@ def my_orders(request):
     ).order_by('-created_at')
     if status_filter:
         orders = [order for order in orders if order.filtered_items]
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(orders, 5)
+    try:
+        orders = paginator.page(page)
+    except PageNotAnInteger:
+        orders = paginator.page(1)
+    except EmptyPage:
+        orders = paginator.page(paginator.num_pages)
+    
     status_choices = OrderItem.STATUS_CHOICES
     data = {
         'orders': orders,
@@ -249,7 +261,6 @@ def my_orders(request):
         'search_query': search_query,
         'status_filter': status_filter,
     }
-
     return render(request, 'my_orders.html', data)
 
 
