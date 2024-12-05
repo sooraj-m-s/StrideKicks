@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     confirmDeleteButton.addEventListener('click', function() {
         if (productToDelete) {
             // Send delete request
-            fetch(`/product/delete-product/${productToDelete}/`, {
+            fetch(`/product/delete/${productToDelete}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',

@@ -37,7 +37,12 @@ def view_cart(request):
     discount_amount = Decimal(coupon.get('discount_amount', '0'))
     coupon_code = None
     if coupon:
-        coupon_code = Coupon.objects.get(id=coupon_id)
+        try:
+            coupon_code = Coupon.objects.get(id=coupon_id, is_deleted=False, active=True)
+        except Coupon.DoesNotExist:
+            messages.error(request, 'The coupon you applied earlier is no longer available. It has been removed from your cart.')
+            del request.session['coupon']
+            return redirect('view_cart')
     total_price_after_coupon_discount = cart.total_price - int(discount_amount) if int(discount_amount) > 0 else cart.total_price
     data = {
         'cart': cart,

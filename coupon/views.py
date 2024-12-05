@@ -164,9 +164,6 @@ def delete_coupon(request, coupon_id):
                     'success': True,
                     'message': 'Coupon has been deactivated as it was already used'
                 })
-            else:
-                coupon.delete()
-                return JsonResponse({'success': True, 'message': 'Coupon deleted successfully'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
 

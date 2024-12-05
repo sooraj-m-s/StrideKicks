@@ -59,11 +59,9 @@ def products_view(request):
 
 @login_required
 @require_POST
-def delete_product(request, id):
+def delete_product(request, product_id):
     try:
-        print('hello: ', id, type(id))
-        product = get_object_or_404(Product, id=id)
-        print('getted okok')
+        product = get_object_or_404(Product, id=product_id)
         product.is_deleted = True
         product.deleted_at = timezone.now()
         product.save()
