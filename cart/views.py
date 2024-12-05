@@ -63,19 +63,56 @@ def view_cart(request):
 def update_cart_item(request, item_id):
     if request.method == 'POST':
         cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-        quantity = int(request.POST.get('quantity', 1))
         
-        max_quantity = min(5, cart_item.variant.quantity)
-        if quantity <= max_quantity:
-            cart_item.quantity = quantity
-            cart_item.save()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'total_price': float(cart_item.cart.total_price),
-                'item_total': float(cart_item.total_price)
-            })
+        try:
+            if request.headers.get('Content-Type') == 'application/json':
+                import json
+                data = json.loads(request.body)
+                quantity = int(data.get('quantity', 1))
+            else:
+                quantity = int(request.POST.get('quantity', 1))
+            
+            max_quantity = min(5, cart_item.variant.quantity)
+            if quantity <= max_quantity:
+                cart_item.quantity = quantity
+                cart_item.save()
+                
+                # Recalculate cart totals
+                cart = cart_item.cart
+                cart_total = sum(item.total_price for item in cart.items.all())
+                delivery_charge = 0 if cart_total > 4999 else 99
+                cart.total_price = cart_total + delivery_charge
+                cart.delivery_charge = delivery_charge
+                cart.save()
+                
+                # Calculate all necessary totals
+                total_actual_price = cart.get_total_actual_price()
+                total_discount = total_actual_price - cart_total
+                
+                # Check for coupon discount
+                coupon = request.session.get('coupon', {})
+                discount_amount = Decimal(coupon.get('discount_amount', '0'))
+                total_after_discount = cart.total_price - discount_amount if discount_amount > 0 else cart.total_price
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'total_price': float(cart.total_price),
+                        'item_total': float(cart_item.total_price),
+                        'total_after_discount': float(total_after_discount),
+                        'total_actual_price': float(total_actual_price),
+                        'total_discount': float(total_discount),
+                        'discount_amount': float(discount_amount),
+                        'delivery_charge': delivery_charge,
+                        'items_count': cart.items.count(),
+                        'is_free_delivery': cart.total_price > 4999
+                    })
+        except (ValueError, json.JSONDecodeError):
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid quantity'
+                }, status=400)
     
     return redirect('view_cart')
 

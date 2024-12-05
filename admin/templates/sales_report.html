@@ -129,11 +129,11 @@
                 <div class="row">
                     <div class="col-md-3">
                         <label class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="startDate" value="{{ start_date|date:'Y-m-d' }}">
+                        <input type="date" class="form-control" id="startDate" value="{{ start_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="endDate" value="{{ end_date|date:'Y-m-d' }}">
+                        <input type="date" class="form-control" id="endDate" value="{{ end_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button class="btn btn-primary" id="applyDateRange">Apply</button>
@@ -157,7 +157,7 @@
                     <tbody>
                         {% for order in orders %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
+                            <td>{{ forloop.counter|add:orders.start_index|add:-1 }}</td>
                             <td>{{ order.user.first_name }} {{ order.user.last_name }}</td>
                             <td>{{ order.created_at|date:"d/m/Y" }}</td>
                             <td>{{ order.get_payment_method_display }}</td>
@@ -249,6 +249,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 });
+
 document.addEventListener('DOMContentLoaded', function() {
     const reportButtons = document.querySelectorAll('[data-type]');
     const customDateRange = document.getElementById('customDateRange');
@@ -256,28 +257,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const endDateInput = document.getElementById('endDate');
     const applyDateRangeBtn = document.getElementById('applyDateRange');
 
-    // Handle report type selection
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.max = today;
+    endDateInput.max = today;
+    startDateInput.addEventListener('change', function() {
+        endDateInput.min = this.value;
+    });
+    endDateInput.addEventListener('change', function() {
+        startDateInput.max = this.value;
+    });
+
     reportButtons.forEach(button => {
         button.addEventListener('click', function() {
             const type = this.dataset.type;
+            reportButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
             customDateRange.style.display = type === 'custom' ? 'block' : 'none';
             
             if (type !== 'custom') {
-                window.location.href = `?type=${type}`;
+                window.location.href = `?type=${type}&page=1`;
             }
         });
     });
-
-    // Handle custom date range
     applyDateRangeBtn.addEventListener('click', function() {
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
+        
         if (startDate && endDate) {
+            const customButton = document.querySelector('[data-type="custom"]');
+            if (customButton) {
+                reportButtons.forEach(btn => btn.classList.remove('active'));
+                customButton.classList.add('active');
+            }
+            
             window.location.href = `?type=custom&start_date=${startDate}&end_date=${endDate}&page=1`;
         }
     });
-    if (type !== 'custom') {
-        window.location.href = `?type=${type}&page=1`;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentType = urlParams.get('type');
+    if (currentType) {
+        const activeButton = document.querySelector(`[data-type="${currentType}"]`);
+        if (activeButton) {
+            reportButtons.forEach(btn => btn.classList.remove('active'));
+            activeButton.classList.add('active');
+        }
     }
 });
 </script>

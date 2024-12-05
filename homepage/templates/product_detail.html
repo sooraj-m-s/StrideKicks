@@ -202,14 +202,18 @@ function updateThumbnails() {
 function toggleWishlist(button, initialSize) {
     const productId = button.dataset.productId;
     const productSize = document.getElementById('sizeSelect').value || initialSize;
+    const productColor = document.getElementById('colorSelect').value;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const formData = new FormData();
+    formData.append('color', productColor);
 
     fetch(`/userpanel/toggle-wishlist/${productId}/${productSize}/`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,
         },
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -217,7 +221,7 @@ function toggleWishlist(button, initialSize) {
             button.classList.toggle('active');
             showMessage(data.message, 'success');
         } else {
-            showMessage(data.message, 'error');
+            showMessage(data.message || 'Error adding to wishlist', 'error');
         }
     })
     .catch(error => {

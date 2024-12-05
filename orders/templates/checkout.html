@@ -35,9 +35,9 @@
                             </label>
                         </div>
                         {% endfor %}
-                        <a href="{% url 'add_address' %}?next=checkout" class="btn btn-outline-primary mt-3">
+                        <button type="button" class="btn btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#addAddressModal">
                             <i class="fas fa-plus"></i> Add New Address
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -121,9 +121,253 @@
     </form>
 </div>
 
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAddressModalLabel">Add New Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addAddressForm" method="POST" action="{% url 'add_address' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">Full Name*</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                            <div class="invalid-feedback">Please enter your full name</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="mobile_no" class="form-label">Mobile Number*</label>
+                            <input type="tel" class="form-control" id="mobile_no" name="mobile_no" pattern="[0-9]{10}" required>
+                            <div class="invalid-feedback">Please enter a valid 10-digit mobile number</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address (House No, Building, etc.)*</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                        <div class="invalid-feedback">Please enter your address</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="street" class="form-label">Street/Area*</label>
+                        <input type="text" class="form-control" id="street" name="street" required>
+                        <div class="invalid-feedback">Please enter your street/area</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="landmark" class="form-label">Landmark</label>
+                        <input type="text" class="form-control" id="landmark" name="landmark">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="city" class="form-label">City*</label>
+                            <input type="text" class="form-control" id="city" name="city" required>
+                            <div class="invalid-feedback">Please enter your city</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="state" class="form-label">State*</label>
+                            <select class="form-select" id="state" name="state" required>
+                                <option value="">Select State</option>
+                                <option value="AN">Andaman and Nicobar Islands</option>
+                                <option value="AP">Andhra Pradesh</option>
+                                <option value="AR">Arunachal Pradesh</option>
+                                <option value="AS">Assam</option>
+                                <option value="BR">Bihar</option>
+                                <option value="CH">Chandigarh</option>
+                                <option value="CT">Chhattisgarh</option>
+                                <option value="DN">Dadra and Nagar Haveli</option>
+                                <option value="DD">Daman and Diu</option>
+                                <option value="DL">Delhi</option>
+                                <option value="GA">Goa</option>
+                                <option value="GJ">Gujarat</option>
+                                <option value="HR">Haryana</option>
+                                <option value="HP">Himachal Pradesh</option>
+                                <option value="JK">Jammu and Kashmir</option>
+                                <option value="JH">Jharkhand</option>
+                                <option value="KA">Karnataka</option>
+                                <option value="KL">Kerala</option>
+                                <option value="LA">Ladakh</option>
+                                <option value="LD">Lakshadweep</option>
+                                <option value="MP">Madhya Pradesh</option>
+                                <option value="MH">Maharashtra</option>
+                                <option value="MN">Manipur</option>
+                                <option value="ML">Meghalaya</option>
+                                <option value="MZ">Mizoram</option>
+                                <option value="NL">Nagaland</option>
+                                <option value="OR">Odisha</option>
+                                <option value="PY">Puducherry</option>
+                                <option value="PB">Punjab</option>
+                                <option value="RJ">Rajasthan</option>
+                                <option value="SK">Sikkim</option>
+                                <option value="TN">Tamil Nadu</option>
+                                <option value="TG">Telangana</option>
+                                <option value="TR">Tripura</option>
+                                <option value="UP">Uttar Pradesh</option>
+                                <option value="UT">Uttarakhand</option>
+                                <option value="WB">West Bengal</option>
+                            </select>
+                            <div class="invalid-feedback">Please select your state</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pin_code" class="form-label">PIN Code*</label>
+                        <input type="text" class="form-control" id="pin_code" name="pin_code" pattern="[0-9]{6}" required>
+                        <div class="invalid-feedback">Please enter a valid 6-digit PIN code</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="default_address" name="default_address">
+                        <label class="form-check-label" for="default_address">Make this my default address</label>
+                    </div>
+                    <input type="hidden" name="next" value="checkout">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addAddressForm" class="btn btn-primary">Save Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const addressCards = document.querySelectorAll('.address-card');
+    const addAddressForm = document.getElementById('addAddressForm');
+    const addAddressModal = document.getElementById('addAddressModal');
+    const modal = new bootstrap.Modal(addAddressModal);
+
+    // Form validation
+    function validateForm(form) {
+        const inputs = form.querySelectorAll('input[required], select[required]');
+        let isValid = true;
+
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+
+            // Special validation for mobile number
+            if (input.id === 'mobile_no') {
+                const mobileRegex = /^[0-9]{10}$/;
+                if (!mobileRegex.test(input.value)) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                }
+            }
+
+            // Special validation for PIN code
+            if (input.id === 'pin_code') {
+                const pinRegex = /^[0-9]{6}$/;
+                if (!pinRegex.test(input.value)) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                }
+            }
+        });
+
+        return isValid;
+    }
+
+    // Mobile number validation
+    const mobileInput = document.getElementById('mobile_no');
+    mobileInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        if (this.value.length === 10) {
+            this.classList.remove('is-invalid');
+        }
+    });
+
+    // PIN code validation
+    const pinCodeInput = document.getElementById('pin_code');
+    pinCodeInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+        if (this.value.length === 6) {
+            this.classList.remove('is-invalid');
+        }
+    });
+
+    // Handle form submission
+    addAddressForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        if (!validateForm(this)) {
+            return;
+        }
+
+        try {
+            const formData = new FormData(this);
+            formData.append('ajax', 'true'); // Add flag for AJAX request
+
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Close modal
+                modal.hide();
+                
+                // Show success message
+                const successAlert = document.createElement('div');
+                successAlert.className = 'alert alert-success alert-dismissible fade show';
+                successAlert.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.querySelector('.container').insertBefore(successAlert, document.querySelector('.container').firstChild);
+                
+                // Reload page to show new address
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Show error message in modal
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = data.message || 'An error occurred. Please try again.';
+                
+                const existingError = addAddressForm.querySelector('.alert');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                addAddressForm.prepend(errorDiv);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            
+            const existingError = addAddressForm.querySelector('.alert');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            addAddressForm.prepend(errorDiv);
+        }
+    });
+
+    // Reset form and validation state when modal is closed
+    addAddressModal.addEventListener('hidden.bs.modal', function () {
+        addAddressForm.reset();
+        const invalidInputs = addAddressForm.querySelectorAll('.is-invalid');
+        invalidInputs.forEach(input => input.classList.remove('is-invalid'));
+        const errorAlert = addAddressForm.querySelector('.alert');
+        if (errorAlert) {
+            errorAlert.remove();
+        }
+    });
+
     addressCards.forEach(card => {
         card.addEventListener('click', function() {
             addressCards.forEach(c => c.classList.remove('selected'));

@@ -42,25 +42,16 @@
                     </div>
                     <div class="item-price">₹{{ item.price }}</div>
                 </div>
-                <form method="POST" action="{% url 'update_cart_item' item.id %}" class="quantity-form">
-                    {% csrf_token %}
-                    <select name="quantity" class="quantity-select" onchange="this.form.submit()"
-                        {% if item.product.quantity == 0 %}disabled{% endif %}>
-                        {% with max_quantity=item.product.quantity|default:5 %}
-                            {% with display_max=max_quantity|min_value:5 %}
-                                {% for i in "12345"|make_list %}
-                                    {% if forloop.counter <= display_max %}
-                                        <option value="{{ forloop.counter }}" 
-                                            {% if item.quantity == forloop.counter %}selected{% endif %}>
-                                            {{ forloop.counter }}
-                                        </option>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-                        {% endwith %}
-                    </select>
-                </form>
-                <form method="POST" action="{% url 'remove_from_cart' item.id %}">
+                <div class="quantity-control" data-item-id="{{ item.id }}">
+                    <button type="button" class="quantity-btn decrease" {% if item.quantity <= 1 %}disabled{% endif %}>
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="quantity-display">{{ item.quantity }}</span>
+                    <button type="button" class="quantity-btn increase" {% if item.quantity >= 5 or item.quantity >= item.variant.quantity %}disabled{% endif %}>
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <form method="POST" action="{% url 'remove_from_cart' item.id %}" class="remove-form">
                     {% csrf_token %}
                     <button type="submit" class="remove-item">
                         <i class="fas fa-trash"></i>
@@ -87,41 +78,32 @@
                 {% endif %}
             </div>
             <h2 class="summary-title">ORDER SUMMARY</h2>
-            <div class="summary-item">
-                <span>{{ cart.items.count }} ITEMS</span>
-                <span>₹{{ total_actual_price }}</span>
+            <div class="summary-item items-count">
+                <span><span class="item-count">{{ cart.items.count }}</span> ITEMS</span>
+                <span class="total-actual-price">₹{{ total_actual_price }}</span>
             </div>
-            <div class="summary-item">
+            <div class="summary-item delivery-charges">
                 <span>Delivery Charges</span>
-                {% if cart.total_price > 4999 %}
-                    <span style="color: green;">Free</span>
-                {% else %}
-                    <span>₹99</span>
-                {% endif %}
+                <span class="delivery-charge-amount">
+                    {% if cart.total_price > 4999 %}
+                        <span style="color: green;">Free</span>
+                    {% else %}
+                        <span>₹99</span>
+                    {% endif %}
+                </span>
             </div>
-            <div class="summary-item">
+            <div class="summary-item savings">
                 <span>Saved</span>
-                <span>₹{{ total_discount }}</span>
+                <span class="total-discount">₹{{ total_discount }}</span>
             </div>
-            {% if discount_amount > 0 %}
-            <div class="summary-item">
+            <div class="summary-item coupon-discount">
                 <span>Coupon Applied</span>
-                <span>₹ {{ discount_amount }}</span>
+                <span class="discount-amount">₹ {{ discount_amount|default:"0" }}</span>
             </div>
             <div class="summary-item summary-total">
                 <span>TOTAL</span>
-                <span>₹{{ total_price_after_coupon_discount }}</span>
+                <span class="total-after-discount">₹{{ total_price_after_coupon_discount }}</span>
             </div>
-            {% else %}
-            <div class="summary-item">
-                <span>Coupon Applied</span>
-                <span>₹ 0</span>
-            </div>
-            <div class="summary-item summary-total">
-                <span>TOTAL</span>
-                <span>₹{{ total_price_after_coupon_discount }}</span>
-            </div>
-            {% endif %}
             <a href="{% url 'checkout' %}" class="checkout-btn">Checkout</a>
         </div>
     </div>
@@ -214,6 +196,68 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Quantity control functionality
+        document.querySelectorAll('.quantity-control').forEach(control => {
+            const itemId = control.dataset.itemId;
+            const decreaseBtn = control.querySelector('.decrease');
+            const increaseBtn = control.querySelector('.increase');
+            const quantityDisplay = control.querySelector('.quantity-display');
+            
+            function updateQuantity(newQuantity) {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch(`/cart/update/${itemId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ quantity: newQuantity })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update quantity display
+                        quantityDisplay.textContent = newQuantity;
+                        
+                        // Update buttons state
+                        decreaseBtn.disabled = newQuantity <= 1;
+                        increaseBtn.disabled = newQuantity >= 5;
+                        
+                        // Update item price
+                        const itemPriceElement = control.closest('.cart-item').querySelector('.item-price');
+                        if (itemPriceElement) {
+                            itemPriceElement.textContent = `₹${data.item_total.toFixed(2)}`;
+                        }
+                        
+                        // Update order summary
+                        updateOrderSummary(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revert the quantity display on error
+                    quantityDisplay.textContent = parseInt(quantityDisplay.textContent);
+                });
+            }
+            
+            decreaseBtn.addEventListener('click', () => {
+                const currentQuantity = parseInt(quantityDisplay.textContent);
+                if (currentQuantity > 1) {
+                    updateQuantity(currentQuantity - 1);
+                }
+            });
+            
+            increaseBtn.addEventListener('click', () => {
+                const currentQuantity = parseInt(quantityDisplay.textContent);
+                if (currentQuantity < 5) {
+                    updateQuantity(currentQuantity + 1);
+                }
+            });
+        });
+
+        // Existing coupon code functionality
         const couponForm = document.getElementById('couponForm');
         const couponListButton = document.getElementById('couponListButton');
         const couponModal = document.getElementById('couponModal');
@@ -349,28 +393,31 @@
         }
     
         function updateOrderSummary(data) {
-            document.querySelector('.summary-total span:last-child').textContent = `₹${parseFloat(data.new_total).toFixed(2)}`;
-            const summaryItems = document.querySelector('.order-summary');
-            let couponItem = summaryItems.querySelector('.summary-item:nth-last-child(2)');
-            if (couponItem && couponItem.textContent.includes('Coupon Applied')) {
-                couponItem.querySelector('span:last-child').textContent = `-₹${parseFloat(data.discount_amount).toFixed(2)}`;
-            } else {
-                couponItem = document.createElement('div');
-                couponItem.className = 'summary-item';
-                couponItem.innerHTML = `<span>Coupon Applied</span><span>-₹${parseFloat(data.discount_amount).toFixed(2)}</span>`;
-                summaryItems.insertBefore(couponItem, summaryItems.querySelector('.summary-total'));
+            // Update items count and total actual price
+            const itemCountElement = document.querySelector('.item-count');
+            const totalActualPriceElement = document.querySelector('.total-actual-price');
+            if (itemCountElement) itemCountElement.textContent = data.items_count;
+            if (totalActualPriceElement) totalActualPriceElement.textContent = `₹${data.total_actual_price.toFixed(2)}`;
+            
+            // Update delivery charges
+            const deliveryChargeElement = document.querySelector('.delivery-charge-amount');
+            if (deliveryChargeElement) {
+                deliveryChargeElement.innerHTML = data.is_free_delivery ? 
+                    '<span style="color: green;">Free</span>' : 
+                    `<span>₹${data.delivery_charge}</span>`;
             }
-            const couponSection = document.querySelector('.coupon-section');
-            const appliedCouponDiv = document.createElement('div');
-            appliedCouponDiv.innerHTML = `
-                <div>
-                    <span>Applied Coupon: <strong>${data.coupon_code}</strong></span>
-                    <button id="removeCouponButton" class="coupon-button">Remove Coupon</button>
-                </div>
-            `;
-            couponSection.innerHTML = '';
-            couponSection.appendChild(appliedCouponDiv);
-            document.getElementById('removeCouponButton').addEventListener('click', removeCoupon);
+            
+            // Update savings
+            const totalDiscountElement = document.querySelector('.total-discount');
+            if (totalDiscountElement) totalDiscountElement.textContent = `₹${data.total_discount.toFixed(2)}`;
+            
+            // Update coupon discount
+            const discountAmountElement = document.querySelector('.discount-amount');
+            if (discountAmountElement) discountAmountElement.textContent = `₹${data.discount_amount.toFixed(2)}`;
+            
+            // Update final total
+            const totalAfterDiscountElement = document.querySelector('.total-after-discount');
+            if (totalAfterDiscountElement) totalAfterDiscountElement.textContent = `₹${data.total_after_discount.toFixed(2)}`;
         }
     
         function showMessage(message, type) {

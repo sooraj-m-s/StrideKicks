@@ -138,12 +138,6 @@ def delete_address(request, address_id):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_address(request):
-    context = {
-        'states': Address.STATE_CHOICES,
-        'form_data': {},
-        'errors': {}
-    }
-    
     if request.method == 'POST':
         form_data = {
             'full_name': request.POST.get('full_name'),
@@ -156,7 +150,6 @@ def add_address(request):
             'state': request.POST.get('state'),
             'default_address': request.POST.get('default_address') == 'on'
         }
-        context['form_data'] = form_data
 
         try:
             address = Address(user_id=request.user, **form_data)
@@ -166,14 +159,38 @@ def add_address(request):
                 Address.objects.filter(user_id=request.user).update(default_address=False)
             
             address.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Address added successfully!'})
+            
             messages.success(request, 'Address added successfully!')
+            next_url = request.POST.get('next')
+            if next_url and next_url == 'checkout':
+                return redirect('checkout')
             return redirect('manage_address')
+            
         except ValidationError as ve:
-            context['errors'] = ve.message_dict
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Please correct the following errors:',
+                    'errors': ve.message_dict
+                })
+            messages.error(request, 'Please correct the following errors.')
+            context = {'states': Address.STATE_CHOICES, 'form_data': form_data, 'errors': ve.message_dict}
+            return render(request, 'add_address.html', context)
         except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': f'Error adding address: {str(e)}'})
             messages.error(request, f'Error adding address: {str(e)}')
+            return redirect('manage_address')
 
-    return render(request, 'add_address.html', context)
+    data = {
+        'states': Address.STATE_CHOICES,
+        'form_data': {},
+        'errors': {}
+    }
+    return render(request, 'add_address.html', data)
 
 
 @login_required
@@ -234,16 +251,37 @@ def set_default_address(request, address_id):
 
 @login_required
 def toggle_wishlist(request, product_id, product_size):
-    variant = get_object_or_404(ProductVariant, product_id=product_id, size=product_size)
-    wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, variant=variant)
+    try:
+        existing_wishlist = Wishlist.objects.filter(
+            user=request.user,
+            variant__product_id=product_id,
+            variant__size=product_size
+        ).first()
+        if existing_wishlist:
+            existing_wishlist.delete()
+            return JsonResponse({"success": True, "message": "Product removed from wishlist."})
 
-    if created:
-        message = "Product added to wishlist."
-    else:
-        wishlist_item.delete()
-        message = "Product removed from wishlist."
+        variants = ProductVariant.objects.filter(product_id=product_id, size=product_size, is_deleted=False)
+        
+        if not variants.exists():
+            return JsonResponse({"success": False, "message": "Product variant not found."}, status=404)
+            
+        if variants.count() == 1:
+            variant = variants.first()
+        else:
+            color = request.POST.get('color')
+            if not color:
+                return JsonResponse({"success": False, "message": "Please select a color before adding to wishlist."}, status=400)
+            
+            variant = variants.filter(color=color).first()
+            if not variant:
+                return JsonResponse({"success": False, "message": "Product variant not found with specified color."}, status=404)
 
-    return JsonResponse({"success": True, "message": message})
+        Wishlist.objects.create(user=request.user, variant=variant)
+        return JsonResponse({"success": True, "message": "Product added to wishlist."})
+        
+    except Exception as e:
+        return JsonResponse({"success": False, "message": "An error occurred while processing your request."}, status=500)
 
 
 @login_required
