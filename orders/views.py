@@ -11,7 +11,7 @@ from decimal import Decimal
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from .razorpay_client import client
-from .models import Order, OrderItem
+from .models import Order, OrderItem, ReturnRequest
 from wallet.models import Wallet, WalletTransaction
 from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
@@ -66,7 +66,25 @@ def checkout(request):
             if payment_method == 'COD' and subtotal > 10000:
                 messages.error(request, 'COD not available on order above 10,000 rs.')
                 return redirect('checkout')
-            amount_in_paise = int(total_amount * 100)  # Convert to paise
+            amount_in_paise = int(total_amount * 100)  # Convert to pais
+
+            if payment_method == 'WP':
+                try:
+                    user_id = request.user
+                    wallet = Wallet.objects.get(user_id=user_id)
+                    if not wallet.is_active:
+                        messages.error(request, 'Your wallet is inactive. Please contact customer care.')
+                        return redirect('checkout')
+                    if wallet.balance < total_amount:
+                        messages.error(request, 'Insufficient balance in your wallet. Please choose a different payment method.')
+                        return redirect('checkout')
+                except Wallet.DoesNotExist:
+                    messages.error(request, 'Wallet not found. Please contact customer support.')
+                    return redirect('checkout')
+                except ValueError as e:
+                    messages.error(request, f"An error occurred while processing your wallet payment.")
+                    return redirect('checkout')
+            
             if payment_method == 'RP':
                 try:
                     razorpay_order = client.order.create({
@@ -123,20 +141,6 @@ def checkout(request):
             if payment_method == 'WP':
                 try:
                     with transaction.atomic():
-                        try:
-                            user_id = request.user
-                            if not user_id:
-                                raise ValueError('Wallet not found')
-                            wallet = Wallet.objects.get(user_id=user_id)
-                            if not wallet.is_active:
-                                raise ValueError('Wallet is inactive, please contact customer care.')
-                        except Wallet.DoesNotExist:
-                            raise ValueError('Wallet not created.')
-                        except ValueError as e:
-                            raise ValueError(str(e))
-                        if wallet.balance < total_amount:
-                            raise ValueError("Insufficient balance in wallet.")
-                        
                         wallet.balance -= total_amount
                         wallet.save()
                         WalletTransaction.objects.create(
@@ -146,14 +150,12 @@ def checkout(request):
                             status="Completed",
                             transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                         )
-                        for order_item in order.orderitem_set.all():
-                            order_item.item_payment_status = 'Paid'
-                            order_item.save()
+                        order.items.update(item_payment_status='Paid')
                 except ValueError as e:
                     messages.error(request, str(e))
                     return redirect('checkout')
                 except Exception as e:
-                    messages.error(request, "An error occurred while processing your payment. Please try again.")
+                    messages.error(request, f"An error occurred while processing your payment. Please try again.")
                     return redirect('checkout')
             if payment_method == 'RP':
                 data = {
@@ -267,7 +269,11 @@ def my_orders(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def order_detail(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(
+        Order.objects.select_related('shipping_address').prefetch_related('items__product_variant__product__images'),
+        id=order_id,
+        user=request.user
+    )
     return render(request, 'order_detail.html', {'order': order})
 
 
@@ -380,14 +386,12 @@ def return_product(request, item_id):
         else:
             order_item.cancellation_reason = reason
         
-        order_item.order.status = 'Returned'
+        order_item.order.status = 'Pending'
         order_item.order.save()
         
-        product_variant = order_item.product_variant
-        product_variant.quantity += order_item.quantity
-        product_variant.save()
+        # Create a return request
+        ReturnRequest.objects.create(order=order_item)
         
-        messages.success(request, 'Product return request has been submitted successfully.')
         return JsonResponse({'status': 'success', 'message': 'Product return request has been submitted successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES

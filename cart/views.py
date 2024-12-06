@@ -215,7 +215,11 @@ def apply_coupon(request, coupon_code):
             if coupon.discount_type == 'fixed':
                 discount = float(coupon.discount_value)
             else:
-                discount = float(cart.total_price * coupon.discount_value / 100)
+                if cart.total_price < 5000:
+                    effective_price = cart.total_price - 99
+                else:
+                    effective_price = cart.total_price
+                discount = float(effective_price * coupon.discount_value // 100)
                 if coupon.max_discount:
                     discount = min(discount, float(coupon.max_discount))
             

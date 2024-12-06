@@ -125,3 +125,52 @@ body {
     border-color: #666;
     color: #fff;
 }
+.modal-content {
+    background-color: #2c2c2c;
+    color: #ffffff;
+    border: 1px solid #444;
+}
+.modal-header {
+    border-bottom: 1px solid #444;
+}
+.modal-footer {
+    border-top: 1px solid #444;
+}
+.modal-title {
+    color: #ffffff;
+}
+.btn-close {
+    color: #ffffff;
+    opacity: 0.5;
+}
+.btn-close:hover {
+    opacity: 1;
+}
+.modal .table {
+    color: #ffffff;
+}
+.modal .table thead th {
+    border-bottom: 1px solid #444;
+    background-color: #1a1a1a;
+}
+.modal .table td, .modal .table th {
+    border-color: #444;
+}
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.modal-body::-webkit-scrollbar {
+    width: 10px;
+}
+.modal-body::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+.modal-body::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 5px;
+    border: 2px solid #1e1e1e;
+}
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}

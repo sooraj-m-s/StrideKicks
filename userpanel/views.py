@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import Users
-from product.models import Product, ProductVariant
+from product.models import ProductVariant
 from .models import Address, Wishlist
 
 

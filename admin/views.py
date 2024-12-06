@@ -111,6 +111,14 @@ def admin_orders(request):
     if status_filter:
         order_items_list = order_items_list.filter(status=status_filter)
     
+    # Get pending return requests
+    return_requests = OrderItem.objects.filter(
+        status='Returned'
+    ).select_related(
+        'order__user',
+        'product_variant'
+    )
+    
     # Pagination
     paginator = Paginator(order_items_list, 5)
     page = request.GET.get('page', 1)
@@ -124,12 +132,31 @@ def admin_orders(request):
     first_name = request.user.first_name.title()
     data = {
         'order_items': order_items,
+        'return_requests': return_requests,
         'status_choices': OrderItem.STATUS_CHOICES,
         'search_query': search_query,
         'status_filter': status_filter,
         'first_name': first_name,
     }
     return render(request, 'admin_orders.html', data)
+
+
+@login_required
+@admin_required
+def handle_return_request(request, request_id, action):
+    if request.method == 'POST':
+        order_item = get_object_or_404(OrderItem, id=request_id)
+        
+        if action == 'approve':
+            order_item.status = 'Returned'
+            order_item.item_payment_status = 'Refunded'
+        elif action == 'reject':
+            order_item.status = 'Delivered'
+        
+        order_item.save()
+        messages.success(request, f'Return request has been {action}d successfully.')
+        
+    return redirect('admin_orders')
 
 
 @login_required

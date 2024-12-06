@@ -87,7 +87,7 @@
                                         <div class="col-md-6 order-details">
                                             <h5 class="card-title">Order ID #{{ order.order_number }}</h5>
                                             <p class="mb-1">Date: {{ order.created_at|date:"F d, Y" }}</p>
-                                            <p class="mb-1">Payable: ₹{{ order.subtotal }}</p>
+                                            <p class="mb-1">Order Total: ₹{{ order.subtotal }}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex flex-wrap justify-content-end">
