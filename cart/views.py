@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib import messages
 from django.utils import timezone
 from decimal import Decimal
+import json
 from .models import Cart, CartItem
 from coupon.models import Coupon, UserCoupon
 from product.models import Product, ProductVariant
@@ -66,7 +67,6 @@ def update_cart_item(request, item_id):
         
         try:
             if request.headers.get('Content-Type') == 'application/json':
-                import json
                 data = json.loads(request.body)
                 quantity = int(data.get('quantity', 1))
             else:
@@ -109,10 +109,7 @@ def update_cart_item(request, item_id):
                     })
         except (ValueError, json.JSONDecodeError):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Invalid quantity'
-                }, status=400)
+                return JsonResponse({'success': False, 'error': 'Invalid quantity'}, status=400)
     
     return redirect('view_cart')
 

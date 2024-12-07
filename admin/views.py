@@ -4,17 +4,16 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
-from django.db.models import Q, Sum
 from django.utils import timezone
 from datetime import datetime, timedelta
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotAllowed
 from io import BytesIO
-from django.db.models import Count, Sum
+from django.db.models import Q, Count, Sum
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
 import json, uuid, time
 from users.forms import CustomAuthenticationForm
 from users.models import Users
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, ReturnRequest
 from wallet.models import Wallet, WalletTransaction
 from utils.decorators import admin_required
 
@@ -111,13 +110,13 @@ def admin_orders(request):
     if status_filter:
         order_items_list = order_items_list.filter(status=status_filter)
     
-    # Get pending return requests
+    # Get return requests (items with status 'Return Requested')
     return_requests = OrderItem.objects.filter(
-        status='Returned'
+        status='Return_Requested'
     ).select_related(
         'order__user',
-        'product_variant'
-    )
+        'product_variant__product'
+    ).order_by('-order__created_at')
     
     # Pagination
     paginator = Paginator(order_items_list, 5)
@@ -144,19 +143,57 @@ def admin_orders(request):
 @login_required
 @admin_required
 def handle_return_request(request, request_id, action):
-    if request.method == 'POST':
-        order_item = get_object_or_404(OrderItem, id=request_id)
-        
+    if not request.method == 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    
+    try:
+        order_item = OrderItem.objects.get(id=request_id, status='Return_Requested')
+        order = order_item.order
+        return_requests = ReturnRequest.objects.filter(order_id=request_id).last()
+
         if action == 'approve':
             order_item.status = 'Returned'
             order_item.item_payment_status = 'Refunded'
+            return_requests.status = 'Approved'
+
+            # refund by proportion
+            discount_deduction = (order_item.price / order.total_amount) * order.discount
+            refund = (order_item.price - discount_deduction) * order_item.quantity
+            order.total_amount -= refund
+            order.subtotal -= order_item.original_price
+
+            wallet, _ = Wallet.objects.get_or_create(user=order.user)
+            wallet.balance += refund
+            wallet.save()
+            WalletTransaction.objects.create(
+                            wallet=wallet,
+                            transaction_type="Cr",
+                            amount=refund,
+                            status="Completed",
+                            transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                        )
+
+            # qty
+            product_variant = order_item.product_variant
+            product_variant.quantity += order_item.quantity
+            product_variant.save()
+
+            messages.success(request, 'Return request approved successfully.')
         elif action == 'reject':
             order_item.status = 'Delivered'
+            return_requests.status = 'Rejected'
+            messages.error(request, 'Return request rejected.')
+        else:
+            messages.error(request, 'Invalid action.')
+            return redirect('orders')
         
         order_item.save()
-        messages.success(request, f'Return request has been {action}d successfully.')
+        return_requests.save()
+        return redirect('orders')
         
-    return redirect('admin_orders')
+    except OrderItem.DoesNotExist:
+        messages.error(request, 'Return request not found.')
+        return redirect('orders')
 
 
 @login_required

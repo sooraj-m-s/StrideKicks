@@ -152,9 +152,12 @@ body {
 .modal .table thead th {
     border-bottom: 1px solid #444;
     background-color: #1a1a1a;
+    color: #ffffff;
 }
 .modal .table td, .modal .table th {
     border-color: #444;
+    background-color: #444;
+    color: #ffffff;
 }
 .modal-body {
     max-height: 70vh;

@@ -40,7 +40,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="item-price">₹{{ item.price }}</div>
+                    <div class="item-price">₹{{ item.variant.sale_price }}</div>
                 </div>
                 <div class="quantity-control" data-item-id="{{ item.id }}">
                     <button type="button" class="quantity-btn decrease" {% if item.quantity <= 1 %}disabled{% endif %}>
@@ -224,12 +224,6 @@
                         // Update buttons state
                         decreaseBtn.disabled = newQuantity <= 1;
                         increaseBtn.disabled = newQuantity >= 5;
-                        
-                        // Update item price
-                        const itemPriceElement = control.closest('.cart-item').querySelector('.item-price');
-                        if (itemPriceElement) {
-                            itemPriceElement.textContent = `₹${data.item_total.toFixed(2)}`;
-                        }
                         
                         // Update order summary
                         updateOrderSummary(data);

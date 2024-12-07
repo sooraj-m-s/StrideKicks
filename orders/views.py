@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
 from decimal import Decimal
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import uuid, time
 from django.conf import settings
 from .razorpay_client import client
 from .models import Order, OrderItem, ReturnRequest
@@ -16,7 +17,6 @@ from wallet.models import Wallet, WalletTransaction
 from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
-import uuid, time
 from .invoice_utils import generate_invoice_pdf
 
 
@@ -47,7 +47,7 @@ def checkout(request):
         address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
 
-        if payment_method == 'CC' or payment_method == 'PP' or payment_method == 'BT':
+        if payment_method in ['CC', 'PP', 'BT']:
             messages.error(request, "Current payment method is not available. Please try another payment method.")
             return redirect('checkout')
         if not address_id or not payment_method:
@@ -151,6 +151,8 @@ def checkout(request):
                             transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                         )
                         order.items.update(item_payment_status='Paid')
+                        order.payment_status = True
+                        order.save()
                 except ValueError as e:
                     messages.error(request, str(e))
                     return redirect('checkout')
@@ -316,8 +318,12 @@ def razorpay_checkout(request, order_id):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cancel_product(request, item_id):
-    order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
-    order = order_item.order
+    try:
+        order_item = OrderItem.objects.get(id=item_id, order__user=request.user)
+        order = order_item.order
+    except OrderItem.DoesNotExist:
+        messages.error(request, 'Order item not found.')
+        return redirect('my_orders')
     
     if request.method == 'POST':
         reason = request.POST.get('cancellation_reason')
@@ -327,12 +333,6 @@ def cancel_product(request, item_id):
             order_item.custom_cancellation_reason = custom_reason
         else:
             order_item.cancellation_reason = reason
-        
-        # payment status
-        if order_item.item_payment_status == 'Paid':
-            order_item.item_payment_status = 'Refunded'
-        else:
-            order_item.item_payment_status = 'Processing'
 
         # order status
         order_item.is_cancelled = True
@@ -346,11 +346,11 @@ def cancel_product(request, item_id):
 
         # refund by proportion
         discount_deduction = (order_item.price / order.total_amount) * order.discount
-        refund = order_item.price - discount_deduction
+        refund = (order_item.price - discount_deduction) * order_item.quantity
         order.total_amount -= refund
         order.subtotal -= order_item.original_price
 
-        if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
+        if order.payment_method in ['RP', 'WP']:
             if order_item.item_payment_status == 'Paid':
                 wallet, _ = Wallet.objects.get_or_create(user=order.user)
                 wallet.balance += refund
@@ -362,7 +362,12 @@ def cancel_product(request, item_id):
                                 status="Completed",
                                 transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                             )
-            return JsonResponse({'status': 'success', 'message': 'Product successfully cancelled and the amount credited to your wallet.'})
+        
+        # payment status
+        if order_item.item_payment_status == 'Paid':
+            order_item.item_payment_status = 'Refunded'
+        else:
+            order_item.item_payment_status = 'Processing'
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES
@@ -386,8 +391,8 @@ def return_product(request, item_id):
         else:
             order_item.cancellation_reason = reason
         
-        order_item.order.status = 'Pending'
-        order_item.order.save()
+        order_item.status = 'Return_Requested'
+        order_item.save()
         
         # Create a return request
         ReturnRequest.objects.create(order=order_item)

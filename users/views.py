@@ -7,13 +7,13 @@ from django.conf import settings
 from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
-from django.conf import settings
-from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 import re, random, json
+from django.conf import settings
 from .models import Users
 from .forms import CustomAuthenticationForm
 
@@ -319,11 +319,11 @@ def reset_password(request):
     otp_expiry = timezone.datetime.fromisoformat(user_data['otp_expiry'])
     resend_available = timezone.now() + timedelta(seconds=30)
 
-    context = {
+    data = {
         'otp_expiry_timestamp': int(otp_expiry.timestamp()),
         'resend_available_timestamp': int(resend_available.timestamp()),
     }
-    return render(request, 'reset_password.html', context)
+    return render(request, 'reset_password.html', data)
 
 
 def logout_account(request):

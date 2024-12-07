@@ -52,6 +52,7 @@ class OrderItem(models.Model):
         ('On_the_Way', 'On the Way'),
         ('Delivered', 'Delivered'),
         ('Cancelled', 'Cancelled'),
+        ('Return_Requested', 'Return Requested'),
         ('Returned', 'Returned'),
         ('Refunded', 'Refunded'),
     ]
@@ -105,6 +106,11 @@ class OrderItem(models.Model):
                 self.generate_bill()
             self.item_payment_status = 'Paid'
         super().save(*args, **kwargs)
+        if self.item_payment_status == 'Paid':
+            order = self.order
+            if all(item.item_payment_status == 'Paid' for item in order.items.all()):
+                order.payment_status = True
+                order.save()
 
     def __str__(self):
         return f"{self.product_variant.product.name} - {self.quantity} pcs at ${self.price}"

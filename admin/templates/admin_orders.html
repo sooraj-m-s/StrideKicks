@@ -239,15 +239,37 @@
                                 <th>S.No</th>
                                 <th>Order ID</th>
                                 <th>Customer Name</th>
+                                <th>Product</th>
                                 <th>Amount</th>
-                                <th>Payment</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for item in return_requests %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ item.order.order_number }}</td>
+                                <td>{{ item.order.user.first_name }} {{ item.order.user.last_name }}</td>
+                                <td>{{ item.product_variant.product.name }}</td>
+                                <td>₹{{ item.price }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <form method="post" action="{% url 'handle_return_request' item.id 'approve' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        <form method="post" action="{% url 'handle_return_request' item.id 'reject' %}" class="d-inline ms-2">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
                             <tr>
                                 <td colspan="6" class="text-center">No return requests found</td>
                             </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
