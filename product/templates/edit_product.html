@@ -380,57 +380,57 @@ body {
 
                 <div id="variantsContainer">
                     {% for variant in product.variants.all %}
-                    <div class="variant-container mb-4" data-variant-id="{{ variant.id }}">
-                        <h4>Variant {{ forloop.counter }}</h4>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label for="color{{ forloop.counter }}" class="form-label">Color:</label>
-                                <input type="text" class="form-control color-input" id="color{{ forloop.counter }}" name="color{{ forloop.counter }}" value="{{ variant.color }}">
-                                <div class="error-message" id="color{{ forloop.counter }}_error"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="size{{ forloop.counter }}" class="form-label">Size:</label>
-                                <select class="form-select size-input" id="size{{ forloop.counter }}" name="size{{ forloop.counter }}">
-                                    <option value="">Select Size</option>
-                                    {% for size in sizes %}
-                                        <option value="{{ size }}" {% if size == variant.size %}selected{% endif %}>{{ size }}</option>
-                                    {% endfor %}
-                                </select>
-                                <div class="error-message" id="size{{ forloop.counter }}_error"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="quantity{{ forloop.counter }}" class="form-label">Quantity:</label>
-                                <input type="number" class="form-control" id="quantity{{ forloop.counter }}" name="quantity{{ forloop.counter }}" value="{{ variant.quantity }}">
-                                <div class="error-message" id="quantity{{ forloop.counter }}_error"></div>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="actual_price{{ forloop.counter }}" class="form-label">Actual Price:</label>
-                                <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" value="{{ variant.actual_price }}" step="0.01">
-                                <div class="error-message" id="actual_price{{ forloop.counter }}_error"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="sale_price{{ forloop.counter }}" class="form-label">Sale Price:</label>
-                                <input type="number" class="form-control sale-price-input" id="sale_price{{ forloop.counter }}" name="sale_price{{ forloop.counter }}" value="{{ variant.sale_price }}" step="0.01">
-                                <div class="error-message" id="sale_price{{ forloop.counter }}_error"></div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="variant_image{{ forloop.counter }}" class="form-label">Variant Images:</label>
-                            <input type="file" class="form-control file-input" id="variant_image{{ forloop.counter }}" name="variant_image{{ forloop.counter }}[]" accept="image/*" multiple>
-                            <div class="image-preview-container" id="imagePreview{{ forloop.counter }}">
-                                {% for image in product.images.all %}
-                                <div class="image-preview-item">
-                                    <img src="{{ image.image }}" alt="Existing Image">
-                                    <button type="button" class="btn btn-sm btn-danger remove-existing-image" data-image-id="{{ image.id }}">×</button>
+                        <div class="variant-container mb-4" data-variant-id="{{ variant.id }}">
+                            <h4>Variant {{ forloop.counter }}</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="color{{ forloop.counter }}" class="form-label">Color:</label>
+                                    <input type="text" class="form-control color-input" id="color{{ forloop.counter }}" name="color{{ forloop.counter }}" value="{{ variant.color }}">
+                                    <div class="error-message" id="color{{ forloop.counter }}_error"></div>
                                 </div>
-                                {% endfor %}
+                                <div class="col-md-4">
+                                    <label for="size{{ forloop.counter }}" class="form-label">Size:</label>
+                                    <select class="form-select size-input" id="size{{ forloop.counter }}" name="size{{ forloop.counter }}">
+                                        <option value="">Select Size</option>
+                                        {% for size in sizes %}
+                                            <option value="{{ size }}" {% if size == variant.size %}selected{% endif %}>{{ size }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="error-message" id="size{{ forloop.counter }}_error"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="quantity{{ forloop.counter }}" class="form-label">Quantity:</label>
+                                    <input type="number" class="form-control" id="quantity{{ forloop.counter }}" name="quantity{{ forloop.counter }}" value="{{ variant.quantity }}">
+                                    <div class="error-message" id="quantity{{ forloop.counter }}_error"></div>
+                                </div>
                             </div>
-                            <div class="error-message" id="variant_image{{ forloop.counter }}_error"></div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="actual_price{{ forloop.counter }}" class="form-label">Actual Price:</label>
+                                    <input type="number" class="form-control actual-price-input" id="actual_price{{ forloop.counter }}" name="actual_price{{ forloop.counter }}" value="{{ variant.actual_price }}" step="0.01">
+                                    <div class="error-message" id="actual_price{{ forloop.counter }}_error"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="sale_price{{ forloop.counter }}" class="form-label">Sale Price:</label>
+                                    <input type="number" class="form-control sale-price-input" id="sale_price{{ forloop.counter }}" name="sale_price{{ forloop.counter }}" value="{{ variant.sale_price }}" step="0.01">
+                                    <div class="error-message" id="sale_price{{ forloop.counter }}_error"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="variant_image{{ forloop.counter }}" class="form-label">Variant Images:</label>
+                                <input type="file" class="form-control file-input" id="variant_image{{ forloop.counter }}" name="variant_image{{ forloop.counter }}[]" accept="image/*" multiple>
+                                <div class="image-preview-container" id="imagePreview{{ forloop.counter }}">
+                                    {% for image in variant.images.all %}
+                                    <div class="image-preview-item">
+                                        <img src="{{ image.image }}" alt="Existing Image">
+                                        <button type="button" class="btn btn-sm btn-danger remove-existing-image" data-image-id="{{ image.id }}">×</button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="error-message" id="variant_image{{ forloop.counter }}_error"></div>
+                            </div>
+                            <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
                         </div>
-                        <button type="button" class="btn btn-danger remove-variant-btn">Remove Variant</button>
-                    </div>
                     {% endfor %}
                 </div>
 

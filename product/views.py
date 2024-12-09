@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Min, Sum
+from django.db.models import Q, Min, Sum, Prefetch
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -184,7 +184,8 @@ def add_product(request):
                         cloudinary_url = cloudinary_response['secure_url']
                         ProductImage.objects.create(
                             image=cloudinary_url, 
-                            product=product
+                            product=product,
+                            variant=product_variant
                         )
 
                 product.total_quantity = total_quantity
@@ -216,7 +217,15 @@ def cancel_add_product(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_product(request, product_id):
-    product = get_object_or_404(Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images'), id=product_id)
+    product = get_object_or_404(
+        Product.objects.select_related('brand', 'category').prefetch_related(
+            Prefetch('variants', queryset=ProductVariant.objects.prefetch_related(
+                Prefetch('images', queryset=ProductImage.objects.filter(is_deleted=False))
+            )),
+            Prefetch('images', queryset=ProductImage.objects.filter(is_deleted=False, variant__isnull=True))
+        ),
+        id=product_id
+    )
     categories = Category.objects.filter(is_deleted=False, is_listed=True)
     brands = Brand.objects.filter(is_deleted=False, is_listed=True)
     sizes = ProductVariant.STATUS_CHOICES
