@@ -21,66 +21,61 @@
     <div class="cart-content">
         <div class="cart-items">
             {% for item in cart_items %}
-            <div class="cart-item">
-                <a href="{% url 'product_detail' item.product.id %}">
-                    <img src="{{ item.product.images.first.image }}" alt="{{ item.product.name }}" class="item-image">
-                </a>
-                <div class="item-details">
-                    <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none text-dark">
-                        <div class="fw-bold">{{ item.product.name }}</div>
-                    </a>
-                    <div class="item-meta">
-                        <div>Color: {{ item.variant.color }}</div>
-                        <div>Size: {{ item.variant.size }}</div>
-                        <div>
-                            {% if item.in_stock > 0 %}
-                                <span style="color: green;">In Stock</span>
-                            {% else %}
-                                <span style="color: red;">Out of Stock</span>
-                            {% endif %}
+            <div class="card mb-3">
+                <div class="row g-0">
+                    <div class="col-md-2">
+                        <img src="{{ item.product.images.first.image }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                    </div>
+                    <div class="col-md-10">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="card-title">{{ item.product.name }}</h5>
+                                <div class="text-end">
+                                    <p class="mb-0">₹{{ item.variant.sale_price }}</p>
+                                    {% with offer_details=item.get_offer_details %}
+                                        {% if offer_details %}
+                                        <div class="text-success">
+                                            <small>{{ offer_details.name }}</small>
+                                            <p class="mb-0">-₹{{ item.get_offer_discount|floatformat:2 }}</p>
+                                        </div>
+                                        <p class="fw-bold mb-0">Final: ₹{{ item.get_final_price|floatformat:2 }}</p>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <p class="card-text">
+                                <small class="text-muted">Color: {{ item.variant.color }}, Size: {{ item.variant.size }}</small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="quantity-controls" data-item-id="{{ item.id }}">
+                                    <button class="btn btn-sm btn-outline-secondary decrease" {% if item.quantity <= 1 %}disabled{% endif %}>-</button>
+                                    <span class="quantity-display mx-2">{{ item.quantity }}</span>
+                                    <button class="btn btn-sm btn-outline-secondary increase" {% if item.quantity >= 5 %}disabled{% endif %}>+</button>
+                                </div>
+                                <form method="POST" action="{% url 'remove_from_cart' item.id %}" class="remove-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger remove-item">Remove</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                    <div class="item-price">₹{{ item.variant.sale_price }}</div>
                 </div>
-                <div class="quantity-control" data-item-id="{{ item.id }}">
-                    <button type="button" class="quantity-btn decrease" {% if item.quantity <= 1 %}disabled{% endif %}>
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <span class="quantity-display">{{ item.quantity }}</span>
-                    <button type="button" class="quantity-btn increase" {% if item.quantity >= 5 or item.quantity >= item.variant.quantity %}disabled{% endif %}>
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-                <form method="POST" action="{% url 'remove_from_cart' item.id %}" class="remove-form">
-                    {% csrf_token %}
-                    <button type="submit" class="remove-item">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </form>
             </div>
             {% endfor %}
         </div>
         <div class="order-summary">
-            <div class="coupon-section">
-                {% if not coupon_code %}
-                <form id="couponForm" class="coupon-form">
-                    {% csrf_token %}
-                    <input type="text" class="coupon-input" id="couponCode" name="coupon_code" placeholder="Enter coupon code">
-                    <button class="coupon-button" type="submit">Apply</button>
-                </form>
-                <button id="couponListButton" class="coupon-list-button">View available coupons</button>
-                <div id="couponResult" class="coupon-result"></div>
-                {% else %}
-                <div>
-                    <span>Applied Coupon: <strong>{{ coupon_code.code }}</strong></span>
-                    <button id="removeCouponButton" class="coupon-button">Remove Coupon</button>
-                </div>
-                {% endif %}
-            </div>
             <h2 class="summary-title">ORDER SUMMARY</h2>
             <div class="summary-item items-count">
                 <span><span class="item-count">{{ cart.items.count }}</span> ITEMS</span>
                 <span class="total-actual-price">₹{{ total_actual_price }}</span>
+            </div>
+            <div class="summary-item normal-discount">
+                <span>Discount</span>
+                <span class="total-normal-discount text-success">₹{{ total_normal_discount }}</span>
+            </div>
+            <div class="summary-item offer-discount">
+                <span>Offer Discount</span>
+                <span class="total-offer-discount text-success">₹{{ total_offer_discount }}</span>
             </div>
             <div class="summary-item delivery-charges">
                 <span>Delivery Charges</span>
@@ -92,17 +87,24 @@
                     {% endif %}
                 </span>
             </div>
-            <div class="summary-item savings">
-                <span>Saved</span>
-                <span class="total-discount">₹{{ total_discount }}</span>
-            </div>
             <div class="summary-item coupon-discount">
                 <span>Coupon Applied</span>
-                <span class="discount-amount">₹ {{ discount_amount|default:"0" }}</span>
+                <span class="discount-amount text-success">₹{{ discount_amount|default:"0" }}</span>
             </div>
             <div class="summary-item summary-total">
                 <span>TOTAL</span>
-                <span class="total-after-discount">₹{{ total_price_after_coupon_discount }}</span>
+                <span class="total-after-discount">₹{{ total_after_coupon }}</span>
+            </div>
+            <div class="coupon-section">
+                <div class="input-group mb-3">
+                    <input type="text" id="couponCode" class="form-control" placeholder="Enter coupon code" value="{% if coupon_code %}{{ coupon_code.code }}{% endif %}" {% if coupon_code %}readonly{% endif %}>
+                    {% if coupon_code %}
+                        <button class="btn btn-outline-danger" type="button" id="removeCoupon">Remove</button>
+                    {% else %}
+                        <button class="btn btn-outline-secondary" type="button" id="applyCoupon">Apply</button>
+                    {% endif %}
+                </div>
+                <button class="btn btn-link p-0" type="button" id="showCoupons" {% if coupon_code %}disabled{% endif %}>View Available Coupons</button>
             </div>
             <a href="{% url 'checkout' %}" class="checkout-btn">Checkout</a>
         </div>
@@ -196,21 +198,18 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Quantity control functionality
-        document.querySelectorAll('.quantity-control').forEach(control => {
+        document.querySelectorAll('.quantity-controls').forEach(control => {
             const itemId = control.dataset.itemId;
             const decreaseBtn = control.querySelector('.decrease');
             const increaseBtn = control.querySelector('.increase');
             const quantityDisplay = control.querySelector('.quantity-display');
             
             function updateQuantity(newQuantity) {
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
                 fetch(`/cart/update/${itemId}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({ quantity: newQuantity })
@@ -225,13 +224,82 @@
                         decreaseBtn.disabled = newQuantity <= 1;
                         increaseBtn.disabled = newQuantity >= 5;
                         
+                        // Find the cart item card
+                        const cartItemCard = control.closest('.card');
+                        if (cartItemCard) {
+                            // Update sale price
+                            const salePriceElement = cartItemCard.querySelector('.card-body p.mb-0');
+                            if (salePriceElement) {
+                                salePriceElement.textContent = `₹${data.item_sale_total.toFixed(2)}`;
+                            }
+                            
+                            // Update offer discount if present
+                            const offerDiscountElement = cartItemCard.querySelector('.text-success p.mb-0');
+                            if (offerDiscountElement) {
+                                offerDiscountElement.textContent = `-₹${data.item_offer_discount.toFixed(2)}`;
+                                
+                                // Update final price
+                                const finalPriceElement = cartItemCard.querySelector('.fw-bold.mb-0');
+                                if (finalPriceElement) {
+                                    finalPriceElement.textContent = `Final: ₹${data.item_final_price.toFixed(2)}`;
+                                }
+                            }
+                        }
+                        
                         // Update order summary
-                        updateOrderSummary(data);
+                        const summary = document.querySelector('.order-summary');
+                        if (summary) {
+                            // Update total items and actual price
+                            const itemCount = summary.querySelector('.item-count');
+                            if (itemCount) itemCount.textContent = data.items_count;
+                            
+                            const totalActualPrice = summary.querySelector('.total-actual-price');
+                            if (totalActualPrice) totalActualPrice.textContent = `₹${data.total_actual_price.toFixed(2)}`;
+                            
+                            // Update normal discount
+                            const normalDiscount = summary.querySelector('.total-normal-discount');
+                            if (normalDiscount) normalDiscount.textContent = `-₹${data.total_normal_discount.toFixed(2)}`;
+                            
+                            // Update offer discount
+                            const offerDiscount = summary.querySelector('.total-offer-discount');
+                            if (offerDiscount) offerDiscount.textContent = `-₹${data.total_offer_discount.toFixed(2)}`;
+                            
+                            // Update delivery charge
+                            const deliveryCharge = summary.querySelector('.delivery-charge-amount');
+                            if (deliveryCharge) {
+                                deliveryCharge.innerHTML = data.is_free_delivery ? 
+                                    '<span style="color: green;">Free</span>' : 
+                                    `<span>₹${data.delivery_charge}</span>`;
+                            }
+                            
+                            // Update final total
+                            const finalTotal = summary.querySelector('.total-after-discount');
+                            if (finalTotal) finalTotal.textContent = `₹${data.total_after_coupon.toFixed(2)}`;
+                        }
+                    } else {
+                        Toastify({
+                            text: data.message || 'Error updating quantity',
+                            duration: 3000,
+                            gravity: "top",
+                            position: "center",
+                            style: {
+                                background: "#dc3545"
+                            }
+                        }).showToast();
+                        quantityDisplay.textContent = parseInt(quantityDisplay.textContent);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    // Revert the quantity display on error
+                    Toastify({
+                        text: "An error occurred while updating the quantity",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                            background: "#dc3545"
+                        }
+                    }).showToast();
                     quantityDisplay.textContent = parseInt(quantityDisplay.textContent);
                 });
             }
@@ -250,183 +318,160 @@
                 }
             });
         });
+    });
 
-        // Existing coupon code functionality
-        const couponForm = document.getElementById('couponForm');
-        const couponListButton = document.getElementById('couponListButton');
-        const couponModal = document.getElementById('couponModal');
-        const closeModal = document.querySelector('.close');
-        const removeCouponButton = document.getElementById('removeCouponButton');
-    
-        if (couponForm) {
-            couponForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const couponCode = document.getElementById('couponCode').value;
-                applyCoupon(couponCode);
-            });
-        }
+    // Coupon functionality
+    const couponInput = document.getElementById('couponCode');
+    const applyCouponBtn = document.getElementById('applyCoupon');
+    const removeCouponBtn = document.getElementById('removeCoupon');
+    const showCouponsBtn = document.getElementById('showCoupons');
+    const couponModal = document.getElementById('couponModal');
+    const closeModalBtn = document.querySelector('.close');
+    const couponList = document.getElementById('couponList');
 
-        if (couponListButton) {
-            couponListButton.addEventListener('click', function() {
-                fetchAvailableCoupons();
-                couponModal.style.display = "block";
-            });
-        }
-
-        if (closeModal) {
-            closeModal.addEventListener('click', function() {
-                couponModal.style.display = "none";
-            });
-        }
-
-        if (removeCouponButton) {
-            removeCouponButton.addEventListener('click', function() {
-                removeCoupon();
-            });
-        }
-
-        window.addEventListener('click', function(event) {
-            if (event.target == couponModal) {
-                couponModal.style.display = "none";
+    if (applyCouponBtn) {
+        applyCouponBtn.addEventListener('click', function() {
+            const couponCode = couponInput.value.trim();
+            if (!couponCode) {
+                Toastify({
+                    text: "Please enter a coupon code",
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+                return;
             }
-        });
-    
-        function applyCoupon(couponCode) {
+            
             fetch(`/cart/apply-coupon/${couponCode}/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
-                },
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Toastify({
-                        text: data.message,
-                        duration: 3000,
-                        close: true,
-                        gravity: "top",
-                        position: "center",
-                        backgroundColor: "green",
-                    }).showToast();
-                    location.reload();
+                    window.location.reload();
                 } else {
                     Toastify({
                         text: data.message,
                         duration: 3000,
-                        close: true,
                         gravity: "top",
                         position: "center",
-                        backgroundColor: "red",
+                        style: {
+                            background: "#dc3545"
+                        }
                     }).showToast();
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+            });
+        });
+    }
+
+    function removeCoupon() {
+        fetch('/cart/remove-coupon/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
                 Toastify({
-                    text: "An error occurred while applying the coupon. Please try again.",
+                    text: data.message || "Error removing coupon",
                     duration: 3000,
-                    close: true,
                     gravity: "top",
                     position: "center",
-                    backgroundColor: "red",
+                    style: {
+                        background: "#dc3545"
+                    }
                 }).showToast();
-            });
-        }
-    
-        function fetchAvailableCoupons() {
-            fetch('/cart/available-coupons/', {
-                method: 'GET',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                const couponList = document.getElementById('couponList');
-                couponList.innerHTML = '';
-                data.coupons.forEach(coupon => {
-                    const couponElement = document.createElement('div');
-                    couponElement.textContent = `${coupon.code} - ${coupon.description}`;
-                    couponElement.style.cursor = 'pointer';
-                    couponElement.addEventListener('click', function() {
-                        applyCoupon(coupon.code);
-                        couponModal.style.display = "none";
-                    });
-                    couponList.appendChild(couponElement);
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('An error occurred while fetching available coupons.', 'error');
-            });
-        }
-    
-        function removeCoupon() {
-            fetch('/cart/remove-coupon/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showMessage('Coupon removed successfully', 'success');
-                    location.reload();
-                } else {
-                    showMessage(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('An error occurred while removing the coupon. Please try again.', 'error');
-            });
-        }
-    
-        function updateOrderSummary(data) {
-            // Update items count and total actual price
-            const itemCountElement = document.querySelector('.item-count');
-            const totalActualPriceElement = document.querySelector('.total-actual-price');
-            if (itemCountElement) itemCountElement.textContent = data.items_count;
-            if (totalActualPriceElement) totalActualPriceElement.textContent = `₹${data.total_actual_price.toFixed(2)}`;
-            
-            // Update delivery charges
-            const deliveryChargeElement = document.querySelector('.delivery-charge-amount');
-            if (deliveryChargeElement) {
-                deliveryChargeElement.innerHTML = data.is_free_delivery ? 
-                    '<span style="color: green;">Free</span>' : 
-                    `<span>₹${data.delivery_charge}</span>`;
             }
-            
-            // Update savings
-            const totalDiscountElement = document.querySelector('.total-discount');
-            if (totalDiscountElement) totalDiscountElement.textContent = `₹${data.total_discount.toFixed(2)}`;
-            
-            // Update coupon discount
-            const discountAmountElement = document.querySelector('.discount-amount');
-            if (discountAmountElement) discountAmountElement.textContent = `₹${data.discount_amount.toFixed(2)}`;
-            
-            // Update final total
-            const totalAfterDiscountElement = document.querySelector('.total-after-discount');
-            if (totalAfterDiscountElement) totalAfterDiscountElement.textContent = `₹${data.total_after_discount.toFixed(2)}`;
-        }
-    
-        function showMessage(message, type) {
-            const popup = document.createElement('div');
-            popup.className = `popup ${type}`;
-            popup.textContent = message;
-            document.body.appendChild(popup);
-            popup.classList.add('show');
-            setTimeout(() => {
-                popup.classList.remove('show');
-                setTimeout(() => {
-                    document.body.removeChild(popup);
-                }, 300);
-            }, 5000);
+        });
+    }
+
+    if (removeCouponBtn) {
+        removeCouponBtn.addEventListener('click', removeCoupon);
+    }
+
+    showCouponsBtn.addEventListener('click', function() {
+        fetch('/cart/available-coupons/', {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            couponList.innerHTML = '';
+            data.coupons.forEach(coupon => {
+                const couponDiv = document.createElement('div');
+                couponDiv.className = 'coupon-item';
+                couponDiv.innerHTML = `
+                    <div class="coupon-info">
+                        <div class="coupon-code">${coupon.code}</div>
+                        <div class="coupon-description">${coupon.description}</div>
+                    </div>
+                    <button class="apply-coupon-btn" onclick="applyCouponFromModal('${coupon.code}')">Apply</button>
+                `;
+                couponList.appendChild(couponDiv);
+            });
+            couponModal.style.display = 'block';
+        });
+    });
+
+    closeModalBtn.addEventListener('click', function() {
+        couponModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(event) {
+        if (event.target == couponModal) {
+            couponModal.style.display = 'none';
         }
     });
+
+    function applyCouponFromModal(couponCode) {
+        fetch(`/cart/apply-coupon/${couponCode}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                Toastify({
+                    text: data.message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Toastify({
+                text: "An error occurred while applying the coupon",
+                duration: 3000,
+                gravity: "top",
+                position: "center",
+                style: {
+                    background: "#dc3545"
+                }
+            }).showToast();
+        });
+    }
 </script>
 {% endblock %}

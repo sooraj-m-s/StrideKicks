@@ -40,7 +40,8 @@ class CartItem(models.Model):
         self.clean()
 
         if self.quantity > 0:
-            self.total_price = self.price * self.quantity
+            # Calculate total based on sale price and quantity
+            self.total_price = self.variant.sale_price * self.quantity
         else:
             self.total_price = 0
 
@@ -53,3 +54,97 @@ class CartItem(models.Model):
 
     def get_actual_price(self):
         return self.variant.actual_price * self.quantity
+
+    def get_subtotal(self):
+        """Get subtotal based on sale price and quantity"""
+        return self.variant.sale_price * self.quantity
+
+    def get_offer_discount(self):
+        """Calculate offer discount based on sale price"""
+        from wallet.models import Offer
+        from django.utils import timezone
+        
+        now = timezone.now()
+        total_sale_price = self.variant.sale_price * self.quantity
+        
+        # Check product offer
+        product_offer = Offer.objects.filter(
+            product=self.variant.product,
+            offer_type='Product',
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).order_by('-discount_percentage').first()
+        
+        # Check category offer
+        category_offer = Offer.objects.filter(
+            category=self.variant.product.category,
+            offer_type='Category',
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).order_by('-discount_percentage').first()
+        
+        # Get the best discount
+        product_discount = product_offer.discount_percentage if product_offer else 0
+        category_discount = category_offer.discount_percentage if category_offer else 0
+        
+        best_discount = max(product_discount, category_discount)
+        if best_discount > 0:
+            return (total_sale_price * best_discount) / 100
+        return 0
+    
+    def get_final_price(self):
+        """Calculate final price after offer discount"""
+        total_sale_price = self.variant.sale_price * self.quantity
+        offer_discount = self.get_offer_discount()
+        return total_sale_price - offer_discount
+
+    def get_offer_details(self):
+        """Get details of the applied offer"""
+        from wallet.models import Offer
+        from django.utils import timezone
+        
+        now = timezone.now()
+        
+        # Check product offer
+        product_offer = Offer.objects.filter(
+            product=self.variant.product,
+            offer_type='Product',
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).order_by('-discount_percentage').first()
+        
+        # Check category offer
+        category_offer = Offer.objects.filter(
+            category=self.variant.product.category,
+            offer_type='Category',
+            start_date__lte=now,
+            end_date__gte=now,
+            is_active=True
+        ).order_by('-discount_percentage').first()
+        
+        if not product_offer and not category_offer:
+            return None
+            
+        # Return the better offer
+        if (product_offer and category_offer and 
+            product_offer.discount_percentage >= category_offer.discount_percentage):
+            return {
+                'name': product_offer.name,
+                'type': 'Product',
+                'discount': product_offer.discount_percentage
+            }
+        elif category_offer:
+            return {
+                'name': category_offer.name,
+                'type': 'Category',
+                'discount': category_offer.discount_percentage
+            }
+        else:
+            return {
+                'name': product_offer.name,
+                'type': 'Product',
+                'discount': product_offer.discount_percentage
+            }
