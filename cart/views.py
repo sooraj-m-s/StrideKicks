@@ -85,6 +85,13 @@ def update_cart_item(request, item_id):
                     'message': 'Quantity must be between 1 and 5'
                 })
             
+            # Check available stock
+            if quantity > cart_item.variant.quantity:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Only {cart_item.variant.quantity} items available in stock'
+                })
+            
             # Update quantity and save (this will recalculate total_price)
             cart_item.quantity = quantity
             cart_item.save()
@@ -176,6 +183,13 @@ def add_to_cart(request, product_id):
         variant = get_object_or_404(ProductVariant, id=variant_id) if variant_id else None
         
         try:
+            # Check if variant exists and has stock
+            if not variant or variant.quantity < 1:
+                messages.error(request, 'This product is out of stock')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Out of stock'})
+                return redirect('product_detail', product_id=product_id)
+            
             if variant and variant.sale_price:
                 discount = (variant.actual_price - variant.sale_price) * quantity
             else:
@@ -192,7 +206,21 @@ def add_to_cart(request, product_id):
                 }
             )
             
+            # Check if adding quantity exceeds stock
             new_quantity = cart_item.quantity + quantity
+            if new_quantity > variant.quantity:
+                messages.error(request, f'Only {variant.quantity} items available in stock')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': f'Only {variant.quantity} items available in stock'})
+                return redirect('product_detail', product_id=product_id)
+            
+            # Check if adding quantity exceeds maximum limit
+            if new_quantity > 5:
+                messages.error(request, 'Maximum quantity limit is 5')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': 'Maximum quantity limit is 5'})
+                return redirect('product_detail', product_id=product_id)
+            
             cart_item.quantity = new_quantity
             cart_item.save()
             messages.success(request, 'Product added to cart successfully')

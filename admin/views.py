@@ -226,23 +226,25 @@ def update_order_item(request, item_id):
         item.is_cancelled = 'True'
         item.save()
 
-        # refund by proportion
-        discount_deduction = (order_item.price / order.total_amount) * order.discount
-        refund = order_item.price - discount_deduction
-        order.total_amount -= refund
-        order.subtotal -= order_item.original_price
-        if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
-            if order_item.item_payment_status == 'Paid':
-                wallet, _ = Wallet.objects.get_or_create(user=order.user)
-                wallet.balance += refund
-                wallet.save()
-                WalletTransaction.objects.create(
-                                wallet=wallet,
-                                transaction_type="Cr",
-                                amount=refund,
-                                status="Completed",
-                                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
-                            )
+        if request.POST.get('status') == 'Returned' and order_item.item_payment_status == 'Paid':
+            # refund by proportion
+            discount_deduction = (order_item.price / order.total_amount) * order.discount
+            refund = order_item.price - discount_deduction
+            order.total_amount -= refund
+            order.subtotal -= order_item.original_price
+            order.save()
+            if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
+                if order_item.item_payment_status == 'Paid':
+                    wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                    wallet.balance += refund
+                    wallet.save()
+                    WalletTransaction.objects.create(
+                                    wallet=wallet,
+                                    transaction_type="Cr",
+                                    amount=refund,
+                                    status="Completed",
+                                    transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                                )
         return redirect('admin_order_overview', order_id=item.order.id) 
 
 

@@ -47,17 +47,21 @@ def product_detail(request, product_id):
     related_products = Product.objects.filter(is_deleted=False).exclude(id=product.id)[:4]
     variants = product.variants.all()
 
-    available_variants = [
-        {
+    available_variants = []
+    for variant in variants:
+        variant_images = [img.image for img in variant.images.filter(is_deleted=False)]
+        if not variant_images:  # If no variant images, use product images
+            variant_images = [img.image for img in product.images.filter(is_deleted=False)]
+            
+        available_variants.append({
             'id': variant.id,
             'size': variant.size,
             'color': variant.color,
             'sale_price': str(variant.sale_price),
             'actual_price': str(variant.actual_price),
             'quantity': variant.quantity,
-        }
-        for variant in variants
-    ]
+            'images': variant_images
+        })
     is_wishlisted = Wishlist.objects.filter(user=request.user, variant__product=product).exists()
 
     # get review
