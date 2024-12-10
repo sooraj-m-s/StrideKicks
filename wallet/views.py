@@ -46,7 +46,8 @@ def offer_management(request):
     search_query = request.GET.get('search', '')
     offers = Offer.objects.filter(
         Q(name__icontains=search_query) |
-        Q(offer_type__icontains=search_query)
+        Q(offer_type__icontains=search_query),
+        is_active=True
     ).order_by('-created_at')
 
     context = {
@@ -69,6 +70,9 @@ def add_offer(request):
         discount_percentage = request.POST.get('discount_percentage')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
+
+        if Offer.objects.filter(name__iexact=name).exists():
+            return JsonResponse({'success': False, 'message': 'An offer with this name already exists.'})
         
         try:
             offer = Offer(
@@ -135,9 +139,10 @@ def delete_offer(request, offer_id):
         offer.is_active = False
         offer.save()
         messages.success(request, 'Offer deleted successfully!')
+        return JsonResponse({'success': True, 'message': 'Offer deleted successfully!'})
     except Exception as e:
         messages.error(request, f'Error deleting offer: {str(e)}')
-    return redirect('offers_view')
+        return JsonResponse({'error': True, 'message': f'Error deleting offer: {str(e)}'})
 
 
 @login_required

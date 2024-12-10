@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         button.addEventListener('click', function() {
             if (confirm('Are you sure you want to delete this offer?')) {
                 const offerId = this.dataset.offerId;
-                fetch(`/admin/delete-offer/${offerId}/`, {
+                fetch(`/wallet/delete-offer/${offerId}/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': '{{ csrf_token }}'
