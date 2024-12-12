@@ -157,18 +157,20 @@ def handle_return_request(request, request_id, action):
             return_requests.status = 'Approved'
 
             # refund by proportion
-            discount_deduction = (order_item.price / order.total_amount) * order.discount
-            refund = (order_item.price - discount_deduction) * order_item.quantity
-            order.total_amount -= refund
-            order.subtotal -= order_item.original_price
+            total_item_price = order_item.price * order_item.quantity
+            proportion = total_item_price / (order.total_amount + order.discount)
+            allocated_discount = order.discount * proportion
+            returned_item_price = order_item.price  * order_item.quantity
+            proportional_discount = (allocated_discount / order_item.quantity) * order_item.quantity
+            refund_amount = returned_item_price - proportional_discount
 
             wallet, _ = Wallet.objects.get_or_create(user=order.user)
-            wallet.balance += refund
+            wallet.balance += int(refund_amount)
             wallet.save()
             WalletTransaction.objects.create(
                             wallet=wallet,
                             transaction_type="Cr",
-                            amount=refund,
+                            amount=refund_amount,
                             status="Completed",
                             transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                         )
@@ -228,24 +230,29 @@ def update_order_item(request, item_id):
 
         if request.POST.get('status') == 'Returned' and order_item.item_payment_status == 'Paid':
             # refund by proportion
-            discount_deduction = (order_item.price / order.total_amount) * order.discount
-            refund = order_item.price - discount_deduction
-            order.total_amount -= refund
+            total_item_price = order_item.price * order_item.quantity
+            proportion = total_item_price / (order.total_amount + order.discount)
+            allocated_discount = order.discount * proportion
+            returned_item_price = order_item.price  * order_item.quantity
+            proportional_discount = (allocated_discount / order_item.quantity) * order_item.quantity
+            refund_amount = returned_item_price - proportional_discount
+
+            order.total_amount -= refund_amount
             order.subtotal -= order_item.original_price
             order.save()
             if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
-                if order_item.item_payment_status == 'Paid':
-                    wallet, _ = Wallet.objects.get_or_create(user=order.user)
-                    wallet.balance += refund
-                    wallet.save()
-                    WalletTransaction.objects.create(
-                                    wallet=wallet,
-                                    transaction_type="Cr",
-                                    amount=refund,
-                                    status="Completed",
-                                    transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
-                                )
-        return redirect('admin_order_overview', order_id=item.order.id) 
+                wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                wallet.balance += refund_amount
+                wallet.save()
+                WalletTransaction.objects.create(
+                                wallet=wallet,
+                                transaction_type="Cr",
+                                amount=refund_amount,
+                                status="Completed",
+                                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                            )
+        messages.success(request, 'Status updated sucessful')
+        return redirect('orders')
 
 
 @login_required

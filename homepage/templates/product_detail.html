@@ -248,6 +248,17 @@ function toggleWishlist(button, initialSize) {
     });
 }
 
+function showMessage(message, type) {
+    Toastify({
+        text: message,
+        duration: 3000,
+        close: true,
+        gravity: "top",
+        position: "center",
+        backgroundColor: type === 'success' ? "#28a745" : "#dc3545",
+    }).showToast();
+}
+
 function updateSizeOptions() {
     const sizeSelect = document.getElementById('sizeSelect');
     const availableSizes = [...new Set(availableVariants.map(v => v.size))];

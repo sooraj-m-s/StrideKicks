@@ -104,21 +104,21 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="full_name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ address.full_name }}" required>
+                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ address.full_name }}">
                             </div>
                             <div class="col-md-6">
                                 <label for="mobile_no" class="form-label">Mobile Number</label>
-                                <input type="tel" class="form-control" id="mobile_no" name="mobile_no" value="{{ address.mobile_no }}" required>
+                                <input type="tel" class="form-control" id="mobile_no" name="mobile_no" value="{{ address.mobile_no }}">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="pin_code" class="form-label">PIN Code</label>
-                                <input type="text" class="form-control" id="pin_code" name="pin_code" value="{{ address.pin_code }}" required>
+                                <input type="text" class="form-control" id="pin_code" name="pin_code" value="{{ address.pin_code }}">
                             </div>
                             <div class="col-md-6">
                                 <label for="state" class="form-label">State</label>
-                                <select class="form-select" id="state" name="state" required>
+                                <select class="form-select" id="state" name="state">
                                     {% for state_code, state_name in states %}
                                         <option value="{{ state_code }}" {% if address.state == state_code %}selected{% endif %}>{{ state_name }}</option>
                                     {% endfor %}
@@ -131,7 +131,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="street" class="form-label">Street/Road Name</label>
-                            <input type="text" class="form-control" id="street" name="street" value="{{ address.street }}" required>
+                            <input type="text" class="form-control" id="street" name="street" value="{{ address.street }}">
                         </div>
                         <div class="mb-3">
                             <label for="landmark" class="form-label">Landmark (Optional)</label>
@@ -139,7 +139,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="city" class="form-label">City/Town</label>
-                            <input type="text" class="form-control" id="city" name="city" value="{{ address.city }}" required>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ address.city }}">
                         </div>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="default_address" name="default_address" {% if address.default_address %}checked{% endif %}>

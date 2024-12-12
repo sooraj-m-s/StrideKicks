@@ -24,12 +24,16 @@
             <div class="card mb-3">
                 <div class="row g-0">
                     <div class="col-md-2">
-                        <img src="{{ item.product.images.first.image }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                        <a href="{% url 'product_detail' item.product.id %}">
+                            <img src="{{ item.product.images.first.image }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                        </a>
                     </div>
                     <div class="col-md-10">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <h5 class="card-title">{{ item.product.name }}</h5>
+                                <a href="{% url 'product_detail' item.product.id %}" class="text-black text-decoration-none">
+                                    <h5 class="card-title">{{ item.product.name }}</h5>
+                                </a>
                                 <div class="text-end">
                                     <p class="mb-0">₹{{ item.variant.sale_price }}</p>
                                     {% with offer_details=item.get_offer_details %}

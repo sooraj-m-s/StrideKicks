@@ -345,20 +345,26 @@ def cancel_product(request, item_id):
         product_variant.save()
 
         # refund by proportion
-        discount_deduction = (order_item.price / order.total_amount) * order.discount
-        refund = (order_item.price - discount_deduction) * order_item.quantity
-        order.total_amount -= refund
+        total_item_price = order_item.price * order_item.quantity
+        proportion = total_item_price / (order.total_amount + order.discount)
+        allocated_discount = order.discount * proportion
+        returned_item_price = order_item.price  * order_item.quantity
+        proportional_discount = (allocated_discount / order_item.quantity) * order_item.quantity
+        refund_amount = returned_item_price - proportional_discount
+
+        order.total_amount -= refund_amount
         order.subtotal -= order_item.original_price
+        order.save()
 
         if order.payment_method in ['RP', 'WP']:
             if order_item.item_payment_status == 'Paid':
                 wallet, _ = Wallet.objects.get_or_create(user=order.user)
-                wallet.balance += refund
+                wallet.balance += refund_amount
                 wallet.save()
                 WalletTransaction.objects.create(
                                 wallet=wallet,
                                 transaction_type="Cr",
-                                amount=refund,
+                                amount=refund_amount,
                                 status="Completed",
                                 transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
                             )
@@ -368,6 +374,7 @@ def cancel_product(request, item_id):
             order_item.item_payment_status = 'Refunded'
         else:
             order_item.item_payment_status = 'Processing'
+        order_item.save()
         return JsonResponse({'status': 'success', 'message': 'Product has been cancelled successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES
@@ -396,7 +403,6 @@ def return_product(request, item_id):
         
         # Create a return request
         ReturnRequest.objects.create(order=order_item)
-        
         return JsonResponse({'status': 'success', 'message': 'Product return request has been submitted successfully.'})
     
     cancellation_reasons = OrderItem.CANCELLATION_REASON_CHOICES

@@ -112,7 +112,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control {% if 'full_name' in errors %}is-invalid{% endif %}" id="full_name" name="full_name" value="{{ form_data.full_name|default:'' }}" required>
+                            <input type="text" class="form-control {% if 'full_name' in errors %}is-invalid{% endif %}" id="full_name" name="full_name" value="{{ form_data.full_name|default:'' }}">
                             {% if 'full_name' in errors %}
                                 <div class="error-message">{{ errors.full_name.0 }}</div>
                             {% endif %}
@@ -135,7 +135,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="state" class="form-label">State</label>
-                            <select class="form-select {% if 'state' in errors %}is-invalid{% endif %}" id="state" name="state" required>
+                            <select class="form-select {% if 'state' in errors %}is-invalid{% endif %}" id="state" name="state">
                                 <option value="">Select State</option>
                                 {% for state_code, state_name in states %}
                                     <option value="{{ state_code }}" {% if form_data.state == state_code %}selected{% endif %}>{{ state_name }}</option>
@@ -155,7 +155,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="street" class="form-label">Street/Road Name</label>
-                        <input type="text" class="form-control {% if 'street' in errors %}is-invalid{% endif %}" id="street" name="street" value="{{ form_data.street|default:'' }}" required>
+                        <input type="text" class="form-control {% if 'street' in errors %}is-invalid{% endif %}" id="street" name="street" value="{{ form_data.street|default:'' }}">
                         {% if 'street' in errors %}
                             <div class="error-message">{{ errors.street.0 }}</div>
                         {% endif %}
@@ -169,7 +169,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="city" class="form-label">City/Town</label>
-                        <input type="text" class="form-control {% if 'city' in errors %}is-invalid{% endif %}" id="city" name="city" value="{{ form_data.city|default:'' }}" required>
+                        <input type="text" class="form-control {% if 'city' in errors %}is-invalid{% endif %}" id="city" name="city" value="{{ form_data.city|default:'' }}">
                         {% if 'city' in errors %}
                             <div class="error-message">{{ errors.city.0 }}</div>
                         {% endif %}

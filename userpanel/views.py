@@ -8,6 +8,7 @@ import re
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.auth import logout
 from .models import Address, Wishlist
 from users.models import Users
 from product.models import ProductVariant
@@ -61,7 +62,8 @@ def change_password(request):
     if request.method == 'POST':
         user_id = request.session.get('user_id')
         if not user_id:
-            messages.error(request, 'Session expired. Please log in again.')
+            logout(request)
+            messages.error(request, 'An error has occurred. Please log in again.')
             return redirect('login_to_account')
         old_password = request.POST.get('old_password')
         new_password = request.POST.get('new_password')
@@ -70,19 +72,28 @@ def change_password(request):
         try:
             user = Users.objects.get(user_id=user_id)
 
+            if not old_password:
+                messages.error(request, 'Old password cannot be blank.')
+                return redirect('change_password')
+            
             # Check if the old password is correct
             if not check_password(old_password, user.password):
-                messages.error(request, 'The old password is incorrect, please try again')
+                messages.error(request, 'The old password is incorrect, please try again.')
                 return redirect('change_password')
-
+            
+            # Validate the new password
+            if len(new_password) < 8 or new_password.isspace():
+                messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+                return redirect('change_password')
+            
             # Check if the new password and confirmation match
             if new_password != confirm_password:
                 messages.error(request, 'The new passwords do not match.')
                 return redirect('change_password')
 
-            # Validate the new password (you can add more validation rules)
-            if len(new_password) < 8 or new_password.isspace():
-                messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+            # Check if the new password matches the old password
+            if check_password(new_password, user.password):
+                messages.error(request, 'New password cannot be the old one.')
                 return redirect('change_password')
 
             # Update the password
@@ -157,7 +168,6 @@ def add_address(request):
             
             if address.default_address:
                 Address.objects.filter(user_id=request.user).update(default_address=False)
-            
             address.save()
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -170,25 +180,21 @@ def add_address(request):
             return redirect('manage_address')
             
         except ValidationError as ve:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Please correct the following errors:',
-                    'errors': ve.message_dict
-                })
-            messages.error(request, 'Please correct the following errors.')
-            context = {'states': Address.STATE_CHOICES, 'form_data': form_data, 'errors': ve.message_dict}
-            return render(request, 'add_address.html', context)
+            request.session['form_data'] = form_data
+            request.session['errors'] = ve.message_dict
+            messages.error(request, 'Please correct the errors.')
+            return redirect('add_address')
+
         except Exception as e:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'message': f'Error adding address: {str(e)}'})
             messages.error(request, f'Error adding address: {str(e)}')
             return redirect('manage_address')
 
+    form_data = request.session.pop('form_data', {})
+    errors = request.session.pop('errors', {})
     data = {
         'states': Address.STATE_CHOICES,
-        'form_data': {},
-        'errors': {}
+        'form_data': form_data,
+        'errors': errors,
     }
     return render(request, 'add_address.html', data)
 
@@ -213,6 +219,7 @@ def edit_address(request, address_id):
             if new_default and not address.default_address:
                 Address.objects.filter(user_id=request.user).update(default_address=False)
                 address.default_address = True
+            
             address.full_clean()
             address.save()
             messages.success(request, 'Address updated successfully!')
@@ -220,13 +227,9 @@ def edit_address(request, address_id):
         except ValidationError as ve:
             for field, error_list in ve.message_dict.items():
                 for error in error_list:
-                    if field == 'mobile_no' and 'Invalid Mobile Number.' in error:
-                        messages.error(request, "Invalid Mobile Number.")
-                    else:
-                        messages.error(request, "Invalid PIN Number.")
-                    return redirect('manage_address')
+                    messages.error(request, f"{field.capitalize()}: {error}")
         except Exception as e:
-            messages.error(request, 'Error updating address. Please try again.')
+            messages.error(request, 'Error updating address. Please try again later.')
     
     data = {
         'address': address,
@@ -271,17 +274,17 @@ def toggle_wishlist(request, product_id, product_size):
         else:
             color = request.POST.get('color')
             if not color:
-                return JsonResponse({"success": False, "message": "Please select a color before adding to wishlist."}, status=400)
+                return JsonResponse({"error": False, "message": "Please select a color before adding to wishlist."}, status=400)
             
             variant = variants.filter(color=color).first()
             if not variant:
-                return JsonResponse({"success": False, "message": "Product variant not found with specified color."}, status=404)
+                return JsonResponse({"error": False, "message": "Product variant not found with specified color."}, status=404)
 
         Wishlist.objects.create(user=request.user, variant=variant)
         return JsonResponse({"success": True, "message": "Product added to wishlist."})
         
     except Exception as e:
-        return JsonResponse({"success": False, "message": "An error occurred while processing your request."}, status=500)
+        return JsonResponse({"error": False, "message": "An error occurred while processing your request."}, status=500)
 
 
 @login_required

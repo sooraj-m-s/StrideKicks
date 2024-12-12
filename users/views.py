@@ -30,6 +30,13 @@ def signup_view(request):
         password = request.POST.get('password')
         retype_password = request.POST.get('retype_password')
 
+        request.session['form_data'] = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'mobile_no': mobile_no
+            }
+
         if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", first_name):
             messages.error(request, 'Invalid first name, please enter a valid input.')
             return redirect('signup')
@@ -97,7 +104,11 @@ def signup_view(request):
         return redirect('verify_email')
 
     google_auth_url = reverse('social:begin', args=['google-oauth2'])
-    return render(request, 'sign_up.html', {'google_auth_url': google_auth_url})
+
+    form_data = request.session.get('form_data', {})
+    if 'form_data' in request.session:
+        del request.session['form_data']
+    return render(request, 'sign_up.html', {**form_data, 'google_auth_url': google_auth_url})
 
 
 @csrf_exempt

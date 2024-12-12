@@ -41,9 +41,7 @@ def home(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_detail(request, product_id):
-    # product = get_object_or_404(Product, id=product_id)
     product = get_object_or_404(Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images'), id=product_id)
-    # related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
     related_products = Product.objects.filter(is_deleted=False).exclude(id=product.id)[:4]
     variants = product.variants.all()
 
@@ -184,7 +182,6 @@ def filter_products(request):
     elif sort_by == 'price_desc':
         products = products.order_by('-variants__sale_price')
     elif sort_by == 'rating':
-        # products = products.order_by('-rating')
         products = products.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
     products = products.distinct()
 
