@@ -17,6 +17,11 @@ class CustomAuthenticationForm(forms.Form):
         email = cleaned_data.get('email')
         password = cleaned_data.get('password')
 
+        if not email:
+            raise forms.ValidationError(_('Please enter a valid email.'))
+        if not password:
+            raise forms.ValidationError(_('Password cannot be blank.'))
+
         if email and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
             if self.user_cache is None:

@@ -348,3 +348,17 @@
 .apply-coupon-btn:hover {
     background-color: #218838;
 }
+.stock-status {
+    margin: 0 15px;
+}
+.stock-status .text-success {
+    color: #28a745;
+}
+.stock-status .text-danger {
+    color: #dc3545;
+}
+.checkout-btn.disabled {
+    background-color: #6c757d !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}

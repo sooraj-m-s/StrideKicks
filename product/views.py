@@ -128,7 +128,6 @@ def add_product(request):
                 except ValueError:
                     errors[f'actual_price{i+1}'] = 'Please enter a valid price.'
 
-            if variant.get('sale_price'):
                 try:
                     sale_price = float(variant['sale_price'])
                     if sale_price <= 0:

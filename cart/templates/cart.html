@@ -52,9 +52,20 @@
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="quantity-controls" data-item-id="{{ item.id }}">
-                                    <button class="btn btn-sm btn-outline-secondary decrease" {% if item.quantity <= 1 %}disabled{% endif %}>-</button>
+                                    <button class="btn btn-sm btn-outline-secondary decrease">-</button>
                                     <span class="quantity-display mx-2">{{ item.quantity }}</span>
-                                    <button class="btn btn-sm btn-outline-secondary increase" {% if item.quantity >= 5 %}disabled{% endif %}>+</button>
+                                    <button class="btn btn-sm btn-outline-secondary increase" {% if item.quantity >= 5 or item.quantity >= item.variant.quantity %}disabled{% endif %}>+</button>
+                                </div>
+                                <div class="stock-status">
+                                    {% if item.variant.quantity == 0 %}
+                                        <span class="text-danger">Out of Stock</span>
+                                    {% elif item.variant.quantity >= 5 %}
+                                        <span class="text-success">In Stock</span>
+                                    {% else %}
+                                        <span class="text-{% if item.quantity > item.variant.quantity %}danger{% else %}success{% endif %}">
+                                            Only {{ item.variant.quantity }} Stock available
+                                        </span>
+                                    {% endif %}
                                 </div>
                                 <form method="POST" action="{% url 'remove_from_cart' item.id %}" class="remove-form">
                                     {% csrf_token %}
@@ -110,7 +121,13 @@
                 </div>
                 <button class="btn btn-link p-0" type="button" id="showCoupons" {% if coupon_code %}disabled{% endif %}>View Available Coupons</button>
             </div>
-            <a href="{% url 'checkout' %}" class="checkout-btn">Checkout</a>
+            <a href="{% url 'checkout' %}" class="checkout-btn {% if cart_exceeds_stock %}disabled{% endif %}" {% if cart_exceeds_stock %}onclick="return false;"{% endif %}>
+                {% if cart_exceeds_stock %}
+                    Some items are out of stock
+                {% else %}
+                    Checkout
+                {% endif %}
+            </a>
         </div>
     </div>
     <!-- Latest Products Section -->

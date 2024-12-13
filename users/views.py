@@ -37,7 +37,7 @@ def signup_view(request):
                 'mobile_no': mobile_no
             }
 
-        if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", first_name):
+        if not re.match(r"^[A-Za-z]{3,}(?: [A-Za-z]+)*$", first_name):
             messages.error(request, 'Invalid first name, please enter a valid input.')
             return redirect('signup')
 
@@ -53,13 +53,13 @@ def signup_view(request):
             messages.error(request, 'Invalid mobile number, please enter a valid input.')
             return redirect('signup')
 
-        if len(password) < 8 or password.isspace():
-            messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+        if len(password) < 8 or " " in password:
+            messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
             return redirect('signup')
 
         #check if email of mob is already exists
         if Users.objects.filter(email=email).exists() or Users.objects.filter(mobile_no=mobile_no).exists():
-            messages.error(request, 'Email or phone numeber already registered')
+            messages.error(request, 'Email or phone number already registered.')
             return redirect('signup')
         
         if password != retype_password:
@@ -82,7 +82,7 @@ def signup_view(request):
             <html>
                 <body style="font-family: Arial, sans-serif; color: #333;">
                     <h2 style="color: #4CAF50;">Email Verification</h2>
-                    <p>Dear user,</p>
+                    <p>Dear {first_name.title()},</p>
                     <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
                     <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{otp}</p>
                     <p>If you didn’t request this, please ignore this email.</p>
@@ -191,12 +191,13 @@ def resend_otp(request):
         user_data['otp_expiry'] = new_expiry_time.isoformat()
         user_data['resend_time'] = new_resend_time.isoformat()
         request.session['user_data'] = user_data  #save updated data back to the session
-        
+
+        first_name = user_data.get('first_name', 'User')
         html_message = f"""
             <html>
                 <body style="font-family: Arial, sans-serif; color: #333;">
                     <h2 style="color: #4CAF50;">Email Verification</h2>
-                    <p>Dear user,</p>
+                    <p>Dear {first_name.title()},</p>
                     <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
                     <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{new_otp}</p>
                     <p>If you didn’t request this, please ignore this email.</p>
@@ -239,7 +240,7 @@ def login_to_account(request):
         else:
             for error in form.non_field_errors():
                 messages.error(request, error)
-                return redirect('login_to_account')
+        return redirect('login_to_account')
 
     form = CustomAuthenticationForm(request)
     return render(request, 'login.html', {'form': form, 'google_auth_url': google_auth_url})
@@ -311,8 +312,8 @@ def reset_password(request):
             messages.error(request, 'Passwords do not match.')
             return redirect('reset_password')
         
-        if len(new_password) < 8 or new_password.isspace():
-            messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+        if len(new_password) < 8 or " " in new_password:
+            messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
             return redirect('signup')
 
         try:

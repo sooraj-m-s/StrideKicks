@@ -55,6 +55,13 @@ def view_cart(request):
     # Final total after coupon
     total_after_coupon = final_total - discount_amount if discount_amount > 0 else final_total
 
+    # Check if any cart item quantity exceeds available stock
+    cart_exceeds_stock = False
+    for item in cart_items:
+        if item.quantity > item.variant.quantity:
+            cart_exceeds_stock = True
+            break
+
     data = {
         'cart': cart,
         'cart_items': cart_items,
@@ -67,6 +74,7 @@ def view_cart(request):
         'total_after_coupon': total_after_coupon,
         'latest_products': Product.objects.filter(is_deleted=False).order_by('-created_at')[:5],
         'max_quantity': 5,
+        'cart_exceeds_stock': cart_exceeds_stock,
     }
     return render(request, 'cart.html', data)
 
@@ -85,14 +93,14 @@ def update_cart_item(request, item_id):
                     'message': 'Quantity must be between 1 and 5'
                 })
             
-            # Check available stock
-            if quantity > cart_item.variant.quantity:
+            # Only check stock if trying to increase quantity
+            if quantity > cart_item.quantity and quantity > cart_item.variant.quantity:
                 return JsonResponse({
                     'success': False,
                     'message': f'Only {cart_item.variant.quantity} items available in stock'
                 })
             
-            # Update quantity and save (this will recalculate total_price)
+            # Update quantity
             cart_item.quantity = quantity
             cart_item.save()
             

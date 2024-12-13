@@ -35,7 +35,7 @@ def update_profile(request):
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
 
-        if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", first_name):
+        if not re.match(r"^[A-Za-z]{3,}(?: [A-Za-z]+)*$", first_name):
             messages.error(request, 'Invalid first name, please enter a valid input.')
             return redirect('update_profile')
 
@@ -82,8 +82,8 @@ def change_password(request):
                 return redirect('change_password')
             
             # Validate the new password
-            if len(new_password) < 8 or new_password.isspace():
-                messages.error(request, 'Password must be at least 8 characters and cannot contain only spaces.')
+            if len(new_password) < 8 or " " in new_password:
+                messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
                 return redirect('change_password')
             
             # Check if the new password and confirmation match

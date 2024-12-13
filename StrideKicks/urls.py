@@ -19,7 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),
-    path('create', include('users.urls')),
+    path('create/', include('users.urls')),
     path('admin/', include('admin.urls')),
     path('', include('homepage.urls')),
     path('category/', include('category.urls')),

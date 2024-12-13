@@ -48,7 +48,7 @@
     .wallet-balance {
         font-size: 2.5rem;
         font-weight: bold;
-        margin: 1rem 0;
+        margin: 0;
     }
     .transaction-table {
         width: 100%;
@@ -91,6 +91,58 @@
     }
     .page-link:hover {
         color: #0056b3;
+    }
+    .wallet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+    }
+    .add-money-btn {
+        padding: 10px 20px;
+        font-size: 1rem;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .add-money-btn:hover {
+        background-color: #0056b3;
+    }
+    .amount-input.is-invalid {
+        border-color: #dc3545;
+    }
+    .amount-input.is-valid {
+        border-color: #28a745;
+    }
+    .otp-timer {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    .resend-btn {
+        color: #007bff;
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .resend-btn:disabled {
+        color: #6c757d;
+        cursor: not-allowed;
+        text-decoration: none;
+    }
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
     }
 </style>
 {% endblock %}
@@ -142,11 +194,14 @@
         <div class="col-md-9">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h1 class="mb-4">My Wallet</h1>
-                    
-                    <!-- Wallet Balance -->
-                    <div class="wallet-balance">
-                        ₹{{ wallet.balance }}
+                    <div class="wallet-header">
+                        <div>
+                            <h1 class="mb-4">My Wallet</h1>
+                            <div class="wallet-balance">₹{{ wallet.balance }}</div>
+                        </div>
+                        <button type="button" class="add-money-btn" data-bs-toggle="modal" data-bs-target="#addMoneyModal">
+                            <i class="fas fa-plus-circle"></i> Add Money
+                        </button>
                     </div>
 
                     <!-- Recent Transactions -->
@@ -224,4 +279,297 @@
         </div>
     </div>
 </div>
+
+<!-- Add Money Modal -->
+<div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMoneyModalLabel">Add Money to Wallet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Amount Input Form -->
+                <form id="addMoneyForm" class="mb-3">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Enter Amount (₹)</label>
+                        <input type="number" class="form-control amount-input" id="amount" name="amount">
+                        <div class="invalid-feedback" id="amountError"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="proceedButton">Proceed</button>
+                </form>
+
+                <!-- OTP Verification Form (Initially Hidden) -->
+                <form id="otpForm" class="d-none">
+                    <div class="mb-3">
+                        <label for="otp" class="form-label">Enter OTP</label>
+                        <input type="text" class="form-control" id="otp" name="otp">
+                        <div class="invalid-feedback">
+                            Please enter a valid 6-digit OTP
+                        </div>
+                        <div class="otp-timer mt-2">
+                            Resend OTP in <span id="timer">30</span> seconds
+                        </div>
+                        <button type="button" class="resend-btn mt-2" id="resendOtp" disabled>
+                            Resend OTP
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Verify OTP</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addMoneyForm = document.getElementById('addMoneyForm');
+        const otpForm = document.getElementById('otpForm');
+        const amountInput = document.getElementById('amount');
+        const amountError = document.getElementById('amountError');
+        const proceedButton = document.getElementById('proceedButton');
+        const resendOtpBtn = document.getElementById('resendOtp');
+        const timerSpan = document.getElementById('timer');
+        let timerInterval;
+
+        function validateAmount() {
+            const amount = parseFloat(amountInput.value);
+            amountInput.classList.remove('is-invalid');
+            
+            if (isNaN(amount)) {
+                amountError.textContent = 'Please enter a valid amount.';
+                amountInput.classList.add('is-invalid');
+                return false;
+            }
+
+            if (amount < 100) {
+                amountError.textContent = 'The amount should not be below ₹100.';
+                amountInput.classList.add('is-invalid');
+                return false;
+            }
+
+            if (amount > 20000) {
+                amountError.textContent = 'The amount should not go above ₹20000.';
+                amountInput.classList.add('is-invalid');
+                return false;
+            }
+
+            return true;
+        }
+
+        function startTimer() {
+            let timeLeft = 30;
+            resendOtpBtn.disabled = true;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerSpan.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    resendOtpBtn.disabled = false;
+                    timerSpan.parentElement.style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        amountInput.addEventListener('input', validateAmount);
+
+        addMoneyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Prevent form resubmission
+            if (proceedButton.disabled) {
+                return;
+            }
+
+            if (!validateAmount()) return;
+
+            const amount = amountInput.value;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Disable the button and show processing state
+            proceedButton.disabled = true;
+            proceedButton.textContent = 'Processing...';
+
+            fetch('{% url "add_money" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ amount: amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    addMoneyForm.classList.add('d-none');
+                    otpForm.classList.remove('d-none');
+                    startTimer();
+                    Toastify({
+                        text: "OTP sent successfully! Please check your email.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                            background: "#28a745"
+                        }
+                    }).showToast();
+                    // Reset button state after success
+                    proceedButton.disabled = false;
+                    proceedButton.textContent = 'Proceed';
+                } else {
+                    throw new Error(data.error || 'Failed to send OTP');
+                }
+            })
+            .catch(error => {
+                Toastify({
+                    text: error.message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+                // Reset button state on error
+                proceedButton.disabled = false;
+                proceedButton.textContent = 'Proceed';
+            });
+        });
+
+        otpForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const otpInput = document.getElementById('otp');
+            const otp = otpInput.value.trim();
+            const verifyButton = this.querySelector('button[type="submit"]');
+            
+            // Prevent multiple submissions
+            if (verifyButton.disabled) {
+                return;
+            }
+            
+            // Show processing state
+            verifyButton.disabled = true;
+            verifyButton.textContent = 'Processing...';
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('{% url "verify_add_money_otp" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ otp: otp })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    Toastify({
+                        text: "Money added successfully!",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                            background: "#28a745"
+                        }
+                    }).showToast();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.error || 'Failed to verify OTP');
+                }
+            })
+            .catch(error => {
+                Toastify({
+                    text: error.message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+                // Reset button state on error
+                verifyButton.disabled = false;
+                verifyButton.textContent = 'Verify OTP';
+            });
+        });
+
+        resendOtpBtn.addEventListener('click', function() {
+            // Prevent multiple clicks
+            if (resendOtpBtn.disabled) {
+                return;
+            }
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Disable button and show processing state
+            resendOtpBtn.disabled = true;
+            resendOtpBtn.textContent = 'Processing...';
+
+            fetch('{% url "resend_add_money_otp" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    timerSpan.parentElement.style.display = 'block';
+                    startTimer();
+                    Toastify({
+                        text: "OTP resent successfully! Please check your email.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "center",
+                        style: {
+                            background: "#28a745"
+                        }
+                    }).showToast();
+                    // Don't reset the button here as startTimer() will handle the disabled state
+                    resendOtpBtn.textContent = 'Resend OTP';
+                } else {
+                    throw new Error(data.error || 'Failed to resend OTP');
+                }
+            })
+            .catch(error => {
+                Toastify({
+                    text: error.message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+                // Reset button state on error
+                resendOtpBtn.disabled = false;
+                resendOtpBtn.textContent = 'Resend OTP';
+            });
+        });
+
+        // Reset forms when modal is closed
+        document.getElementById('addMoneyModal').addEventListener('hidden.bs.modal', function() {
+            addMoneyForm.classList.remove('d-none');
+            otpForm.classList.add('d-none');
+            addMoneyForm.reset();
+            otpForm.reset();
+            amountInput.classList.remove('is-invalid');
+            clearInterval(timerInterval);
+            resendOtpBtn.disabled = true;
+            resendOtpBtn.textContent = 'Resend OTP';
+            proceedButton.disabled = false;
+            proceedButton.textContent = 'Proceed';
+            timerSpan.parentElement.style.display = 'block';
+            timerSpan.textContent = '30';
+        });
+    });
+</script>
 {% endblock %}
