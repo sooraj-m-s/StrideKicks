@@ -278,14 +278,16 @@ body, .form-control, .form-select, .btn, .nav-link, .card-header, .card-body, la
                         <small class="text-muted">Enter a value between 1 and 90</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="datetime-local" class="form-control" id="start_date" name="start_date">
-                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date">
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary">Add Offer</button>
@@ -422,6 +424,19 @@ body, .form-control, .form-select, .btn, .nav-link, .card-header, .card-body, la
             if (!name) {
                 Toastify({
                     text: "Please enter an offer name",
+                    duration: 3000,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "#dc3545"
+                    }
+                }).showToast();
+                return;
+            }
+
+            if (!/^[a-zA-Z]+$/.test(name)) {
+                Toastify({
+                    text: "Offer name should contain only alphabets",
                     duration: 3000,
                     gravity: "top",
                     position: "center",
@@ -576,6 +591,28 @@ body, .form-control, .form-select, .btn, .nav-link, .card-header, .card-body, la
             link.addEventListener('click', function() {
                 navLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
+            });
+        });
+
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.min = today;
+        endDateInput.min = today;
+
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+        });
+        endDateInput.addEventListener('change', function() {
+            startDateInput.max = this.value;
+        });
+
+        // Prevent keyboard input on date fields
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            input.addEventListener('keydown', function(event) {
+                event.preventDefault();
             });
         });
     });

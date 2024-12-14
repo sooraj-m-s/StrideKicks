@@ -110,14 +110,6 @@
 <main class="main-content">
     <div class="container-fluid">
         <h2 class="mb-4">Coupon Management</h2>
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
 
         <!-- Coupon List -->
         <div class="card bg-dark text-white mb-4">
@@ -180,12 +172,11 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="couponCode">Code:</label>
-                            <input type="text" class="form-control bg-dark text-white" 
-                                   id="couponCode" name="code" required>
+                            <input type="text" class="form-control bg-dark text-white" id="couponCode" name="code">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="discountType">Discount Type:</label>
-                            <select class="form-select bg-dark text-white" id="discountType" name="discount_type" required>
+                            <select class="form-select bg-dark text-white" id="discountType" name="discount_type">
                                 <option value="fixed">Fixed Amount</option>
                                 <option value="percent">Percentage</option>
                             </select>
@@ -193,8 +184,7 @@
                         <div class="col-md-4 mb-3">
                             <label for="discountValue">Discount Value:</label>
                             <div class="input-group">
-                                <input type="number" class="form-control bg-dark text-white" 
-                                       id="discountValue" name="discount_value" required>
+                                <input type="number" class="form-control bg-dark text-white" id="discountValue" name="discount_value">
                                 <span class="input-group-text bg-dark text-white" id="discountSymbol">$</span>
                             </div>
                         </div>
@@ -202,40 +192,33 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="minCartValue">Min Cart Value:</label>
-                            <input type="number" class="form-control bg-dark text-white" 
-                                   id="minCartValue" name="min_cart_value">
+                            <input type="number" class="form-control bg-dark text-white" id="minCartValue" name="min_cart_value">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="maxDiscount">Max Discount:</label>
-                            <input type="number" class="form-control bg-dark text-white" 
-                                   id="maxDiscount" name="max_discount">
+                            <input type="number" class="form-control bg-dark text-white" id="maxDiscount" name="max_discount">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="maxUsage">Max Usage:</label>
-                            <input type="number" class="form-control bg-dark text-white" 
-                                   id="maxUsage" name="max_usage" value="1" required>
+                            <input type="number" class="form-control bg-dark text-white" id="maxUsage" name="max_usage" value="1">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="maxUsagePerUser">Max Usage Per User:</label>
-                            <input type="number" class="form-control bg-dark text-white" 
-                                   id="maxUsagePerUser" name="max_usage_per_user" value="1" required>
+                            <input type="number" class="form-control bg-dark text-white" id="maxUsagePerUser" name="max_usage_per_user" value="1">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="startDate">Start Date:</label>
-                            <input type="date" class="form-control bg-dark text-white" 
-                                   id="startDate" name="start_date" required>
+                            <input type="date" class="form-control bg-dark text-white" id="startDate" name="start_date">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="endDate">End Date:</label>
-                            <input type="date" class="form-control bg-dark text-white" 
-                                   id="endDate" name="end_date" required>
+                            <input type="date" class="form-control bg-dark text-white" id="endDate" name="end_date">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12 mb-3">
-                            <label for="description">Description:</label>
-                            <textarea class="form-control bg-dark text-white" 
-                                      id="description" name="description"></textarea>
+                            <label for="description">Description (optional):</label>
+                            <textarea class="form-control bg-dark text-white" id="description" name="description"></textarea>
                         </div>
                     </div>
                     <div class="row">
@@ -271,12 +254,11 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="editCouponCode">Code:</label>
-                            <input type="text" class="form-control bg-dark text-white" 
-                                   id="editCouponCode" name="code" required>
+                            <input type="text" class="form-control bg-dark text-white" id="editCouponCode" name="code" readonly>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editDiscountType">Discount Type:</label>
-                            <select class="form-select bg-dark text-white" id="editDiscountType" name="discount_type" required>
+                            <select class="form-select bg-dark text-white" id="editDiscountType" name="discount_type">
                                 <option value="fixed">Fixed Amount</option>
                                 <option value="percent">Percentage</option>
                             </select>
@@ -284,8 +266,7 @@
                         <div class="col-md-4 mb-3">
                             <label for="editDiscountValue">Discount Value:</label>
                             <div class="input-group">
-                                <input type="number" class="form-control bg-dark text-white" 
-                                       id="editDiscountValue" name="discount_value" required>
+                                <input type="number" class="form-control bg-dark text-white" id="editDiscountValue" name="discount_value">
                                 <span class="input-group-text bg-dark text-white" id="editDiscountSymbol">$</span>
                             </div>
                         </div>
@@ -293,47 +274,39 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="editMinCartValue">Min Cart Value:</label>
-                            <input type="number" class="form-control bg-dark text-white"
-                                   id="editMinCartValue" name="min_cart_value">
+                            <input type="number" class="form-control bg-dark text-white" id="editMinCartValue" name="min_cart_value">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editMaxDiscount">Max Discount:</label>
-                            <input type="number" class="form-control bg-dark text-white"
-                                   id="editMaxDiscount" name="max_discount">
+                            <input type="number" class="form-control bg-dark text-white" id="editMaxDiscount" name="max_discount">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editMaxUsage">Max Usage:</label>
-                            <input type="number" class="form-control bg-dark text-white"
-                                   id="editMaxUsage" name="max_usage" required>
+                            <input type="number" class="form-control bg-dark text-white" id="editMaxUsage" name="max_usage">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editMaxUsagePerUser">Max Usage Per User:</label>
-                            <input type="number" class="form-control bg-dark text-white"
-                                   id="editMaxUsagePerUser" name="max_usage_per_user" required>
+                            <input type="number" class="form-control bg-dark text-white" id="editMaxUsagePerUser" name="max_usage_per_user">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editStartDate">Start Date:</label>
-                            <input type="date" class="form-control bg-dark text-white"
-                                   id="editStartDate" name="start_date" required>
+                            <input type="date" class="form-control bg-dark text-white" id="editStartDate" name="start_date" readonly>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="editEndDate">End Date:</label>
-                            <input type="date" class="form-control bg-dark text-white"
-                                   id="editEndDate" name="end_date" required>
+                            <input type="date" class="form-control bg-dark text-white" id="editEndDate" name="end_date">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-12 mb-3">
-                            <label for="editDescription">Description:</label>
-                            <textarea class="form-control bg-dark text-white"
-                                      id="editDescription" name="description"></textarea>
+                            <label for="editDescription">Description (optional):</label>
+                            <textarea class="form-control bg-dark text-white" id="editDescription" name="description"></textarea>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox"
-                                       id="editCouponStatus" name="active">
+                                <input class="form-check-input" type="checkbox" id="editCouponStatus" name="active">
                                 <label class="form-check-label" for="editCouponStatus">
                                     Active
                                 </label>
@@ -446,6 +419,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        input.addEventListener('keydown', function(event) {
+            event.preventDefault();
+        });
+    });
+
     document.getElementById('saveEditCoupon').addEventListener('click', function() {
         const couponId = document.getElementById('editCouponId').value;
         const formData = new FormData(document.getElementById('editCouponForm'));
@@ -543,6 +523,36 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editDiscountType').addEventListener('change', function() {
         const symbol = this.value === 'percent' ? '%' : '$';
         document.getElementById('editDiscountSymbol').textContent = symbol;
+    });
+
+    // Get date inputs for both add and edit forms
+    const startDateInputs = document.querySelectorAll('#startDate, #editStartDate');
+    const endDateInputs = document.querySelectorAll('#endDate, #editEndDate');
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Set up validation for start dates
+    startDateInputs.forEach(input => {
+        input.min = today;
+        input.addEventListener('change', function() {
+            const relatedEndId = this.id === 'startDate' ? 'endDate' : 'editEndDate';
+            const endInput = document.getElementById(relatedEndId);
+            if (endInput) {
+                endInput.min = this.value;
+            }
+        });
+    });
+    
+    // Set up validation for end dates
+    endDateInputs.forEach(input => {
+        input.min = today;
+        input.addEventListener('change', function() {
+            const startId = this.id === 'endDate' ? 'startDate' : 'editStartDate';
+            const startInput = document.getElementById(startId);
+            if (startInput) {
+                startInput.max = this.value;
+            }
+        });
     });
 });
 </script>

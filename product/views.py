@@ -186,7 +186,6 @@ def add_product(request):
                             product=product,
                             variant=product_variant
                         )
-
                 product.total_quantity = total_quantity
                 product.save()
                 

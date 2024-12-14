@@ -6,6 +6,7 @@
 {% block style %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <style>
     body {
@@ -262,6 +263,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', (event) => {
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
@@ -272,26 +274,53 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    // Delete offer functionality
+    // Delete offer functionality with SweetAlert2
     document.querySelectorAll('.delete-offer').forEach(button => {
         button.addEventListener('click', function() {
-            if (confirm('Are you sure you want to delete this offer?')) {
-                const offerId = this.dataset.offerId;
-                fetch(`/wallet/delete-offer/${offerId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error deleting offer');
-                    }
-                });
-            }
+            const offerId = this.dataset.offerId;
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you really want to delete this offer? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/wallet/delete-offer/${offerId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire(
+                                'Deleted!',
+                                'The offer has been deleted successfully.',
+                                'success'
+                            ).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire(
+                                'Error!',
+                                'An error occurred while deleting the offer.',
+                                'error'
+                            );
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire(
+                            'Error!',
+                            'An error occurred while connecting to the server.',
+                            'error'
+                        );
+                    });
+                }
+            });
         });
     });
 });

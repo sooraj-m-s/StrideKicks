@@ -277,17 +277,20 @@ def apply_coupon(request, coupon_code):
                 return JsonResponse({'success': False, 'message': 'Coupon is inactive'})
             if cart.total_price < coupon.min_cart_value:
                 return JsonResponse({'success': False, 'message': f'Minimum cart value of ₹{coupon.min_cart_value} required to apply this coupon.'})
+            
+            if cart.total_price < 5000:
+                effective_price = cart.total_price - 99
+            else:
+                effective_price = cart.total_price
             if coupon.discount_type == 'fixed':
                 discount = float(coupon.discount_value)
             else:
-                if cart.total_price < 5000:
-                    effective_price = cart.total_price - 99
-                else:
-                    effective_price = cart.total_price
                 discount = float(effective_price * coupon.discount_value // 100)
                 if coupon.max_discount:
-                    discount = min(discount, float(coupon.max_discount))
+                    discount = max(discount, float(coupon.max_discount))
             
+            if discount > effective_price - 1:
+                return JsonResponse({'success': False, 'message': 'Coupon discount exceeds cart total'})
             request.session['coupon'] = {
                 'coupon_id': coupon.id,
                 'discount_amount': discount,

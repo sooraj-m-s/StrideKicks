@@ -25,7 +25,7 @@ from utils.decorators import admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def wallet_view(request):
     wallet, created = Wallet.objects.get_or_create(user=request.user)
-    transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')[:10]
+    transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')
     
     # Pagination
     page = request.GET.get('page', 1)
@@ -37,11 +37,11 @@ def wallet_view(request):
     except EmptyPage:
         transactions = paginator.page(paginator.num_pages)
 
-    context = {
+    data = {
         'wallet': wallet,
         'transactions': transactions,
     }
-    return render(request, 'wallet.html', context)
+    return render(request, 'wallet.html', data)
 
 
 @login_required
@@ -55,13 +55,13 @@ def offer_management(request):
         is_active=True
     ).order_by('-created_at')
 
-    context = {
+    data = {
         'offers': offers,
         'search_query': search_query,
         'offer_types': Offer.OFFER_TYPES,
-        'first_name': request.user.first_name,
+        'first_name': request.user.first_name.title(),
     }
-    return render(request, 'offers.html', context)
+    return render(request, 'offers.html', data)
 
 
 @login_required
@@ -111,6 +111,7 @@ def add_offer(request):
     context = {
         'products': products,
         'categories': categories,
+        'first_name': request.user.first_name.title(),
     }
     return render(request, 'add_offer.html', context)
 
@@ -143,7 +144,6 @@ def delete_offer(request, offer_id):
         offer = get_object_or_404(Offer, id=offer_id)
         offer.is_active = False
         offer.save()
-        messages.success(request, 'Offer deleted successfully!')
         return JsonResponse({'success': True, 'message': 'Offer deleted successfully!'})
     except Exception as e:
         messages.error(request, f'Error deleting offer: {str(e)}')

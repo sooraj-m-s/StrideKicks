@@ -32,21 +32,50 @@ def add_coupon(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            code = data.get('code', '').strip().upper()
+            code = data.get('code').strip().upper()
             discount_type = data.get('discount_type')
-            discount_value = data.get('discount_value')
-            min_cart_value = data.get('min_cart_value')
-            max_discount = data.get('max_discount')
+            discount_value = data.get('discount_value') or 0
+            min_cart_value = data.get('min_cart_value') or 0
+            max_discount = data.get('max_discount') or 0
             start_date = data.get('start_date')
             end_date = data.get('end_date')
-            max_usage = data.get('max_usage', 1)
-            max_usage_per_user = data.get('max_usage_per_user', 1)
+            max_usage = data.get('max_usage') or 1
+            max_usage_per_user = data.get('max_usage_per_user') or 1
             description = data.get('description', '').strip()
             active = data.get('active', True)
-
+            
             if Coupon.objects.filter(code__exact=code).exists():
                 raise ValidationError("A coupon with this code already exists.")
-
+            
+            if not code or not code.isalnum():
+                raise ValidationError("Coupon code is required and contains only letters and numbers.")
+            
+            if not discount_value or not str(discount_value).isdigit():
+                raise ValidationError("Invalid discount value.")
+            
+            if discount_type == 'percent' and not (0 < int(discount_value) <= 100):
+                raise ValidationError("Discount value must be between 1 and 100 for a percentage discount.")
+            elif discount_type == 'fixed' and int(discount_value) < 1:
+                raise ValidationError("Discount value must be greater than 0.")
+            
+            if int(min_cart_value) <= 0:
+                raise ValidationError("Minimum Cart Value is required and must be a positive digit.")
+            
+            if int(max_discount) <= 0:
+                raise ValidationError("Maximum discount is required and must be a positive digit.")
+            
+            if int(max_usage) <= 0:
+                raise ValidationError("Maximum Usage is required and must be a positive digit.")
+            
+            if int(max_usage_per_user) <= 0:
+                raise ValidationError("Maximum Usage per user is required and must be a positive digit.")
+            
+            if not start_date:
+                raise ValidationError("Start date is required.")
+            
+            if not end_date:
+                raise ValidationError("End date is required.")
+            
             coupon = Coupon(
                 code=code,
                 discount_type=discount_type,
@@ -108,10 +137,6 @@ def edit_coupon(request, coupon_id):
             data = json.loads(request.body)
             code = data.get('code', '').strip().upper()
             
-            # Check if another coupon exists with the same code
-            if Coupon.objects.filter(code__exact=code).exclude(id=coupon_id).exists():
-                raise ValidationError("A coupon with this code already exists.")
-            
             coupon.code = code
             coupon.discount_type = data.get('discount_type')
             coupon.discount_value = data.get('discount_value')
@@ -123,12 +148,35 @@ def edit_coupon(request, coupon_id):
             coupon.max_usage_per_user = data.get('max_usage_per_user', 1)
             coupon.description = data.get('description', '').strip()
             active = data.get('active')
+            
             if active is not None:
                 coupon.active = active in [True, 'true', 'True', 1, '1']
             
+            if not coupon.discount_value or not str(coupon.discount_value).isdigit():
+                raise ValidationError("Invalid discount value.")
+            
+            if coupon.discount_type == 'percent' and not (0 < float(coupon.discount_value) <= 100):
+                raise ValidationError("Discount value must be between 1 and 100 for a percentage discount.")
+            elif coupon.discount_type == 'fixed' and float(coupon.discount_value) < 1:
+                raise ValidationError("Discount value must be greater than 0.")
+            
+            if float(coupon.min_cart_value) <= 0:
+                raise ValidationError("Minimum Cart Value is required and must be a positive digit.")
+            
+            if float(coupon.max_discount) <= 0:
+                raise ValidationError("Maximum discount is required and must be a positive digit.")
+            
+            if float(coupon.max_usage) <= 0:
+                raise ValidationError("Maximum Usage is required and must be a positive digit.")
+            
+            if float(coupon.max_usage_per_user) <= 0:
+                raise ValidationError("Maximum Usage per user is required and must be a positive digit.")
+            
+            if not coupon.end_date:
+                raise ValidationError("End date is required.")
+            
             coupon.full_clean()
             coupon.save()
-            
             return JsonResponse({
                 'success': True,
                 'message': 'Coupon updated successfully',

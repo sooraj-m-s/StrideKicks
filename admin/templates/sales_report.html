@@ -257,6 +257,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const endDateInput = document.getElementById('endDate');
     const applyDateRangeBtn = document.getElementById('applyDateRange');
 
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        input.addEventListener('keydown', function(event) {
+            event.preventDefault();
+        });
+    });
+
     const today = new Date().toISOString().split('T')[0];
     startDateInput.max = today;
     endDateInput.max = today;
