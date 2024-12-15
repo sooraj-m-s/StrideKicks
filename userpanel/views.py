@@ -296,8 +296,6 @@ def is_wishlisted(request, product_id):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def wishlist(request):
-    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('variant__product', 'variant__product__brand')
-    context = {
-        'wishlist_items': wishlist_items
-    }
-    return render(request, 'wishlist.html', context)
+    wishlist_items = Wishlist.objects.filter(user=request.user, ).select_related('variant__product', 'variant__product__brand')
+
+    return render(request, 'wishlist.html', {'wishlist_items': wishlist_items})

@@ -11,10 +11,7 @@ from coupon.models import Coupon
 
 class Order(models.Model):
     PAYMENT_METHOD_CHOICES = [
-        ('CC', 'Credit Card'),
         ('RP', 'Razor Pay'),
-        ('PP', 'PayPal'),
-        ('BT', 'Bank Transfer'),
         ('WP', 'Wallet Pay'),
         ('COD', 'Cash on Delivery'),
     ]

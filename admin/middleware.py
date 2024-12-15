@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import logout
 from django.contrib import messages
 from social_core.exceptions import AuthCanceled
+from django.shortcuts import render
 
 
 class ActiveUserMiddleware:
@@ -35,3 +36,16 @@ class SocialAuthExceptionMiddleware:
             messages.error(request, "Authentication process canceled.")
             return redirect('signup')  
         return None
+
+
+class Custom404Middleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        if response.status_code == 404:
+            return render(request, '404.html', status=404)
+        
+        return response

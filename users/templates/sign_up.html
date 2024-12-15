@@ -116,23 +116,27 @@ input[type="number"] {
             <span>or</span>
         </div>
         
-        <form action="{% url 'signup' %}" method="POST">
+        <form action="{% url 'signup' %}" method="POST" id="signupForm">
             {% csrf_token %}
             <div class="row mb-3">
                 <div class="col-md-6">
                     <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" value="{{ first_name }}">
+                    <div class="invalid-feedback">Please enter your first name.</div>
                 </div>
                 <div class="col-md-6">
                     <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" value="{{ last_name }}">
+                    <div class="invalid-feedback">Please enter your last name.</div>
                 </div>
             </div>
 
             <div class="mb-3">
-                <input type="text" class="form-control" id="email" name="email" placeholder="Email Address" value="{{ email }}">
+                <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" value="{{ email }}">
+                <div class="invalid-feedback">Please enter a valid email address.</div>
             </div>
 
             <div class="mb-3">
                 <input type="number" class="form-control" id="mobile_no" name="mobile_no" placeholder="Mobile Number" value="{{ mobile_no }}">
+                <div class="invalid-feedback">Please enter a valid mobile number.</div>
             </div>
 
             <div class="mb-3">
@@ -141,6 +145,7 @@ input[type="number"] {
                     <button type="button" class="password-toggle" onclick="togglePassword('password')">
                         <i class="bi bi-eye-slash" id="password-toggle-icon"></i>
                     </button>
+                    <div class="invalid-feedback">Please enter a password.</div>
                 </div>
             </div>
     
@@ -150,11 +155,12 @@ input[type="number"] {
                     <button type="button" class="password-toggle" onclick="togglePassword('retype_password')">
                         <i class="bi bi-eye-slash" id="retype-password-toggle-icon"></i>
                     </button>
+                    <div class="invalid-feedback">Passwords do not match.</div>
                 </div>
             </div>
 
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-signup">Sign Up</button>
+                <button type="submit" class="btn btn-primary btn-signup" id="signupButton">Sign Up</button>
             </div>
 
             <div class="text-center mt-3">
@@ -184,5 +190,87 @@ function togglePassword(fieldId) {
         toggleIcon.classList.add('bi-eye-slash');
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const signupForm = document.getElementById('signupForm');
+    const signupButton = document.getElementById('signupButton');
+    const password = document.getElementById('password');
+    const retypePassword = document.getElementById('retype_password');
+    const email = document.getElementById('email');
+    const mobileNo = document.getElementById('mobile_no');
+
+    function validateForm() {
+        let isValid = true;
+        
+        // Reset all validations
+        const inputs = signupForm.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.classList.remove('is-invalid');
+        });
+
+        // Validate required fields
+        inputs.forEach(input => {
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (email.value && !emailRegex.test(email.value)) {
+            email.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        // Validate mobile number (10 digits)
+        if (mobileNo.value && !/^\d{10}$/.test(mobileNo.value)) {
+            mobileNo.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        // Validate password match
+        if (password.value !== retypePassword.value) {
+            retypePassword.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Prevent multiple submissions
+        if (signupButton.disabled) {
+            return;
+        }
+
+        if (!validateForm()) {
+            // If validation fails, re-enable button after 3 seconds
+            signupButton.disabled = true;
+            setTimeout(() => {
+                signupButton.disabled = false;
+            }, 3000);
+            return;
+        }
+
+        // Show processing state
+        signupButton.disabled = true;
+        signupButton.textContent = 'Processing...';
+
+        // Submit the form
+        signupForm.submit();
+    });
+
+    // Real-time password match validation
+    retypePassword.addEventListener('input', function() {
+        if (password.value !== this.value) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
 </script>
 {% endblock %}

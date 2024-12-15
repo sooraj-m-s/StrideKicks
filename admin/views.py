@@ -11,6 +11,7 @@ from io import BytesIO
 from django.db.models import Q, Count, Sum
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
 import json, uuid, time
+from django.core.exceptions import ObjectDoesNotExist
 from users.forms import CustomAuthenticationForm
 from users.models import Users
 from orders.models import Order, OrderItem, ReturnRequest
@@ -295,9 +296,19 @@ def customers_view(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def customer_status(request, email):
     if request.method == 'POST':
-        user = get_object_or_404(Users, email=email)
-        user.status = 'Blocked' if user.status == 'Active' else 'Active'
-        user.save()
+        try:
+            user = get_object_or_404(Users, email=email)
+            if user.status == 'Active':
+                user.status = 'Blocked'
+                messages.success(request, f"User {user.first_name.title()} has been successfully blocked.")
+            else:
+                user.status = 'Active'
+                messages.success(request, f"User {user.first_name.title()} has been successfully unblocked.")
+            user.save()
+        except ObjectDoesNotExist:
+            messages.error(request, "User not found.")
+        except Exception as e:
+            messages.error(request, f"An unexpected error occurred: {e}")
     return redirect('customers')
 
 

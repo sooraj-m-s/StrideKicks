@@ -58,9 +58,12 @@ def checkout(request):
         
         with transaction.atomic():
             for item in cart.items.all():
-                if item.quantity > item.variant.quantity:
+                if item.variant.is_deleted == True:
+                    messages.error(request, f"{item.product.name} - {item.variant} is unavailable right now")
+                    return redirect('view_cart')
+                elif item.quantity > item.variant.quantity:
                     messages.error(request, f"Not enough stock for {item.product.name} - {item.variant}")
-                    return redirect('checkout')
+                    return redirect('view_cart')
             
             subtotal = sum(item.price * item.quantity for item in cart.items.all())
             if payment_method == 'COD' and subtotal > 10000:

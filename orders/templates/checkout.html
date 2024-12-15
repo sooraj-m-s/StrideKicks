@@ -114,7 +114,7 @@
                             <p class="text-success mt-2 mb-0">Your Total Savings on this order ₹{{ cart.get_total_actual_price|subtract:cart.total_price|add:discount_amount }}</p>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-place-order w-100 mt-3">Place Order</button>
+                    <button id="submitBtn" type="submit" class="btn btn-place-order w-100 mt-3">Place Order</button>
                 </div>
             </div>
         </div>
@@ -235,6 +235,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const addAddressForm = document.getElementById('addAddressForm');
     const addAddressModal = document.getElementById('addAddressModal');
     const modal = new bootstrap.Modal(addAddressModal);
+    const form = document.querySelector("form");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", function (e) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Processing...";
+    });
 
     // Form validation
     function validateForm(form) {

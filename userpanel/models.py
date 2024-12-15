@@ -44,6 +44,7 @@ class Address(models.Model):
         ('WB', 'West Bengal'),
         ('AR', 'Andhra Pradesh'),
     ]
+    
     user_id = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='address')
     full_name = models.CharField(max_length=255)
     mobile_no = models.CharField(max_length=10, validators=[RegexValidator(

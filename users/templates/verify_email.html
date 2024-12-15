@@ -113,7 +113,7 @@
                 {% csrf_token %}
                 
                 <div class="mb-3">
-                    <input type="text" class="form-control text-center" id="verification-code" name="code" required placeholder="Enter OTP to get verified">
+                    <input type="text" class="form-control text-center" id="verification-code" name="code" placeholder="Enter OTP to get verified">
                 </div>
 
                 <div class="d-grid gap-2">
@@ -198,11 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: 'OTP Expired',
                     text: 'Please request a new one.',
                     icon: 'warning',
-                    confirmButtonText: 'Resend OTP'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        resendOTP();
-                    }
+                    confirmButtonText: 'Ok'
                 });
             }
         }, 1000);
@@ -213,6 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     verificationForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        const submitButton = this.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
         const code = document.getElementById('verification-code').value;
 
         fetch("{% url 'verify_email' %}", {
@@ -246,12 +245,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: data.error || 'Invalid verification code.',
                     icon: 'error',
                     confirmButtonText: 'Try Again'
+                }).then(() => {
+                    location.reload();
                 });
             }
         });
     });
 
-    resendBtn.addEventListener('click', resendOTP);
+    resendBtn.addEventListener('click', function() {
+        this.disabled = true;
+        this.textContent = 'Processing...';
+        resendOTP();
+    });
 
     function resendOTP() {
         fetch("{% url 'resend_otp' %}", {
@@ -273,6 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: 'Please check your email for the new verification code.',
                     icon: 'success',
                     confirmButtonText: 'OK'
+                }).then(() => {
+                    location.reload();
                 });
             } else {
                 Swal.fire({
@@ -280,6 +287,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: 'Unable to resend code.',
                     icon: 'error',
                     confirmButtonText: 'Try Again'
+                }).then(() => {
+                    location.reload();
                 });
             }
         });

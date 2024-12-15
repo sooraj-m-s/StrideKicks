@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'social_django.middleware.SocialAuthExceptionMiddleware',
     'admin.middleware.SocialAuthExceptionMiddleware',
     'admin.middleware.ActiveUserMiddleware',
+    'admin.middleware.Custom404Middleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
 

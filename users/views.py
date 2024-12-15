@@ -79,20 +79,26 @@ def signup_view(request):
             'otp_expiry': otp_expiry
         }
         html_message = f"""
-            <html>
-                <body style="font-family: Arial, sans-serif; color: #333;">
-                    <h2 style="color: #4CAF50;">Email Verification</h2>
-                    <p>Dear {first_name.title()},</p>
-                    <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
-                    <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{otp}</p>
-                    <p>If you didn’t request this, please ignore this email.</p>
-                    <p>Best regards,<br>StrideKicks</p>
-                </body>
-            </html>
-            """
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h2 style="color: #4CAF50; text-align: center;">Verify Your Email Address</h2>
+                    <p>Hi {first_name.title()},</p>
+                    <p>Thank you for signing up with StrideKicks! To complete your registration, please use the verification code below. <strong>Note: This code will expire in 5 minutes.</strong></p>
+                    <p style="font-size: 24px; font-weight: bold; text-align: center; color: #4CAF50; margin: 20px 0;">{otp}</p>
+                    <p>If you didn’t request this email, no action is needed. Simply ignore this message.</p>
+                    <p>Thank you for choosing StrideKicks!</p>
+                    <p style="margin-top: 20px;">Best regards,<br><strong>The StrideKicks Team</strong></p>
+                </div>
+                <footer style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+                    &copy; {timezone.now().year} StrideKicks. All rights reserved.
+                </footer>
+            </body>
+        </html>
+        """
         plain_message = strip_tags(html_message)
         send_mail(
-            'Thanks for registering StrideKicks, Verify your email',
+            'StrideKicks: Verify Your Email Address',
             plain_message,
             settings.EMAIL_HOST_USER,
             [email],
@@ -194,26 +200,39 @@ def resend_otp(request):
 
         first_name = user_data.get('first_name', 'User')
         html_message = f"""
-            <html>
-                <body style="font-family: Arial, sans-serif; color: #333;">
-                    <h2 style="color: #4CAF50;">Email Verification</h2>
-                    <p>Dear {first_name.title()},</p>
-                    <p>Thank you for registering. Please use the following code to verify your email address. <strong>This code will expire in 5 minutes.</strong></p>
-                    <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{new_otp}</p>
-                    <p>If you didn’t request this, please ignore this email.</p>
-                    <p>Best regards,<br>StrideKicks</p>
-                </body>
-            </html>
-            """
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <div style="max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #f9f9f9;">
+                    <h2 style="color: #4CAF50; text-align: center;">Email Verification</h2>
+                    <p style="font-size: 16px;">Dear {first_name.title()},</p>
+                    <p style="font-size: 16px;">
+                        A request to verify your email was made. Please use the following OTP to complete the verification process. 
+                        <strong style="color: #ff0000;">This code will expire in 5 minutes.</strong>
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <p style="font-size: 28px; font-weight: bold; color: #4CAF50;">{new_otp}</p>
+                    </div>
+                    <p style="font-size: 16px;">
+                        If you didn’t make this request, no action is required. Your account remains secure.
+                    </p>
+                    <p style="font-size: 16px;">Best regards,<br>StrideKicks Team</p>
+                </div>
+                <footer style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+                    &copy; {timezone.now().year} StrideKicks. All rights reserved.
+                </footer>
+            </body>
+        </html>
+        """
         plain_message = strip_tags(html_message)
         send_mail(
-            'Verify your email',
+            'Verify your email - StrideKicks',
             plain_message,
             settings.EMAIL_HOST_USER,
             [user_data['email']],
             fail_silently=False,
             html_message=html_message,
         )
+
         return JsonResponse({'success': True, 'message': 'A new verification code has been sent to your email.'})
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
 
@@ -255,20 +274,34 @@ def forgot_password(request):
             otp = random.randint(100000, 999999)
             otp_expiry = (timezone.now() + timedelta(minutes=5)).isoformat()
             html_message = f"""
-                <html>
-                    <body style="font-family: Arial, sans-serif; color: #333;">
-                        <h2 style="color: #4CAF50;">Reset Password</h2>
-                        <p>Dear user,</p>
-                        <p>Hi {user.first_name.title()}. Please use the following code to reset password. <strong>This code will expire in 5 minutes.</strong></p>
-                        <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">{otp}</p>
-                        <p>If you didn’t request this, please ignore this email.</p>
-                        <p>Best regards,<br>StrideKicks</p>
-                    </body>
-                </html>
-                """
+            <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
+                        <h2 style="color: #4CAF50; text-align: center;">Reset Your Password</h2>
+                        <p style="font-size: 16px;">Dear {user.first_name.title()},</p>
+                        <p style="font-size: 16px; color: #555;">
+                            You recently requested to reset your password for your StrideKicks account. Use the code below to complete the process. 
+                            <strong>This code will expire in 5 minutes.</strong>
+                        </p>
+                        <div style="text-align: center; margin: 20px 0;">
+                            <span style="font-size: 24px; font-weight: bold; color: #4CAF50; background: #f1f1f1; padding: 10px 20px; border-radius: 8px; display: inline-block;">
+                                {otp}
+                            </span>
+                        </div>
+                        <p style="font-size: 16px; color: #555;">
+                            If you didn’t request this, no further action is required. Your account is still secure.
+                        </p>
+                        <p style="font-size: 16px; color: #555;">Best regards,<br><strong>StrideKicks Team</strong></p>
+                    </div>
+                    <footer style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+                        &copy; {timezone.now().year} StrideKicks. All rights reserved.
+                    </footer>
+                </body>
+            </html>
+            """
             plain_message = strip_tags(html_message)
             send_mail(
-                'Verify your email',
+                'Reset Your Password - StrideKicks',
                 plain_message,
                 settings.EMAIL_HOST_USER,
                 [user],

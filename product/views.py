@@ -11,9 +11,9 @@ import cloudinary, cloudinary.uploader
 import re, json
 from django.db import transaction, IntegrityError
 from .models import Product, ProductVariant, ProductImage, Banner
-from .forms import BannerForm
 from brand.models import Brand
 from category.models import Category
+from .forms import BannerForm
 from utils.decorators import admin_required
 
 
@@ -61,10 +61,18 @@ def products_view(request):
 @require_POST
 def delete_product(request, product_id):
     try:
-        product = get_object_or_404(Product, id=product_id)
-        product.is_deleted = True
-        product.deleted_at = timezone.now()
-        product.save()
+        with transaction.atomic():
+            product = get_object_or_404(Product, id=product_id)
+            product.is_deleted = True
+            product.deleted_at = timezone.now()
+            product.save()
+
+            ProductVariant.objects.filter(product=product).update(
+                quantity = 0,
+                is_deleted = True,
+                deleted_at = timezone.now()
+            )
+            
         return JsonResponse({'success': True, 'message': 'Product deleted successfully'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)

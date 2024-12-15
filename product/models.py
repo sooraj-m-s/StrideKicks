@@ -35,13 +35,13 @@ class ProductVariant(models.Model):
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.product.name} - {self.color} - Size {self.size}"
-
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.product.total_quantity = self.product.variants.aggregate(total=models.Sum('quantity'))['total'] or 0
         self.product.save()
+
+    def __str__(self):
+        return f"{self.product.name} - {self.color} - Size {self.size}"
 
 
 class ProductImage(models.Model):

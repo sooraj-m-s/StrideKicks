@@ -501,14 +501,11 @@
         });
 
         resendOtpBtn.addEventListener('click', function() {
-            // Prevent multiple clicks
             if (resendOtpBtn.disabled) {
                 return;
             }
 
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            // Disable button and show processing state
             resendOtpBtn.disabled = true;
             resendOtpBtn.textContent = 'Processing...';
 
@@ -533,7 +530,6 @@
                             background: "#28a745"
                         }
                     }).showToast();
-                    // Don't reset the button here as startTimer() will handle the disabled state
                     resendOtpBtn.textContent = 'Resend OTP';
                 } else {
                     throw new Error(data.error || 'Failed to resend OTP');
