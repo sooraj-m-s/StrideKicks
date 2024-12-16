@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.template.loader import render_to_string
@@ -6,7 +6,9 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Min, Max, Q, Avg, Count
 from django.core.serializers.json import DjangoJSONEncoder
-import json
+import json, re
+from django.contrib import messages
+from .models import ContactUs
 from product.models import Product, ProductVariant
 from category.models import Category
 from brand.models import Brand
@@ -106,6 +108,33 @@ def get_variant_details(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def about_us(request):
     return render(request, 'about.html')
+
+
+def contact_us(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+        
+        if not re.match(r"^[A-Za-z]{3,}(?: [A-Za-z]+)*$", name):
+            messages.error(request, 'Invalid name, please enter a valid input.')
+            return redirect('contact_us')
+
+        if not re.match(r"^[A-Za-z\._\-0-9]+@[A-Za-z]+\.[a-z]{2,4}$", email):
+            messages.error(request, 'Invalid email, please enter a valid emali.')
+            return redirect('contact_us')
+        
+        ContactUs.objects.create(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message
+        )
+        messages.success(request, 'Your responce has been submitted successfully!')
+        return redirect('home')
+    
+    return render(request, 'contact_us.html')
 
 
 @login_required

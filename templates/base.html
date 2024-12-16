@@ -7,26 +7,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="{% static 'favicon/favicon.png' %}">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <title>{% block title %}{% endblock %}</title>
     {% block style %}{% endblock %}
 </head>
 <body>
     {% block body %}
     {% endblock %}
+
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <script>
         {% if messages %}
-        {% for message in messages %}
-        Toastify({
-            text: "{{ message }}",
-            duration: 3000,
-            close: true,
-            gravity: "top",
-            position: "center",
-            backgroundColor: "{% if message.tags == 'error' %}red{% else %}green{% endif %}",
-        }).showToast();
-        {% endfor %}
+            {% for message in messages %}
+                Toastify({
+                    text: "{{ message }}",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "{% if message.tags == 'error' %}linear-gradient(to right, #dc3545, #ff6b6b){% else %}linear-gradient(to right, #28a745, #5cd85d){% endif %}",
+                        color: "#fff",
+                        borderRadius: "12px",
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+                    },
+                }).showToast();
+            {% endfor %}
         {% endif %}
     </script>
 </body>

@@ -255,9 +255,15 @@ function showMessage(message, type) {
         close: true,
         gravity: "top",
         position: "center",
-        backgroundColor: type === 'success' ? "#28a745" : "#dc3545",
+        style: {
+            background: "linear-gradient(to right, #28a745, #5cd85d)",
+            color: "#fff",
+            borderRadius: "12px",
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+        },
     }).showToast();
 }
+
 
 function updateSizeOptions() {
     const sizeSelect = document.getElementById('sizeSelect');
@@ -312,7 +318,6 @@ function updateVariantDetails() {
 
         if (parseInt(variant.quantity) > 0) {
             productActions.innerHTML = `
-                <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="buyNowBtn">Buy Now</button>
                 <button type="submit" class="btn btn-dark btn-lg flex-grow-1" id="addToCartBtn">Add to Cart</button>
             `;
         } else {

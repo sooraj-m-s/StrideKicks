@@ -244,7 +244,7 @@ body {
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="title" class="form-label required">Title</label>
-                            <input type="text" class="form-control bg-dark text-light" id="title" name="title" required>
+                            <input type="text" class="form-control bg-dark text-light" id="title" name="title">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="mb-3">
@@ -259,7 +259,7 @@ body {
                             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
                             <label class="form-check-label" for="is_active">Active</label>
                         </div>
-                        <button type="submit" class="btn btn-primary">Add Banner</button>
+                        <button id="addBannerBtn" type="submit" class="btn btn-primary">Add Banner</button>
                     </form>
                 </div>
             </div>
@@ -280,7 +280,7 @@ body {
                         <input type="hidden" id="edit_banner_id" name="banner_id">
                         <div class="mb-3">
                             <label for="edit_title" class="form-label required">Title</label>
-                            <input type="text" class="form-control bg-dark text-light" id="edit_title" name="title" required>
+                            <input type="text" class="form-control bg-dark text-light" id="edit_title" name="title">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="mb-3">
@@ -311,12 +311,33 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const editBannerForm = document.getElementById('editBannerForm');
     const editButtons = document.querySelectorAll('.edit-banner');
     const deleteButtons = document.querySelectorAll('.delete-banner');
+    const addBannerButton = document.querySelector('.btn-add-banner');
+    const addBannerBtn = document.getElementById("addBannerBtn");
 
     navLinks.forEach(link => {
         link.addEventListener('click', function() {
             navLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
         });
+    });
+
+    addBannerButton.addEventListener('click', function(e) {
+        addBannerBtn.disabled = true;
+        addBannerBtn.textContent = "Unavailable";
+        Toastify({
+            text: "Currently unavailable",
+            duration: 4000,
+            close: true,
+            gravity: "center",
+            position: "center",
+            offset: {y: "80px"},
+            style: {
+                background: "linear-gradient(to right, #007bff, #17a2b8)",
+                color: "#fff",
+                borderRadius: "12px",
+                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+            }
+        }).showToast();
     });
 
     this.querySelectorAll('.invalid-feedback').forEach(el => {

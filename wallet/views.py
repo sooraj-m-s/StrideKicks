@@ -247,10 +247,10 @@ def verify_add_money_otp(request):
             
             if timezone.now() > otp_expiry:
                 del request.session['add_money_data']
-                return JsonResponse({'error': 'OTP has expired'}, status=400)
+                return JsonResponse({'error': 'OTP has expired.'}, status=400)
             
             if str(entered_otp) != str(stored_otp):
-                return JsonResponse({'error': 'Invalid OTP'}, status=400)
+                return JsonResponse({'error': 'Invalid OTP.'}, status=400)
             
             # Add money to wallet
             amount = add_money_data.get('amount')

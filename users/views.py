@@ -339,7 +339,7 @@ def reset_password(request):
 
         if timezone.now() > timezone.datetime.fromisoformat(user_data['otp_expiry']):
             messages.error(request, 'OTP has expired. Please request a new one.')
-            return redirect('forgot_password')
+            return redirect('reset_password')
 
         if new_password != confirm_password:
             messages.error(request, 'Passwords do not match.')
@@ -347,7 +347,7 @@ def reset_password(request):
         
         if len(new_password) < 8 or " " in new_password:
             messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
-            return redirect('signup')
+            return redirect('reset_password')
 
         try:
             user = Users.objects.get(user_id=user_data['user_id'])

@@ -69,6 +69,53 @@ body {
 .sidebar .nav-item {
     margin-bottom: 0%;
 }
+.unavailable-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 70px);
+    color: #17a2b8;
+    font-size: 1.5rem;
+    text-align: center;
+}
+.unavailable-message h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+.unavailable-message p {
+    font-size: 1.2rem;
+    font-style: italic;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.2rem;
+}
+#dots-container {
+    display: inline-block;
+    width: 1.5em;
+    text-align: left;
+}
+@keyframes dots {
+    0% {
+        content: "";
+    }
+    33% {
+        content: ".";
+    }
+    66% {
+        content: "..";
+    }
+    100% {
+        content: "...";
+    }
+}
+#dots::after {
+    display: inline-block;
+    animation: dots 1.5s steps(3, end) infinite;
+    content: "...";
+}
 </style>
 {% endblock %}
 
@@ -171,6 +218,10 @@ body {
 
 <main class="main-content">
     {% block content %}
+        <div class="text-center unavailable-message">
+            <h2>Currently Unavailable</h2>
+            <p id="coming-soon-text">Coming Soon<span id="dots"></span></p>
+        </div>
     {% endblock %}
 </main>
 
@@ -178,12 +229,19 @@ body {
 <script>
 document.addEventListener('DOMContentLoaded', (event) => {
     const navLinks = document.querySelectorAll('.sidebar .nav-link');
+    const dotsElement = document.getElementById("dots");
+
     navLinks.forEach(link => {
         link.addEventListener('click', function() {
             navLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
         });
     });
+
+    setInterval(() => {
+        dotCount = (dotCount + 1) % 4;
+        dotsElement.textContent = ".".repeat(dotCount);
+    }, 500);
 });
 </script>
 {% endblock %}

@@ -47,9 +47,6 @@ def checkout(request):
         address_id = request.POST.get('address_id')
         payment_method = request.POST.get('payment_method')
 
-        if payment_method in ['CC', 'PP', 'BT']:
-            messages.error(request, "Current payment method is not available. Please try another payment method.")
-            return redirect('checkout')
         if not address_id or not payment_method:
             messages.error(request, "Please select both address and payment method.")
             return redirect('checkout')
