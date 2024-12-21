@@ -27,7 +27,7 @@ def user_profile(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def update_profile(request):
     if request.method=='POST':
-        user_id = request.session.get('user_id')
+        user_id = request.user.user_id
         if not user_id:
             messages.error(request, 'Session expired. Please log in again.')
             return redirect('login_to_account')
@@ -60,7 +60,7 @@ def update_profile(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def change_password(request):
     if request.method == 'POST':
-        user_id = request.session.get('user_id')
+        user_id = request.user.user_id
         if not user_id:
             logout(request)
             messages.error(request, 'An error has occurred. Please log in again.')

@@ -25,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['51.20.70.72', 'stridekicks.live']
+ALLOWED_HOSTS = ['*', '51.20.70.72', 'stridekicks.live']
 
 
 # Application definition

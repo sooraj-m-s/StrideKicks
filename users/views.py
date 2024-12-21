@@ -44,6 +44,10 @@ def signup_view(request):
         if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", last_name):
             messages.error(request, 'Invalid last name, please enter a valid input.')
             return redirect('signup')
+        
+        if len(first_name) > 20 or len(last_name) > 10:
+            messages.error(request, 'First name or last name exceeds the maximum allowed length.')
+            return redirect('signup')
 
         if not re.match(r"^[A-Za-z\._\-0-9]+@[A-Za-z]+\.[a-z]{2,4}$", email):
             messages.error(request, 'Invalid email, please enter a valid emali.')
