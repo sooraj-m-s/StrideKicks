@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
@@ -12,6 +13,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
+from django.db import DatabaseError
 import re, random, json
 from django.conf import settings
 from .models import Users
@@ -239,6 +241,31 @@ def resend_otp(request):
 
         return JsonResponse({'success': True, 'message': 'A new verification code has been sent to your email.'})
     return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+
+
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+def enter_mobile(request):
+    if request.method == 'POST':
+        mobile = request.POST.get('mobile')
+        try:
+            if Users.objects.filter(mobile_no=mobile).exists():
+                messages.error(request, 'Phone number already registered.')
+                return redirect('enter_mobile')
+        except DatabaseError:
+            messages.error(request, 'An error occurred while checking the database. Please try again.')
+            return redirect('enter_mobile')
+        
+        if mobile and len(mobile) == 10 and mobile.isdigit():
+            user = request.user
+            user.mobile_no = mobile
+            user.save()
+            messages.success(request, 'Mobile number added successfully!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Please enter a valid 10-digit mobile number.')
+    
+    return render(request, 'enter_mobile.html')
 
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)

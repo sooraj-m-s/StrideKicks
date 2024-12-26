@@ -84,6 +84,7 @@ def product_detail(request, product_id):
 
 
 @login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def get_variant_details(request):
     product_id = request.GET.get('product_id')
     size = request.GET.get('size')
@@ -110,6 +111,8 @@ def about_us(request):
     return render(request, 'about.html')
 
 
+@login_required
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def contact_us(request):
     if request.method == 'POST':
         name = request.POST.get('name')

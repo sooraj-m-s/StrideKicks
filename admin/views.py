@@ -275,7 +275,7 @@ def customers_view(request):
 
     # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(users, 5)
+    paginator = Paginator(users, 8)
     try:
         users_page = paginator.page(page)
     except PageNotAnInteger:

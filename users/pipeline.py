@@ -16,6 +16,8 @@ def create_user(strategy, details, backend, request, user=None, *args, **kwargs)
     existing_user = Users.objects.filter(email=fields['email']).first()
     if existing_user:
         login(request, existing_user, backend='social_core.backends.google.GoogleOAuth2')
+        if not existing_user.mobile_no:
+            return redirect('enter_mobile')
         return redirect('/')
 
     # If the user does not exist, create a new user
@@ -29,4 +31,4 @@ def create_user(strategy, details, backend, request, user=None, *args, **kwargs)
     user.save()
 
     login(request, user, backend='social_core.backends.google.GoogleOAuth2')
-    return redirect('/')
+    return redirect('enter_mobile')
