@@ -241,6 +241,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     location.reload();
                 });
             }
+        })
+        .catch(error => {
+            Swal.fire({
+                title: 'Error!',
+                text: 'An unexpected error occurred. Please try again later.',
+                icon: 'error',
+                confirmButtonText: 'Ok'
+            });
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit';
         });
     });
 

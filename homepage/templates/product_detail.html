@@ -72,20 +72,26 @@
                     </div>
                 </div>
     
-                <!-- Buy Now and Add to Cart Buttons -->
+                <!-- Add to Cart Buttons -->
                 <div class="d-flex align-items-center mb-3">
-                    <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2" id="addToCartForm">
-                        {% csrf_token %}
-                        <input type="hidden" name="variant" id="variantId" value="{{ product.variants.first.id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <div class="w-100 d-flex gap-2" id="productActions">
+                    {% if user.is_authenticated %}
+                        <form method="POST" action="{% url 'add_to_cart' product.id %}" class="d-flex w-100 gap-2" id="addToCartForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="variant" id="variantId" value="{{ product.variants.first.id }}">
+                            <input type="hidden" name="quantity" value="1">
+                            <div class="w-100 d-flex gap-2" id="productActions">
+                            </div>
+                            <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" 
+                                    data-product-id="{{ product.id }}" 
+                                    onclick="toggleWishlist(this, '{{ product.variants.first.size }}')">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning d-flex justify-content-center align-items-center w-100" role="alert">
+                            <span>Please <a href="{% url 'login_to_account' %}" class="btn btn-warning btn-sm">login</a> to add products to purchase.</span>
                         </div>
-                        <button type="button" class="wishlist-btn {% if is_wishlisted %}active{% endif %}" 
-                                data-product-id="{{ product.id }}" 
-                                onclick="toggleWishlist(this, '{{ product.variants.first.size }}')">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </form>
+                    {% endif %}
                 </div>
 
                 <!-- Description -->

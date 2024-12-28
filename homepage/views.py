@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Min, Max, Q, Avg, Count
 from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth.models import AnonymousUser
 import json, re
 from django.contrib import messages
 from .models import ContactUs
@@ -19,7 +19,6 @@ from reviews.models import ProductReview
 # Create your views here.
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def home(request):
     latest_products = Product.objects.filter(is_deleted=False).order_by('-created_at')[:5]
@@ -40,7 +39,6 @@ def home(request):
     return render(request, 'home_page.html', data)
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_detail(request, product_id):
     product = get_object_or_404(Product.objects.select_related('brand', 'category').prefetch_related('variants', 'images'), id=product_id)
@@ -62,7 +60,10 @@ def product_detail(request, product_id):
             'quantity': variant.quantity,
             'images': variant_images
         })
-    is_wishlisted = Wishlist.objects.filter(user=request.user, variant__product=product).exists()
+    if isinstance(request.user, AnonymousUser):
+        is_wishlisted = False
+    else:
+        is_wishlisted = Wishlist.objects.filter(user=request.user, variant__product=product).exists()
 
     # get review
     reviews = ProductReview.objects.filter(product=product).order_by('-created_at')
@@ -83,7 +84,6 @@ def product_detail(request, product_id):
     return render(request, 'product_detail.html', data)
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def get_variant_details(request):
     product_id = request.GET.get('product_id')
@@ -105,13 +105,11 @@ def get_variant_details(request):
     return JsonResponse(data)
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def about_us(request):
     return render(request, 'about.html')
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def contact_us(request):
     if request.method == 'POST':
@@ -140,7 +138,6 @@ def contact_us(request):
     return render(request, 'contact_us.html')
 
 
-@login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def product_listing(request):
     categories = Category.objects.filter(is_deleted=False, is_listed=True)

@@ -126,6 +126,9 @@ def signup_view(request):
 @csrf_exempt
 def verify_email(request):
     user_data = request.session.get('user_data')
+    if not user_data:
+        return JsonResponse({'success': False, 'error': 'Session expired or invalid. Please sign up again.'}, status=400)
+
     first_name = user_data.get('first_name').title() if user_data else None
     
     now = timezone.now()
@@ -170,10 +173,15 @@ def verify_email(request):
             password=make_password(user_data['password']),
         )
         new_user.save()
+        user = new_user
+        login(request, user, backend='users.backends.EmailBackend')
 
         if 'user_data' in request.session:
                 del request.session['user_data']
                 request.session.modified = True
+
+        username = user.first_name.title()
+        messages.success(request, f"Login Successful. Welcome, {username}!")
         return JsonResponse({'success': True, 'message': 'Verification successful. Account created!'})
 
     data = {
@@ -405,4 +413,4 @@ def reset_password(request):
 def logout_account(request):
     logout(request)
     messages.success(request, 'You have been logged out.')
-    return redirect('login_to_account')
+    return redirect('home')
