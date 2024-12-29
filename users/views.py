@@ -290,7 +290,11 @@ def login_to_account(request):
                 login(request, user)
                 request.session['user_id'] = user.user_id
                 username = user.first_name.title()
-                messages.success(request, f"Login Successful. Welcome, {username}!")
+                if not user.mobile_no:
+                    messages.success(request, f"Welcome back, {username}! Please add your mobile number to continue.")
+                    return redirect('enter_mobile')
+                
+                messages.success(request, f"Welcome back, {username}! You have successfully logged in!")
                 return redirect('home')
             else:
                 messages.error(request, 'Authentication failed.')
