@@ -180,16 +180,17 @@ const availableVariants = {{ available_variants|safe }};
 let currentSize = null;
 let currentColor = null;
 
+function initializeImages() {
+    images = Array.from(document.querySelectorAll('#thumbnailGallery img')).map(img => img.src);
+    updateGallery();
+}
+
 function updateImages() {
     const variant = availableVariants.find(v => v.size === currentSize && v.color === currentColor);
     if (variant && variant.images && variant.images.length > 0) {
         images = variant.images;
     } else {
-        images = [
-            {% for image in product.images.all %}
-            "{{ image.image }}",
-            {% endfor %}
-        ];
+        initializeImages();
     }
     currentImageIndex = 0;
     updateGallery();
@@ -359,9 +360,11 @@ document.getElementById('sizeSelect').addEventListener('change', handleSizeChang
 document.getElementById('colorSelect').addEventListener('change', handleColorChange);
 
 document.addEventListener('DOMContentLoaded', function() {
+    initializeImages();
     updateSizeOptions();
     updateColorOptions();
     updateVariantDetails();
+    updateGallery();
 });
 
 function magnify(imgID, zoom) {
