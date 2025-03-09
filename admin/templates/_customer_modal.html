@@ -1,0 +1,27 @@
+<!-- templates/_customer_modal.html -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerDetailsModalLabel">Customer Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> <span id="modalName"></span></p>
+                        <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+                        <p><strong>Mobile:</strong> <span id="modalMobile"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+                        <p><strong>Joined Date:</strong> <span id="modalJoined"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

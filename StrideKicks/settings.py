@@ -114,8 +114,8 @@ AUTHENTICATION_BACKENDS = [
 
 
 CSRF_COOKIE_HTTPONLY = True  # Makes the CSRF cookie inaccessible to JavaScript
-CSRF_COOKIE_SECURE = False   # Set to True if using HTTPS
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+CSRF_COOKIE_SECURE = True   # Set to True if using HTTPS
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS')
 
 
 # Password validation
