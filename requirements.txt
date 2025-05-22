@@ -32,7 +32,7 @@ pillow==11.0.0
 platformdirs==4.3.6
 prompt_toolkit==3.0.47
 psutil==6.0.0
-psycopg2==2.9.9
+psycopg==3.1.18
 ptyprocess==0.7.0
 pure_eval==0.2.3
 pycparser==2.22
