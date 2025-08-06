@@ -92,8 +92,6 @@ Please ensure your code follows our coding standards and includes appropriate te
 
 *Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
 
-```
-
 
 ## 📞 Contact
 
