@@ -5,8 +5,6 @@
 
 *Step into style with every stride.*
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live%20Demo-stride--kicks.vercel.app-blue?style=for-the-badge)](https://stride-kicks.vercel.app)  [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)](https://www.djangoproject.com/)  [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)  [![Bootstrap](https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
-
 ---
 
 ## Overview
@@ -95,7 +93,7 @@ Please ensure your code follows our coding standards and includes appropriate te
 *Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
 
 ```
-```
+
 
 ## 📞 Contact
 
