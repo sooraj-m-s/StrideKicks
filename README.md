@@ -9,7 +9,13 @@
 
 ## Overview
 
-StrideKicks is a full-featured e-commerce solution tailored for footwear retailers. Built on Django and Bootstrap, it offers a seamless shopping experience with robust admin tools for inventory, order, and user management.
+StrideKicks is a Django- and Bootstrap-based e-commerce platform
+specifically designed for footwear retailers. It delivers a seamless
+shopping experience—browse, filter, cart, checkout—and provides a
+feature-rich admin dashboard for inventory, orders, promotions, and
+analytics.
+
+---
 
 ## Key Features
 
@@ -27,6 +33,8 @@ StrideKicks is a full-featured e-commerce solution tailored for footwear retaile
 - **Promotions**: Create and manage discounts, coupon code management.
 - **Analytics**: Sales charts, revenue reports, and performance metrics.
 
+---
+
 ## Technology Stack
 
 | Layer      | Technologies              |
@@ -35,6 +43,8 @@ StrideKicks is a full-featured e-commerce solution tailored for footwear retaile
 | Database   | PostgreSQL                |
 | Frontend   | HTML5, CSS3, JavaScript   |
 | UI Library | Bootstrap 5, Font Awesome |
+
+---
 
 ## Getting Started
 
@@ -76,6 +86,8 @@ StrideKicks is a full-featured e-commerce solution tailored for footwear retaile
    - Frontend: [http://localhost:8000](http://localhost:8000)
    - Admin: [http://localhost:8000/admin](http://localhost:8000/admin)
 
+---
+
 ## Contributing
 
 Contributions are welcome. To propose changes:
@@ -90,9 +102,9 @@ Please ensure your code follows our coding standards and includes appropriate te
 
 ---
 
-*Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
 
 
 ## 📞 Contact
 
 For questions or feedback, reach out to **[soorajms4@gmail.com](mailto:soorajms4@gmail.com)**.
+*Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
