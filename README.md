@@ -107,4 +107,4 @@ Please ensure your code follows our coding standards and includes appropriate te
 ## 📞 Contact
 
 For questions or feedback, reach out to **[soorajms4@gmail.com](mailto:soorajms4@gmail.com)**.
-*Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
+Developed by *[*Sooraj M S*](https://www.linkedin.com/in/sooraj-m-s/)
