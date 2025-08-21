@@ -66,20 +66,10 @@ StrideKicks is a Django- and Bootstrap-based e-commerce platform specifically de
    python manage.py migrate
    ```
 
-4. **Create superuser**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-5. **Run development server**
+4. **Run development server**
    ```bash
    python manage.py runserver
    ```
-
-6. **Access application**
-   - Frontend: [http://localhost:8000/](http://localhost:8000/)
-   - Admin: [http://localhost:8000/admin/login/](http://localhost:8000/admin/login/)
-
 ---
 
 ## Contributing
