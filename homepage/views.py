@@ -176,10 +176,18 @@ def product_listing(request):
         )
         all_products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('-created_at')
         
-        # get review
         for product in all_products:
             product.avg_rating = ProductReview.objects.filter(product=product).aggregate(Avg('rating'))['rating__avg'] or 0
             product.review_count = ProductReview.objects.filter(product=product).count()
+            
+            # Check if product is in user's wishlist
+            if request.user.is_authenticated:
+                product.is_wishlisted = Wishlist.objects.filter(
+                    user=request.user, 
+                    variant__product=product
+                ).exists()
+            else:
+                product.is_wishlisted = False
         
         # Pagination
         paginator = Paginator(all_products, 12)
@@ -230,14 +238,24 @@ def filter_products(request):
     if brand_ids and brand_ids[0]:
         products = products.filter(brand_id__in=brand_ids)
 
+    products = products.annotate(avg_rating=Avg('reviews__rating'), review_count=Count('reviews'))
+    
     if ratings and ratings[0]:
-        products = products.filter(rating__gte=min(ratings))
+        # Filter by minimum rating
+        min_rating = min([int(r) for r in ratings if r.isdigit()])
+        products = products.filter(avg_rating__gte=min_rating)
 
     if min_price and max_price:
-        products = products.filter(
-            variants__sale_price__gte=min_price,
-            variants__sale_price__lte=max_price
-        )
+        try:
+            min_price_val = float(min_price)
+            max_price_val = float(max_price)
+            products = products.filter(
+                variants__sale_price__gte=min_price_val,
+                variants__sale_price__lte=max_price_val
+            )
+        except (ValueError, TypeError):
+            pass  # Skip price filtering if invalid values
+    
     if sort_by == 'newest':
         products = products.order_by('-created_at')
     elif sort_by == 'name_asc':
@@ -249,16 +267,23 @@ def filter_products(request):
     elif sort_by == 'price_desc':
         products = products.order_by('-variants__sale_price')
     elif sort_by == 'rating':
-        products = products.annotate(avg_rating=Avg('reviews__rating')).order_by('-avg_rating')
+        products = products.order_by('-avg_rating')
+    
     products = products.distinct()
 
-    # get review
-    products = products.annotate(avg_rating=Avg('reviews__rating'), review_count=Count('reviews'))
+    for product in products:
+        if request.user.is_authenticated:
+            product.is_wishlisted = Wishlist.objects.filter(
+                user=request.user, 
+                variant__product=product
+            ).exists()
+        else:
+            product.is_wishlisted = False
 
     # Pagination
     paginator = Paginator(products, 12)
     page_obj = paginator.get_page(page)
-    html = render_to_string('product_grid.html', {'products': page_obj}, request=request)
+    html = render_to_string('product_grid.html', {'products': page_obj, 'user': request.user}, request=request)
 
     return JsonResponse({
         'success': True,

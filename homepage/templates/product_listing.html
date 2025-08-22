@@ -114,6 +114,8 @@
 {% endblock %}
 
 {% block body %}
+{% csrf_token %}
+
 <!-- Search Bar -->
 <div class="search-container">
     <div class="container">
@@ -249,7 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const paginationContainer = document.getElementById('paginationContainer');
     const loadingOverlay = document.querySelector('.loading-overlay');
     const activeFiltersContainer = document.getElementById('activeFilters');
-    const ratingFilters = document.querySelectorAll('.rating-filter');
 
     // Initialize price slider
     noUiSlider.create(priceSlider, {
@@ -295,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             activeFiltersContainer.appendChild(badge);
         });
 
-        if (priceRange) {
+        if (priceRange && (priceRange[0] != {{ min_price|default:0 }} || priceRange[1] != {{ max_price|default:10000 }})) {
             const badge = document.createElement('span');
             badge.className = 'filter-badge';
             badge.innerHTML = `₹${priceRange[0]} - ₹${priceRange[1]} <span class="close">&times;</span>`;
@@ -398,8 +399,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     priceSlider.noUiSlider.on('change', () => fetchFilteredProducts(1));
 
-    // Initial fetch to set up active filters
-    fetchFilteredProducts(1);
+    // Initial setup
+    updateActiveFilters();
 });
 </script>
 {% endblock %}

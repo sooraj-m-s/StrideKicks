@@ -1,6 +1,16 @@
 {% for product in products %}
 <div class="col">
-    <div class="card product-card h-100 border-0 shadow-sm">
+    <div class="card product-card h-100 border-0 shadow-sm position-relative">
+        {% if user.is_authenticated %}
+        <button class="wishlist-btn position-absolute top-0 end-0 m-2 btn btn-link p-1 {% if product.is_wishlisted %}text-danger{% else %}text-muted{% endif %}" 
+                data-product-id="{{ product.id }}" 
+                data-product-size="{{ product.variants.first.size }}"
+                data-product-color="{{ product.variants.first.color }}"
+                onclick="toggleWishlist(this)">
+            <i class="fas fa-heart fa-lg"></i>
+        </button>
+        {% endif %}
+        
         <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
             <img src="{{ product.images.first.image }}" 
                  class="card-img-top product-image" 
@@ -27,6 +37,103 @@
                 {% endwith %}
             </div>
         </a>
+        
+        {% if user.is_authenticated %}
+        <div class="card-footer bg-transparent border-0 pt-0">
+            {% with variant=product.variants.first %}
+            {% if variant.quantity > 0 %}
+            <button class="btn btn-dark btn-sm w-100 add-to-cart-btn" 
+                    data-product-id="{{ product.id }}" 
+                    data-variant-id="{{ variant.id }}">
+                <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+            </button>
+            {% else %}
+            <button class="btn btn-secondary btn-sm w-100" disabled>
+                Out of Stock
+            </button>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endfor %}
+
+<script>
+function toggleWishlist(button) {
+    const productId = button.dataset.productId;
+    const productSize = button.dataset.productSize;
+    const productColor = button.dataset.productColor;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const formData = new FormData();
+    formData.append('color', productColor);
+
+    fetch(`{% url 'toggle_wishlist' 0 'size' %}`.replace('0', productId).replace('size', productSize), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (button.classList.contains('text-danger')) {
+                button.classList.remove('text-danger');
+                button.classList.add('text-muted');
+            } else {
+                button.classList.remove('text-muted');
+                button.classList.add('text-danger');
+            }
+        } else {
+            console.error('Wishlist toggle failed:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const variantId = this.dataset.variantId;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+            this.disabled = true;
+
+            const formData = new FormData();
+            formData.append('variant', variantId);
+            formData.append('quantity', '1');
+
+            fetch(`{% url 'add_to_cart' 0 %}`.replace('0', productId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{% url "view_cart" %}';
+                } else {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Reset button state
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    });
+});
+</script>

@@ -71,6 +71,20 @@
         color: #6c757d;
         padding: 70px 0;
     }
+    .add-to-cart-btn {
+        background-color: #28a745;
+        border-color: #28a745;
+        margin-bottom: 0.5rem;
+    }
+    .add-to-cart-btn:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+    .add-to-cart-btn:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %}
 
@@ -140,8 +154,27 @@
                                         <p class="text-muted mb-0">{{ item.variant.product.brand.name }}</p>
                                         <p class="mb-0">Size: {{ item.variant.size }}, Color: {{ item.variant.color }}</p>
                                         <p class="mb-0">₹{{ item.variant.sale_price }}</p>
+                                        <!-- Stock status display -->
+                                        {% if item.variant.quantity > 0 %}
+                                            <p class="mb-0 text-success"><small>In Stock ({{ item.variant.quantity }} available)</small></p>
+                                        {% else %}
+                                            <p class="mb-0 text-danger"><small>Out of Stock</small></p>
+                                        {% endif %}
                                     </div>
                                     <div class="col-md-4 text-end">
+                                        <!-- Add to Cart button -->
+                                        {% if item.variant.quantity > 0 %}
+                                            <button class="btn btn-success add-to-cart-btn" 
+                                                    onclick="addToCart({{ item.variant.product.id }}, {{ item.variant.id }})"
+                                                    id="cart-btn-{{ item.variant.product.id }}-{{ item.variant.id }}">
+                                                <i class="fas fa-shopping-cart me-1"></i> Add to Cart
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-secondary" disabled>
+                                                <i class="fas fa-times me-1"></i> Out of Stock
+                                            </button>
+                                        {% endif %}
+                                        <br>
                                         <a href="{% url 'product_detail' item.variant.product.id %}" class="btn btn-primary mb-2">View Product</a>
                                         <br>
                                         <span class="remove-from-wishlist" onclick="removeFromWishlist({{ item.variant.product.id }}, '{{ item.variant.size }}')">Remove from Wishlist</span>
@@ -169,6 +202,43 @@
 
 {% csrf_token %}
 <script>
+    function addToCart(productId, variantId) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const button = document.getElementById(`cart-btn-${productId}-${variantId}`);
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('variant', variantId);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/cart/';
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-shopping-cart me-1"></i> Add to Cart';
+        });
+    }
+
     function removeFromWishlist(productId, productSize) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
