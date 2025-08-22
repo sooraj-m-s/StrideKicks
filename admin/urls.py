@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     path('login/', views.login_to_account, name='admin_login'),
     path('dashboard/', views.dashboard_view, name='admin_dashboard'),
@@ -15,3 +16,4 @@ urlpatterns = [
     path('settings/', views.settings_view, name='settings'),
     path('return-request/<int:request_id>/<str:action>/', views.handle_return_request, name='handle_return_request')
 ]
+

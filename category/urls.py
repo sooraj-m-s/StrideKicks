@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     path('', views.category_list, name='category'),
     path('add/', views.add_category, name='add_category'),
@@ -8,3 +9,4 @@ urlpatterns = [
     path('delete/<int:category_id>/', views.delete_category, name='delete_category'),
     path('toggle/<int:category_id>/', views.toggle_category_status, name='toggle_category_status'),
 ]
+

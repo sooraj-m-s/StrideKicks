@@ -1,24 +1,30 @@
+from pyexpat.errors import messages
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-import json
-from .models import Category
+import json, logging
 from utils.decorators import admin_required
+from .models import Category
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def category_list(request):
     first_name = request.user.first_name.title()
-    categories = Category.objects.filter(is_deleted=False)
-    data = {'first_name': first_name, 'categories': categories,}
+    try:
+        categories = Category.objects.filter(is_deleted=False)
+    except Exception as e:
+        logger.error(f"Error in category_list: {e}")
+        messages.error(request, 'An error occurred while loading categories.')
+        categories = []
+    
+    data = {'first_name': first_name, 'categories': categories}
     return render(request, 'category.html', data)
 
 
@@ -49,17 +55,23 @@ def add_category(request):
                 }
             })
         except ValidationError as e:
+            logger.error(f"Validation error in add_category: {e}")
             return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in add_category: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while adding the category.'}, status=500)
 
 
 @login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def edit_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id, is_deleted=False)
-    
+    try:
+        category = get_object_or_404(Category, id=category_id, is_deleted=False)
+    except Exception as e:
+        logger.error(f"Error in edit_category (get_object): {e}")
+        return JsonResponse({'success': False, 'message': 'An error occurred while retrieving the category.'}, status=500)
+
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -84,9 +96,11 @@ def edit_category(request, category_id):
                 }
             })
         except ValidationError as e:
+            logger.error(f"Validation error in edit_category: {e}")
             return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in edit_category: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while updating the category.'}, status=500)
 
 
 @login_required
@@ -101,7 +115,8 @@ def delete_category(request, category_id):
             category.save()
             return JsonResponse({'success': True, 'message': 'Category deleted successfully'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in delete_category: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while deleting the category.'}, status=500)
 
 
 @login_required
@@ -112,10 +127,13 @@ def toggle_category_status(request, category_id):
             category = get_object_or_404(Category, id=category_id, is_deleted=False)
             category.is_listed = not category.is_listed
             category.save()
+
             return JsonResponse({
                 'success': True,
                 'message': f'Category {"listed" if category.is_listed else "unlisted"} successfully',
                 'is_listed': category.is_listed
             })
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in toggle_category_status: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while toggling the category status.'}, status=500)
+

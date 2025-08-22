@@ -8,52 +8,63 @@ from django.utils import timezone
 from django.views.decorators.cache import cache_control
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import cloudinary, cloudinary.uploader
-import re, json
+import re, json, logging
 from django.db import transaction, IntegrityError
-from .models import Product, ProductVariant, ProductImage, Banner
 from brand.models import Brand
 from category.models import Category
-from .forms import BannerForm
 from utils.decorators import admin_required
+from .forms import BannerForm
+from .models import Product, ProductVariant, ProductImage, Banner
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def products_view(request):
-    first_name = request.user.first_name.title()
-    products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('name')
-    variants = ProductVariant.objects.filter(is_deleted=False)
-    categories = Category.objects.filter(is_deleted=False)
-
-    search_query = request.GET.get('search', '')
-    category_id = request.GET.get('category', '')
-    if search_query:
-        products = products.filter(Q(name__istartswith=search_query))
-    if category_id:
-        products = products.filter(category_id=category_id)
-    products = products.annotate(min_sale_price=Min('variants__sale_price'))
-
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(products, 5)
     try:
-        products_page = paginator.page(page)
-    except PageNotAnInteger:
-        products_page = paginator.page(1)
-    except EmptyPage:
-        products_page = paginator.page(paginator.num_pages)
-    data = {
-        'first_name': first_name,
-        'products': products_page,
-        'variants': variants,
-        'categories': categories,
-        'search_query': search_query,
-        'selected_category': category_id
-    }
+        first_name = request.user.first_name.title()
+        products = Product.objects.filter(is_deleted=False).prefetch_related('variants', 'images').order_by('name')
+        variants = ProductVariant.objects.filter(is_deleted=False)
+        categories = Category.objects.filter(is_deleted=False)
+
+        search_query = request.GET.get('search', '')
+        category_id = request.GET.get('category', '')
+        if search_query:
+            products = products.filter(Q(name__istartswith=search_query))
+        if category_id:
+            products = products.filter(category_id=category_id)
+        products = products.annotate(min_sale_price=Min('variants__sale_price'))
+
+        # Pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(products, 5)
+        try:
+            products_page = paginator.page(page)
+        except PageNotAnInteger:
+            products_page = paginator.page(1)
+        except EmptyPage:
+            products_page = paginator.page(paginator.num_pages)
+        data = {
+            'first_name': first_name,
+            'products': products_page,
+            'variants': variants,
+            'categories': categories,
+            'search_query': search_query,
+            'selected_category': category_id
+        }
+    except Exception as e:
+        logger.error(f"Error in products_view: {e}")
+        messages.error(request, "An error occurred while loading products. Please try again later.")
+        data = {
+            'first_name': request.user.first_name.title(),
+            'products': [],
+            'variants': [],
+            'categories': [],
+            'search_query': '',
+            'selected_category': ''
+        }
     return render(request, 'admin_product.html', data)
 
 
@@ -75,6 +86,7 @@ def delete_product(request, product_id):
             
         return JsonResponse({'success': True, 'message': 'Product deleted successfully'})
     except Exception as e:
+        logger.error(f"Error in delete_product: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
@@ -83,134 +95,136 @@ def delete_product(request, product_id):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_product(request):
-    if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        category_id = request.POST.get('category')
-        brand_id = request.POST.get('brand')
-        description = request.POST.get('description', '').strip()
-        variants = json.loads(request.POST.get('variants', '[]'))
+    try:
+        if request.method == 'POST':
+            name = request.POST.get('name', '').strip()
+            category_id = request.POST.get('category')
+            brand_id = request.POST.get('brand')
+            description = request.POST.get('description', '').strip()
+            variants = json.loads(request.POST.get('variants', '[]'))
 
-        errors = {}
+            errors = {}
 
-        if Product.objects.filter(name=name).exists():
-            errors['name'] = 'Product with this name already exists.'
+            if Product.objects.filter(name=name).exists():
+                errors['name'] = 'Product with this name already exists.'
+            if not name or re.search(r'[^a-zA-Z0-9\s]', name):
+                errors['name'] = 'Product name should contain only text and numbers.'
+            if not category_id:
+                errors['category'] = 'Please select a category.'
+            if not brand_id:
+                errors['brand'] = 'Please select a brand.'
+            if len(description) < 20:
+                errors['description'] = f'{20 - len(description)} more characters needed.'
+            if not variants:
+                errors['variants'] = 'At least one variant is required.'
 
-        if not name or re.search(r'[^a-zA-Z0-9\s]', name):
-            errors['name'] = 'Product name should contain only text and numbers.'
-
-        if not category_id:
-            errors['category'] = 'Please select a category.'
-
-        if not brand_id:
-            errors['brand'] = 'Please select a brand.'
-
-        if len(description) < 20:
-            errors['description'] = f'{20 - len(description)} more characters needed.'
-
-        if not variants:
-            errors['variants'] = 'At least one variant is required.'
-
-        for i, variant in enumerate(variants):
-            variant_name = f"Variant {i+1}"
-            if not variant.get('color', '').strip():
-                errors[f'color{i+1}'] = 'Color is required.'
-            if not variant.get('size'):
-                errors[f'size{i+1}'] = 'Size is required.'
-            if variant.get('quantity') is None:
-                errors[f'quantity{i+1}'] = 'Quantity is required.'
-            else:
-                try:
-                    quantity = int(variant['quantity'])
-                    if quantity <= 0 or quantity > 1000:
-                        errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
-                except ValueError:
-                    errors[f'quantity{i+1}'] = 'Quantity should be a valid number and cannot be empty.'
-            
-            if variant.get('actual_price') is None:
-                errors[f'actual_price{i+1}'] = 'Actual price is required.'
-            else:
-                try:
-                    actual_price = float(variant['actual_price'])
-                    if actual_price <= 0:
-                        errors[f'actual_price{i+1}'] = 'Actual price must be a positive number.'
-                except ValueError:
-                    errors[f'actual_price{i+1}'] = 'Please enter a valid price.'
-
-                try:
-                    sale_price = float(variant['sale_price'])
-                    if sale_price <= 0:
-                        errors[f'sale_price{i+1}'] = 'Sale price must be a positive number.'
-                    if sale_price >= float(variant['actual_price']):
-                        errors[f'sale_price{i+1}'] = 'Sale price must be less than actual price.'
-                except ValueError:
-                    errors[f'sale_price{i+1}'] = 'Please enter a valid sale price.'
-
-            variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
-            if len(variant_images) < 3:
-                errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
-
-        if errors:
-            return JsonResponse({'success': False, 'errors': errors})
-
-        try:
-            with transaction.atomic():
-                product = Product(
-                    name=name,
-                    category_id=category_id,
-                    brand_id=brand_id,
-                    description=description,
-                    total_quantity=0,
-                    is_deleted=False
-                )
-                product.save()
-
-                total_quantity = 0
-                for i, variant in enumerate(variants):
-                    quantity = int(variant['quantity'])
-                    total_quantity += quantity
-                    product_variant = ProductVariant(
-                        product=product,
-                        color=variant['color'].strip(),
-                        size=variant['size'],
-                        quantity=quantity,
-                        actual_price=float(variant['actual_price']),
-                        sale_price=float(variant['sale_price']) if variant.get('sale_price') else None
-                    )
-                    product_variant.save()
-
-                    variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
-                    for index, image in enumerate(variant_images):
-                        cloudinary_response = cloudinary.uploader.upload(
-                            image,
-                            folder=f"product_images/{product.id}/variant_{i + 1}",
-                            public_id=f"{product.id:03d}_{i + 1:02d}_{index + 1:03d}",
-                            overwrite=True,
-                            format="webp",
-                            quality=85
-                        )
-                        cloudinary_url = cloudinary_response['secure_url']
-                        ProductImage.objects.create(
-                            image=cloudinary_url, 
-                            product=product,
-                            variant=product_variant
-                        )
-                product.total_quantity = total_quantity
-                product.save()
+            for i, variant in enumerate(variants):
+                if not variant.get('color', '').strip():
+                    errors[f'color{i+1}'] = 'Color is required.'
+                if not variant.get('size'):
+                    errors[f'size{i+1}'] = 'Size is required.'
+                if variant.get('quantity') is None:
+                    errors[f'quantity{i+1}'] = 'Quantity is required.'
+                else:
+                    try:
+                        quantity = int(variant['quantity'])
+                        if quantity <= 0 or quantity > 1000:
+                            errors[f'quantity{i+1}'] = 'Quantity should be between 1 and 1000.'
+                    except ValueError:
+                        errors[f'quantity{i+1}'] = 'Quantity should be a valid number and cannot be empty.'
                 
-            return JsonResponse({'success': True, 'message': 'Product added successfully!'})
-        except IntegrityError as e:
-            return JsonResponse({'success': False, 'message': 'A database integrity error occurred. Please try again.'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
+                if variant.get('actual_price') is None:
+                    errors[f'actual_price{i+1}'] = 'Actual price is required.'
+                else:
+                    try:
+                        actual_price = float(variant['actual_price'])
+                        if actual_price <= 0:
+                            errors[f'actual_price{i+1}'] = 'Actual price must be a positive number.'
+                    except ValueError as e:
+                        logger.error(f"Error in actual_price validation for variant {i+1}: {e}")
+                        errors[f'actual_price{i+1}'] = 'Please enter a valid price.'
 
-    first_name = request.user.first_name.title()
-    categories = Category.objects.filter(is_deleted=False, is_listed=True)
-    brands = Brand.objects.filter(is_deleted=False, is_listed=True)
-    data = {
-        'first_name': first_name,
-        'categories': categories,
-        'brands': brands
-    }
+                    try:
+                        sale_price = float(variant['sale_price'])
+                        if sale_price <= 0:
+                            errors[f'sale_price{i+1}'] = 'Sale price must be a positive number.'
+                        if sale_price >= float(variant['actual_price']):
+                            errors[f'sale_price{i+1}'] = 'Sale price must be less than actual price.'
+                    except ValueError as e:
+                        logger.error(f"Error in sale_price validation for variant {i+1}: {e}")
+                        errors[f'sale_price{i+1}'] = 'Please enter a valid sale price.'
+
+                variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
+                if len(variant_images) < 3:
+                    errors[f'variant_image{i+1}'] = 'Please upload at least 3 images for each variant.'
+
+            if errors:
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+            try:
+                with transaction.atomic():
+                    product = Product(
+                        name=name,
+                        category_id=category_id,
+                        brand_id=brand_id,
+                        description=description,
+                        total_quantity=0,
+                        is_deleted=False
+                    )
+                    product.save()
+
+                    total_quantity = 0
+                    for i, variant in enumerate(variants):
+                        quantity = int(variant['quantity'])
+                        total_quantity += quantity
+                        product_variant = ProductVariant(
+                            product=product,
+                            color=variant['color'].strip(),
+                            size=variant['size'],
+                            quantity=quantity,
+                            actual_price=float(variant['actual_price']),
+                            sale_price=float(variant['sale_price']) if variant.get('sale_price') else None
+                        )
+                        product_variant.save()
+
+                        variant_images = request.FILES.getlist(f'variant_image{i + 1}[]')
+                        for index, image in enumerate(variant_images):
+                            cloudinary_response = cloudinary.uploader.upload(
+                                image,
+                                folder=f"product_images/{product.id}/variant_{i + 1}",
+                                public_id=f"{product.id:03d}_{i + 1:02d}_{index + 1:03d}",
+                                overwrite=True,
+                                format="webp",
+                                quality=85
+                            )
+                            cloudinary_url = cloudinary_response['secure_url']
+                            ProductImage.objects.create(
+                                image=cloudinary_url, 
+                                product=product,
+                                variant=product_variant
+                            )
+                    product.total_quantity = total_quantity
+                    product.save()
+                    
+                return JsonResponse({'success': True, 'message': 'Product added successfully!'})
+            except IntegrityError as e:
+                logger.error(f"Database integrity error while adding product: {e}")
+                return JsonResponse({'success': False, 'message': 'A database integrity error occurred. Please try again.'})
+            except Exception as e:
+                logger.error(f"Error occurred while adding product: {e}")
+                return JsonResponse({'success': False, 'message': 'An error occurred while adding the product. Please try again later.'})
+
+        first_name = request.user.first_name.title()
+        categories = Category.objects.filter(is_deleted=False, is_listed=True)
+        brands = Brand.objects.filter(is_deleted=False, is_listed=True)
+        data = {
+            'first_name': first_name,
+            'categories': categories,
+            'brands': brands
+        }
+    except Exception as e:
+        logger.error(f"Error in add_product view: {e}")
+        return JsonResponse({'success': False, 'message': 'Error occurred while adding product.'})
     return render(request, 'add_product.html', data)
 
 
@@ -248,16 +262,12 @@ def edit_product(request, product_id):
 
         if not name or re.search(r'[^a-zA-Z0-9\s]', name):
             errors['name'] = 'Product name should contain only text and numbers.'
-
         if not category_id:
             errors['category'] = 'Please select a category.'
-
         if not brand_id:
             errors['brand'] = 'Please select a brand.'
-
         if len(description) < 20:
             errors['description'] = f'{20 - len(description)} more characters needed.'
-
         if not variants:
             errors['variants'] = 'At least one variant is required.'
 
@@ -364,7 +374,8 @@ def edit_product(request, product_id):
 
             return JsonResponse({'success': True, 'message': 'Product updated successfully!'})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
+            logger.error(f"Error occurred while updating product: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while updating the product. Please try again later.'})
 
     first_name = request.user.first_name.title()
     data = {
@@ -381,12 +392,19 @@ def edit_product(request, product_id):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def banner_management(request):
-    first_name = request.user.first_name.title()
-    banners = Banner.objects.filter(is_deleted=False)
-    data = {
-        'first_name': first_name,
-        'banners': banners,
-    }
+    try:
+        first_name = request.user.first_name.title()
+        banners = Banner.objects.filter(is_deleted=False)
+        data = {
+            'first_name': first_name,
+            'banners': banners,
+        }
+    except Exception as e:
+        logger.error(f"Error occurred while fetching banner management data: {e}")
+        data = {
+            'first_name': first_name,
+            'banners': [],
+        }
     return render(request, 'banner_management.html', data)
 
 
@@ -437,6 +455,7 @@ def add_banner(request):
                 }
             })
     except Exception as e:
+        logger.error(f"Error in add_banner: {e}")
         return JsonResponse({'success': False, 'errors': {'general': [str(e)]}})
 
 
@@ -474,3 +493,4 @@ def delete_banner(request, banner_id):
     banner.is_deleted = True
     banner.save()
     return JsonResponse({'success': True})
+

@@ -4,18 +4,17 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
-import re
+import re, logging
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth import logout
-from .models import Address, Wishlist
 from users.models import Users
 from product.models import ProductVariant
+from .models import Address, Wishlist
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
@@ -50,9 +49,13 @@ def update_profile(request):
             user_data.save()
             messages.success(request, 'Profile updated.')
         except Users.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found.")
             messages.error(request, 'User not found.')
-        return redirect('profile')
+        except Exception as e:
+            logger.error(f"Error updating profile for user {user_id}: {e}")
+            messages.error(request, 'An unexpected error occurred. Please try again.')
         
+        return redirect('profile')        
     return render(request, 'update_profile.html')
 
 
@@ -107,6 +110,7 @@ def change_password(request):
             return redirect('profile')
 
         except Users.DoesNotExist:
+            logger.error(f"User with ID {user_id} not found.")
             messages.error(request, 'User not found.')
             return redirect('login_to_account')
 
@@ -123,26 +127,38 @@ def cancel_profile_update(request):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def manage_address(request):
-    addresses = Address.objects.filter(user_id=request.user, is_deleted=False)
-    states = Address.STATE_CHOICES
-    data = {
-        'addresses': addresses,
-        'states': states
-    }
+    try:
+        addresses = Address.objects.filter(user_id=request.user, is_deleted=False)
+        states = Address.STATE_CHOICES
+        data = {
+            'addresses': addresses,
+            'states': states
+        }
+    except Exception as e:
+        logger.error(f"Error in manage_address view: {e}")
+        messages.error(request, "An error occurred while loading your addresses. Please try again later.")
+        data = {
+            'addresses': [],
+            'states': Address.STATE_CHOICES
+        }
     return render(request, 'manage_address.html', data)
 
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def delete_address(request, address_id):
-    address = get_object_or_404(Address, id=address_id, user_id=request.user)
-    if not address.default_address:
-        address.is_deleted = True
-        address.deleted_at = timezone.now()
-        address.save()
-        messages.success(request, 'Address removed successfully!')
-    else:
-        messages.error(request, 'Cannot delete default address.')
+    try:
+        address = get_object_or_404(Address, id=address_id, user_id=request.user)
+        if not address.default_address:
+            address.is_deleted = True
+            address.deleted_at = timezone.now()
+            address.save()
+            messages.success(request, 'Address removed successfully!')
+        else:
+            messages.error(request, 'Cannot delete default address.')
+    except Exception as e:
+        logger.error(f"Error deleting address {address_id} for user {request.user.id}: {e}")
+        messages.error(request, 'An unexpected error occurred while trying to delete the address. Please try again.')
     return redirect('manage_address')
 
 
@@ -182,10 +198,11 @@ def add_address(request):
         except ValidationError as ve:
             request.session['form_data'] = form_data
             request.session['errors'] = ve.message_dict
+            logger.error(f"Validation error while adding address: {ve.message_dict}")
             messages.error(request, 'Please correct the errors.')
             return redirect('add_address')
-
         except Exception as e:
+            logger.error(f"Error adding address: {str(e)}")
             messages.error(request, f'Error adding address: {str(e)}')
             return redirect('manage_address')
 
@@ -225,10 +242,12 @@ def edit_address(request, address_id):
             messages.success(request, 'Address updated successfully!')
             return redirect('manage_address')
         except ValidationError as ve:
+            logger.error(f"Validation error while updating address {address_id}: {ve.message_dict}")
             for field, error_list in ve.message_dict.items():
                 for error in error_list:
                     messages.error(request, f"{field.capitalize()}: {error}")
         except Exception as e:
+            logger.error(f"Error updating address {address_id}: {e}")
             messages.error(request, 'Error updating address. Please try again later.')
     
     data = {
@@ -247,7 +266,8 @@ def set_default_address(request, address_id):
         address.default_address = True
         address.save()
         messages.success(request, 'Default address updated successfully!')
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error setting default address {address_id}: {e}")
         messages.error(request, 'Address not found.')
     return redirect('manage_address')
 
@@ -284,6 +304,7 @@ def toggle_wishlist(request, product_id, product_size):
         return JsonResponse({"success": True, "message": "Product added to wishlist."})
         
     except Exception as e:
+        logger.error(f"Error toggling wishlist for user {request.user.id}: {e}")
         return JsonResponse({"error": False, "message": "An error occurred while processing your request."}, status=500)
 
 
@@ -296,6 +317,11 @@ def is_wishlisted(request, product_id):
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def wishlist(request):
-    wishlist_items = Wishlist.objects.filter(user=request.user, ).select_related('variant__product', 'variant__product__brand')
-
+    try:
+        wishlist_items = Wishlist.objects.filter(user=request.user).select_related('variant__product', 'variant__product__brand')
+    except Exception as e:
+        logger.error(f"Error loading wishlist for user {request.user.id}: {e}")
+        messages.error(request, "An error occurred while loading your wishlist. Please try again later.")
+        wishlist_items = []
     return render(request, 'wishlist.html', {'wishlist_items': wishlist_items})
+

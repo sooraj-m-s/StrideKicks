@@ -1,27 +1,32 @@
+from pyexpat.errors import messages
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.views.decorators.cache import cache_control
-import json
-from .models import Brand
+import json, logging
 from utils.decorators import admin_required
+from .models import Brand
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def brand_list(request):
-    first_name = request.user.first_name.title()
-    brands = Brand.objects.filter(is_deleted=False)
-    brand = {
-        'first_name': first_name,
-        'brands': brands,
-    }
-    return render(request, 'brand.html', brand)
+    try:
+        first_name = request.user.first_name.title()
+        brands = Brand.objects.filter(is_deleted=False)
+        brand = {
+            'first_name': first_name,
+            'brands': brands,
+        }
+        return render(request, 'brand.html', brand)
+    except Exception as e:
+        logger.error(f"Error in brand_list: {e}")
+        messages.error(request, "An error occurred while loading the brand list.")
+        return render(request, 'brand.html', {})
 
 
 @login_required
@@ -51,11 +56,10 @@ def add_brand(request):
                 }
             })
         except ValidationError as e:
-            return JsonResponse({
-                'success': False,
-                'message': e.messages[0]
-            }, status=400)
+            logger.error(f"Validation error in add_brand: {e}")
+            return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
+            logger.error(f"Error in add_brand: {e}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
@@ -89,11 +93,10 @@ def edit_brand(request, brand_id):
                 }
             })
         except ValidationError as e:
-            return JsonResponse({
-                'success': False,
-                'message': e.messages[0]
-            }, status=400)
+            logger.error(f"Validation error in edit_brand: {e}")
+            return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
+            logger.error(f"Error in edit_brand: {e}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
@@ -106,6 +109,7 @@ def delete_brand(request, brand_id):
             brand.soft_delete()
             return JsonResponse({'success': True, 'message': 'Brand deleted successfully'})
         except Exception as e:
+            logger.error(f"Error in delete_brand: {e}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 
@@ -124,4 +128,6 @@ def toggle_brand_status(request, brand_id):
                 'is_listed': brand.is_listed
             })
         except Exception as e:
+            logger.error(f"Error in toggle_brand_status: {e}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
+

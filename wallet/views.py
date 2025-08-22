@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.cache import cache_control
@@ -10,37 +10,44 @@ from django.core.mail import send_mail
 from django.utils.html import strip_tags
 from django.utils import timezone
 from datetime import timedelta
-import random, uuid, time, json
-from .models import Wallet, WalletTransaction, Offer
+import random, uuid, time, json, logging
 from product.models import Product
 from category.models import Category
 from django.conf import settings
 from utils.decorators import admin_required
+from .models import Wallet, WalletTransaction, Offer
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def wallet_view(request):
-    wallet, created = Wallet.objects.get_or_create(user=request.user)
-    transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')
-    
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(transactions, 5)
     try:
-        transactions = paginator.page(page)
-    except PageNotAnInteger:
-        transactions = paginator.page(1)
-    except EmptyPage:
-        transactions = paginator.page(paginator.num_pages)
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')
+        
+        # Pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(transactions, 5)
+        try:
+            transactions = paginator.page(page)
+        except PageNotAnInteger:
+            transactions = paginator.page(1)
+        except EmptyPage:
+            transactions = paginator.page(paginator.num_pages)
 
-    data = {
-        'wallet': wallet,
-        'transactions': transactions,
-    }
+        data = {
+            'wallet': wallet,
+            'transactions': transactions,
+        }
+    except Exception as e:
+        logger.error(f"Error in wallet_view for user {request.user.id}: {e}")
+        messages.error(request, "An error occurred while loading your wallet. Please try again later.")
+        data = {
+            'wallet': None,
+            'transactions': [],
+        }
     return render(request, 'wallet.html', data)
 
 
@@ -48,19 +55,29 @@ def wallet_view(request):
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def offer_management(request):
-    search_query = request.GET.get('search', '')
-    offers = Offer.objects.filter(
-        Q(name__icontains=search_query) |
-        Q(offer_type__icontains=search_query),
-        is_active=True
-    ).order_by('-created_at')
+    try:
+        search_query = request.GET.get('search', '')
+        offers = Offer.objects.filter(
+            Q(name__icontains=search_query) |
+            Q(offer_type__icontains=search_query),
+            is_active=True
+        ).order_by('-created_at')
 
-    data = {
-        'offers': offers,
-        'search_query': search_query,
-        'offer_types': Offer.OFFER_TYPES,
-        'first_name': request.user.first_name.title(),
-    }
+        data = {
+            'offers': offers,
+            'search_query': search_query,
+            'offer_types': Offer.OFFER_TYPES,
+            'first_name': request.user.first_name.title(),
+        }
+    except Exception as e:
+        logger.error(f"Error in offer_management view for user {request.user.id}: {e}")
+        messages.error(request, "An error occurred while loading offers. Please try again later.")
+        data = {
+            'offers': [],
+            'search_query': '',
+            'offer_types': getattr(Offer, "OFFER_TYPES", []),
+            'first_name': request.user.first_name.title(),
+        }
     return render(request, 'offers.html', data)
 
 
@@ -104,8 +121,9 @@ def add_offer(request):
             return JsonResponse({'success': True, 'message': 'Offer added successfully!'})
             
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
-    
+            logger.error(f"Error adding offer: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while adding the offer.'})
+
     products = Product.objects.filter(is_deleted=False)
     categories = Category.objects.filter(is_deleted=False)
     context = {
@@ -146,8 +164,9 @@ def delete_offer(request, offer_id):
         offer.save()
         return JsonResponse({'success': True, 'message': 'Offer deleted successfully!'})
     except Exception as e:
-        messages.error(request, f'Error deleting offer: {str(e)}')
-        return JsonResponse({'error': True, 'message': f'Error deleting offer: {str(e)}'})
+        logger.error(f"Error deleting offer {offer_id}: {e}")
+        messages.error(request, 'An error occurred while deleting the offer.')
+        return JsonResponse({'error': True, 'message': 'An error occurred while deleting the offer.'})
 
 
 @login_required
@@ -185,7 +204,6 @@ def add_money(request):
             
             if amount < 100:
                 return JsonResponse({'error': 'Amount must be at least ₹100'}, status=400)
-            
             if amount > 20000:
                 return JsonResponse({'error': 'Amount cannot exceed ₹20,000'}, status=400)
             
@@ -222,12 +240,12 @@ def add_money(request):
             )
             
             return JsonResponse({'message': 'OTP sent successfully'})
-            
         except (ValueError, TypeError, json.JSONDecodeError):
+            logger.error(f"Invalid amount or data format in add_money for user {request.user.id}")
             return JsonResponse({'error': 'Invalid amount'}, status=400)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
+            logger.error(f"Error in add_money for user {request.user.id}: {e}")
+            return JsonResponse({'error': 'An error occurred while adding money to the wallet.'}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
@@ -248,7 +266,6 @@ def verify_add_money_otp(request):
             if timezone.now() > otp_expiry:
                 del request.session['add_money_data']
                 return JsonResponse({'error': 'OTP has expired.'}, status=400)
-            
             if str(entered_otp) != str(stored_otp):
                 return JsonResponse({'error': 'Invalid OTP.'}, status=400)
             
@@ -269,10 +286,9 @@ def verify_add_money_otp(request):
             del request.session['add_money_data']
             
             return JsonResponse({'message': 'Money added successfully'})
-            
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
+            logger.error(f"Error verifying OTP for add money for user {request.user.id}: {e}")
+            return JsonResponse({'error': 'An error occurred while verifying the OTP.'}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
@@ -316,8 +332,8 @@ def resend_add_money_otp(request):
             )
             
             return JsonResponse({'message': 'OTP resent successfully'})
-            
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    
+            logger.error(f"Error resending OTP for add money for user {request.user.id}: {e}")
+            return JsonResponse({'error': 'An error occurred while resending the OTP.'}, status=500)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+

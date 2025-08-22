@@ -4,20 +4,24 @@ from django.core.exceptions import ValidationError
 from django.views.decorators.cache import cache_control
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-import json
+import json, logging
 from utils.decorators import admin_required
 from .models import Coupon, UserCoupon
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @admin_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def coupon_list(request):
     first_name = request.user.first_name.title()
-    coupons = Coupon.objects.filter(is_deleted=False).order_by('-created_at')
+    try:
+        coupons = Coupon.objects.filter(is_deleted=False).order_by('-created_at')
+    except Exception as e:
+        logger.error(f"Error in coupon_list: {e}")
+        coupons = []
+
     data = {
         'first_name': first_name,
         'coupons': coupons,
@@ -46,10 +50,8 @@ def add_coupon(request):
             
             if Coupon.objects.filter(code__exact=code).exists():
                 raise ValidationError("A coupon with this code already exists.")
-            
             if not code or not code.isalnum():
                 raise ValidationError("Coupon code is required and contains only letters and numbers.")
-            
             if not discount_value or not str(discount_value).isdigit():
                 raise ValidationError("Invalid discount value.")
             
@@ -60,19 +62,14 @@ def add_coupon(request):
             
             if int(min_cart_value) <= 0:
                 raise ValidationError("Minimum Cart Value is required and must be a positive digit.")
-            
             if int(max_discount) <= 0:
                 raise ValidationError("Maximum discount is required and must be a positive digit.")
-            
             if int(max_usage) <= 0:
                 raise ValidationError("Maximum Usage is required and must be a positive digit.")
-            
             if int(max_usage_per_user) <= 0:
                 raise ValidationError("Maximum Usage per user is required and must be a positive digit.")
-            
             if not start_date:
                 raise ValidationError("Start date is required.")
-            
             if not end_date:
                 raise ValidationError("End date is required.")
             
@@ -103,9 +100,11 @@ def add_coupon(request):
                 }
             })
         except ValidationError as e:
+            logger.error(f"Validation error in add_coupon: {e}")
             return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in add_coupon: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while adding the coupon.'}, status=500)
 
 
 @login_required
@@ -189,9 +188,11 @@ def edit_coupon(request, coupon_id):
                 }
             })
         except ValidationError as e:
+            logger.error(f"Validation error in edit_coupon: {e}")
             return JsonResponse({'success': False, 'message': e.messages[0]}, status=400)
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in edit_coupon: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while updating the coupon.'}, status=500)
     else:
         return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
@@ -206,12 +207,14 @@ def delete_coupon(request, coupon_id):
                 coupon.is_deleted = True
                 coupon.deleted_at = timezone.now()
                 coupon.save()
+                
                 return JsonResponse({
                     'success': True,
                     'message': 'Coupon has been deactivated as it was already used'
                 })
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in delete_coupon: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while deleting the coupon.'}, status=500)
 
 
 @login_required
@@ -229,4 +232,6 @@ def toggle_coupon_status(request, coupon_id):
                 'active': coupon.active
             })
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+            logger.error(f"Error in toggle_coupon_status: {e}")
+            return JsonResponse({'success': False, 'message': 'An error occurred while toggling the coupon status.'}, status=500)
+

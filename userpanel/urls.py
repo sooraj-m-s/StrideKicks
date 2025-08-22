@@ -1,5 +1,6 @@
-from django.urls import path, include
+from django.urls import path
 from . import views
+
 
 urlpatterns = [
     path('profile/', views.user_profile, name='profile'),
@@ -15,3 +16,4 @@ urlpatterns = [
     path('toggle-wishlist/<int:product_id>/<str:product_size>/', views.toggle_wishlist, name='toggle_wishlist'),
     path('is-wishlisted/<int:product_id>/', views.is_wishlisted, name='is_wishlisted'),
 ]
+

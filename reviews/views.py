@@ -1,13 +1,13 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_control
 from django.http import JsonResponse
-from .models import ProductReview
 from product.models import Product
 from orders.models import OrderItem
+import logging
+from .models import ProductReview
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
@@ -44,9 +44,11 @@ def submit_rating(request):
 
         return JsonResponse({'success': True, 'message': message})
     except Product.DoesNotExist:
+        logger.error(f"Product with id {product_id} not found")
         return JsonResponse({'success': False, 'message': 'Product not found'}, status=404)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        logger.error(f"Error occurred while submitting review: {e}")
+        return JsonResponse({'success': False, 'message': 'An error occurred while submitting the review. Please try again later.'}, status=500)
 
 
 @login_required
@@ -65,8 +67,11 @@ def get_user_review(request, product_id):
             })
         else:
             return JsonResponse({'exists': False})
+    
     except Product.DoesNotExist:
+        logger.error(f"Product with id {product_id} not found")
         return JsonResponse({'error': 'Product not found'}, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
+        logger.error(f"Error occurred while fetching user review: {e}")
+        return JsonResponse({'error': 'An error occurred while fetching the review. Please try again later.'}, status=500)
+

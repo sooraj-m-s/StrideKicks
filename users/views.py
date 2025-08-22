@@ -14,14 +14,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 from django.db import DatabaseError
-import re, random, json
+import re, random, json, logging
 from django.conf import settings
 from .models import Users
 from .forms import CustomAuthenticationForm
 
 
-# Create your views here.
-
+logger = logging.getLogger(__name__)
 
 def signup_view(request):
     if request.method == 'POST':
@@ -157,10 +156,8 @@ def verify_email(request):
 
         if not user_data:
             return JsonResponse({'success': False, 'error': 'Session expired. Please sign up again.'}, status=400)
-
         if str(user_data.get('otp')) != str(code):  # Convert both to strings for comparison
             return JsonResponse({'success': False, 'error': 'Invalid verification code.'}, status=400)
-
         if now > otp_expiry:
             return JsonResponse({'success': False, 'error': 'Verification code expired.'}, status=400)
 
@@ -260,7 +257,8 @@ def enter_mobile(request):
             if Users.objects.filter(mobile_no=mobile).exists():
                 messages.error(request, 'Phone number already registered.')
                 return redirect('enter_mobile')
-        except DatabaseError:
+        except DatabaseError as e:
+            logger.error(f"Database error while checking mobile number for user {request.user.id}: {e}")
             messages.error(request, 'An error occurred while checking the database. Please try again.')
             return redirect('enter_mobile')
         
@@ -359,8 +357,12 @@ def forgot_password(request):
             }
             messages.success(request, 'Please check your email for the verification code.')
             return redirect('reset_password')
-        except Users.DoesNotExist:
+        except Users.DoesNotExist as e:
+            logger.error(f"User not found while resetting password for email {email}: {e}")
             messages.error(request, 'No account found with this email address.')
+        except Exception as e:
+            logger.error(f"Unexpected error while resetting password for email {email}: {e}")
+            messages.error(request, 'An error occurred while processing your request. Please try again.')
     return render(request, 'forgot_password.html')
 
 
@@ -401,6 +403,7 @@ def reset_password(request):
             del request.session['user_data']
             return redirect('login_to_account')
         except Users.DoesNotExist:
+            logger.error(f"User not found while resetting password for user_id {user_data['user_id']}")
             messages.error(request, 'User not found. Please try the password reset process again.')
             return redirect('forgot_password')
 
@@ -418,3 +421,4 @@ def logout_account(request):
     logout(request)
     messages.success(request, 'You have been logged out.')
     return redirect('home')
+

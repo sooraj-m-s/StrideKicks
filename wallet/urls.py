@@ -13,3 +13,4 @@ urlpatterns = [
     path('verify-add-money-otp/', views.verify_add_money_otp, name='verify_add_money_otp'),
     path('resend-add-money-otp/', views.resend_add_money_otp, name='resend_add_money_otp'),
 ]
+

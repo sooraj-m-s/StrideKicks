@@ -51,7 +51,7 @@ StrideKicks is a Django- and Bootstrap-based e-commerce platform specifically de
    ```bash
    git clone https://github.com/sooraj-m-s/StrideKicks.git
    cd StrideKicks
-
+   ```
 
 2. **Set up environment**
    ```bash
