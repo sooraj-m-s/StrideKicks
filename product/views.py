@@ -87,7 +87,7 @@ def delete_product(request, product_id):
         return JsonResponse({'success': True, 'message': 'Product deleted successfully'})
     except Exception as e:
         logger.error(f"Error in delete_product: {e}")
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        return JsonResponse({'success': False, 'message': 'An error occurred while deleting the product.'}, status=500)
 
 
 @transaction.atomic

@@ -59,12 +59,22 @@
 </div>
 {% endfor %}
 
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
 <script>
 function toggleWishlist(button) {
     const productId = button.dataset.productId;
     const productSize = button.dataset.productSize;
     const productColor = button.dataset.productColor;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const wasWishlisted = button.classList.contains('text-danger');
+    
+    // Show loading state
+    const heartIcon = button.querySelector('i');
+    const originalIcon = heartIcon.className;
+    heartIcon.className = 'fas fa-spinner fa-spin fa-lg';
+    button.disabled = true;
 
     const formData = new FormData();
     formData.append('color', productColor);
@@ -78,20 +88,79 @@ function toggleWishlist(button) {
     })
     .then(response => response.json())
     .then(data => {
+        // Restore original icon
+        heartIcon.className = originalIcon;
+        button.disabled = false;
+        
         if (data.success) {
-            if (button.classList.contains('text-danger')) {
-                button.classList.remove('text-danger');
-                button.classList.add('text-muted');
-            } else {
+            if (!wasWishlisted) {
+                // Item was added to wishlist
                 button.classList.remove('text-muted');
                 button.classList.add('text-danger');
+                Toastify({
+                    text: "Added to wishlist!",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "linear-gradient(to right, #28a745, #5cd85d)",
+                        color: "#fff",
+                        borderRadius: "12px",
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+                    },
+                }).showToast();
+            } else {
+                // Item was removed from wishlist
+                button.classList.remove('text-danger');
+                button.classList.add('text-muted');
+                Toastify({
+                    text: "Removed from wishlist!",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "center",
+                    style: {
+                        background: "linear-gradient(to right, #dc3545, #ff6b6b)",
+                        color: "#fff",
+                        borderRadius: "12px",
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+                    },
+                }).showToast();
             }
         } else {
-            console.error('Wishlist toggle failed:', data.message);
+            Toastify({
+                text: data.message || "Error updating wishlist",
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "center",
+                style: {
+                    background: "linear-gradient(to right, #dc3545, #ff6b6b)",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+                },
+            }).showToast();
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        heartIcon.className = originalIcon;
+        button.disabled = false;
+        Toastify({
+            text: "Something went wrong. Please try again.",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "center",
+            style: {
+                background: "linear-gradient(to right, #dc3545, #ff6b6b)",
+                color: "#fff",
+                borderRadius: "12px",
+                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)"
+            },
+        }).showToast();
     });
 }
 
@@ -101,8 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const productId = this.dataset.productId;
             const variantId = this.dataset.variantId;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
-            // Show loading state
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Adding...';
             this.disabled = true;
@@ -115,23 +182,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    throw new Error('Server returned HTML instead of JSON - check URL routing');
+                }
+            })
             .then(data => {
-                if (data.success) {
+                if (data.success !== false) {
                     window.location.href = '{% url "view_cart" %}';
                 } else {
                     this.innerHTML = originalText;
                     this.disabled = false;
+                    window.location.reload();
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                // Reset button state
+                console.error('[v0] Add to cart error:', error);
                 this.innerHTML = originalText;
                 this.disabled = false;
+                window.location.reload();
             });
         });
     });

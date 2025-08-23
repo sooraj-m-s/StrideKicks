@@ -64,6 +64,8 @@ def add_coupon(request):
                 raise ValidationError("Minimum Cart Value is required and must be a positive digit.")
             if int(max_discount) <= 0:
                 raise ValidationError("Maximum discount is required and must be a positive digit.")
+            if int(min_cart_value) <= int(max_discount):
+                raise ValidationError("Minimum Cart Value should be greater than Maximum Discount.")
             if int(max_usage) <= 0:
                 raise ValidationError("Maximum Usage is required and must be a positive digit.")
             if int(max_usage_per_user) <= 0:
@@ -161,16 +163,14 @@ def edit_coupon(request, coupon_id):
             
             if float(coupon.min_cart_value) <= 0:
                 raise ValidationError("Minimum Cart Value is required and must be a positive digit.")
-            
             if float(coupon.max_discount) <= 0:
                 raise ValidationError("Maximum discount is required and must be a positive digit.")
-            
+            if float(coupon.min_cart_value) <= float(coupon.max_discount):
+                raise ValidationError("Minimum Cart Value should be greater than Maximum Discount.")
             if float(coupon.max_usage) <= 0:
                 raise ValidationError("Maximum Usage is required and must be a positive digit.")
-            
             if float(coupon.max_usage_per_user) <= 0:
                 raise ValidationError("Maximum Usage per user is required and must be a positive digit.")
-            
             if not coupon.end_date:
                 raise ValidationError("End date is required.")
             

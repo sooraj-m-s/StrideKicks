@@ -114,6 +114,7 @@
 {% endblock %}
 
 {% block body %}
+<!-- Added CSRF token for AJAX requests -->
 {% csrf_token %}
 
 <!-- Search Bar -->
@@ -186,7 +187,7 @@
                                id="rating{{ i }}" value="{{ i }}">
                         <label for="rating{{ i }}">
                             {% for star in "12345"|make_list %}
-                                {% if forloop.counter <= i %}
+                                {% if forloop.counter <= i|add:0 %}
                                     <span class="text-warning">★</span>
                                 {% else %}
                                     <span class="text-muted">☆</span>
