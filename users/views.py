@@ -41,25 +41,20 @@ def signup_view(request):
         if not re.match(r"^[A-Za-z]{3,}(?: [A-Za-z]+)*$", first_name):
             messages.error(request, 'Invalid first name, please enter a valid input.')
             return redirect('signup')
-
         if not re.match(r"^[A-Za-z]+(?: [A-Za-z]+)*$", last_name):
             messages.error(request, 'Invalid last name, please enter a valid input.')
             return redirect('signup')
-        
         if len(first_name) > 20 or len(last_name) > 10:
             messages.error(request, 'First name or last name exceeds the maximum allowed length.')
             return redirect('signup')
-
         if not re.match(r"^[A-Za-z\._\-0-9]+@[A-Za-z]+\.[a-z]{2,4}$", email):
             messages.error(request, 'Invalid email, please enter a valid emali.')
             return redirect('signup')
-        
-        if len(mobile_no) != 10:
+        if len(mobile_no) != 10 or not re.match(r'^[6-9]\d{9}$', mobile_no):
             messages.error(request, 'Invalid mobile number, please enter a valid input.')
             return redirect('signup')
-
-        if len(password) < 8 or " " in password:
-            messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
+        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$", password) or ' ' in password:
+            messages.error(request, 'Password must contain at least one letter and one number, and cannot contain spaces.')
             return redirect('signup')
 
         #check if email of mob is already exists
@@ -262,7 +257,7 @@ def enter_mobile(request):
             messages.error(request, 'An error occurred while checking the database. Please try again.')
             return redirect('enter_mobile')
         
-        if mobile and len(mobile) == 10 and mobile.isdigit():
+        if len(mobile) != 10 or not re.match(r'^[6-9]\d{9}$', mobile):
             user = request.user
             user.mobile_no = mobile
             user.save()
@@ -386,12 +381,12 @@ def reset_password(request):
             messages.error(request, 'OTP has expired. Please request a new one.')
             return redirect('reset_password')
 
+        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$", new_password) or ' ' in new_password:
+            messages.error(request, 'Password must contain at least one letter and one number, and cannot contain spaces.')
+            return redirect('reset_password')
+
         if new_password != confirm_password:
             messages.error(request, 'Passwords do not match.')
-            return redirect('reset_password')
-        
-        if len(new_password) < 8 or " " in new_password:
-            messages.error(request, 'Password must be at least 8 characters and cannot contain spaces.')
             return redirect('reset_password')
 
         try:
