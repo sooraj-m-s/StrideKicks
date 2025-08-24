@@ -6,21 +6,21 @@ from django.db import transaction
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
 from decimal import Decimal
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-import uuid, time, logging
+import uuid, time, logging, json, stripe
+from django.views.decorators.http import require_POST
 from django.conf import settings
 from wallet.models import Wallet, WalletTransaction
 from cart.models import Cart
 from coupon.models import Coupon, UserCoupon
 from userpanel.models import Address
-from .razorpay_client import client
 from .models import Order, OrderItem, ReturnRequest
 from .invoice_utils import generate_invoice_pdf
 
 
 logger = logging.getLogger(__name__)
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
@@ -42,7 +42,7 @@ def checkout(request):
         else:
             total_price_after_coupon_discount = cart.total_price
             total_amount = cart.total_price
-        
+
         if request.method == 'POST':
             address_id = request.POST.get('address_id')
             payment_method = request.POST.get('payment_method')
@@ -50,23 +50,23 @@ def checkout(request):
             if not address_id or not payment_method:
                 messages.error(request, "Please select both address and payment method.")
                 return redirect('checkout')
-            
+
             address = Address.objects.get(id=address_id, user_id=request.user)
-            
+
             with transaction.atomic():
                 for item in cart.items.all():
-                    if item.variant.is_deleted == True:
+                    if item.variant.is_deleted:
                         messages.error(request, f"{item.product.name} - {item.variant} is unavailable right now")
                         return redirect('view_cart')
                     elif item.quantity > item.variant.quantity:
                         messages.error(request, f"Not enough stock for {item.product.name} - {item.variant}")
                         return redirect('view_cart')
-                
+
                 subtotal = sum(item.price * item.quantity for item in cart.items.all())
                 if payment_method == 'COD' and subtotal > 10000:
                     messages.error(request, 'COD not available on order above 10,000 rs.')
                     return redirect('checkout')
-                amount_in_paise = int(total_amount * 100)  # Convert to pais
+                amount_in_paise = int(total_amount * 100)
 
                 if payment_method == 'WP':
                     user_id = request.user
@@ -77,20 +77,58 @@ def checkout(request):
                     if wallet.balance < total_amount:
                         messages.error(request, 'Insufficient balance in your wallet. Please choose a different payment method.')
                         return redirect('checkout')
-                
-                if payment_method == 'RP':
-                    razorpay_order = client.order.create({
-                        'amount': amount_in_paise,
-                        'currency': 'INR',
-                        'payment_capture': 1,
-                        'notes': {
-                            'shipping_address': f"{address.full_name}, {address.address}",
-                            'contact': str(address.mobile_no)
-                        }
+                if payment_method == 'ST':
+                    payment_intent = stripe.PaymentIntent.create(
+                        amount=amount_in_paise,
+                        currency='inr',
+                        metadata={
+                            'order_id': str(order.id) if 'order' in locals() else None,
+                            'user_id': str(request.user.user_id),
+                        },
+                        receipt_email=request.user.email,
+                        automatic_payment_methods={'enabled': True},
+                    )
+                    order = Order.objects.create(
+                        user=request.user,
+                        order_number=uuid.uuid4().hex[:12].upper(),
+                        coupon=coupon_code,
+                        discount=discount_amount,
+                        payment_method=payment_method,
+                        payment_status=False,
+                        subtotal=subtotal,
+                        total_amount=total_amount,
+                        shipping_address=address,
+                        shipping_cost=cart.delivery_charge or 0,
+                        payment_intent_id=payment_intent.id,
+                    )
+                    for item in cart.items.all():
+                        OrderItem.objects.create(
+                            order=order,
+                            product_variant=item.variant,
+                            quantity=item.quantity,
+                            price=item.price,
+                            item_payment_status='Unpaid',
+                            original_price=item.variant.actual_price,
+                        )
+                        item.variant.quantity -= item.quantity
+                        item.variant.save()
+                    if coupon_code:
+                        UserCoupon.objects.create(
+                            user=request.user,
+                            coupon=coupon_code,
+                            order=order,
+                        )
+                    cart.delete()
+                    if 'coupon' in request.session:
+                        del request.session['coupon']
+                        request.session.modified = True
+                    return render(request, 'stripe_checkout.html', {
+                        'publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
+                        'client_secret': payment_intent.client_secret,
+                        'order': order,
+                        'amount': total_amount,
                     })
-                    razorpay_order_id = razorpay_order['id']
-                else:
-                    razorpay_order_id = None
+
                 order = Order.objects.create(
                     user=request.user,
                     order_number=uuid.uuid4().hex[:12].upper(),
@@ -102,9 +140,7 @@ def checkout(request):
                     total_amount=total_amount,
                     shipping_address=address,
                     shipping_cost=cart.delivery_charge or 0,
-                    razorpay_order_id=razorpay_order_id,
                 )
-                
                 for item in cart.items.all():
                     OrderItem.objects.create(
                         order=order,
@@ -126,9 +162,10 @@ def checkout(request):
                 if 'coupon' in request.session:
                     del request.session['coupon']
                     request.session.modified = True
-                
+
                 if payment_method == 'WP':
                     with transaction.atomic():
+                        wallet = Wallet.objects.get(user_id=request.user)
                         wallet.balance -= total_amount
                         wallet.save()
                         WalletTransaction.objects.create(
@@ -142,18 +179,8 @@ def checkout(request):
                         order.payment_status = True
                         order.save()
 
-                if payment_method == 'RP':
-                    data = {
-                        'order': order,
-                        'razorpay_order_id': razorpay_order_id,
-                        'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
-                        'callback_url': request.build_absolute_uri(reverse('razorpay_callback')),
-                        'amount': amount_in_paise,
-                    }
-                    return render(request, 'razorpay_checkout.html', data)
-                else:
-                    messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
-                    return redirect('order_success', order_id=order.id)
+                messages.success(request, f"Order placed successfully. Your order number is {order.order_number}")
+                return redirect('order_success', order_id=order.id)
 
         total_discount = cart.get_total_actual_price() - cart.total_price
         data = {
@@ -166,10 +193,9 @@ def checkout(request):
             'discount_amount': discount_amount,
             'total_price_after_coupon_discount': total_price_after_coupon_discount,
         }
-
         return render(request, 'checkout.html', data)
     except Wallet.DoesNotExist:
-        logger.error(f"Wallet not found for user: {request.user.id}")
+        logger.error(f"Wallet not found for user: {request.user.user_id}")
         messages.error(request, 'Wallet not found. Please contact customer support.')
         return redirect('checkout')
     except ValueError as e:
@@ -183,41 +209,37 @@ def checkout(request):
 
 
 @csrf_exempt
-def razorpay_callback(request):
-    if request.method == "POST":
-        payment_id = request.POST.get('razorpay_payment_id', '')
-        razorpay_order_id = request.POST.get('razorpay_order_id', '')
-        signature = request.POST.get('razorpay_signature', '')
+@require_POST
+def stripe_callback(request):
+    try:
+        data = json.loads(request.body)
+        payment_intent_id = data.get('payment_intent_id')
+        order_id = data.get('order_id')
+        order = Order.objects.get(id=order_id, user=request.user)
+        order_items = OrderItem.objects.filter(order_id=order.id)
+        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
 
-        params_dict = {
-            'razorpay_order_id': razorpay_order_id,
-            'razorpay_payment_id': payment_id,
-            'razorpay_signature': signature
-        }
-
-        try:
-            order = Order.objects.get(razorpay_order_id=razorpay_order_id)
-            order_items = OrderItem.objects.filter(order_id=order.id)
-        except Order.DoesNotExist:
-            logger.error(f"Order not found: {razorpay_order_id}")
-            return HttpResponse("404 Not Found", status=404)
-
-        try:
-            client.utility.verify_payment_signature(params_dict)
-        except:
-            logger.error(f"Payment signature verification failed for order: {razorpay_order_id}")
-            return render(request, 'checkout.html')
-
-        order.razorpay_payment_id = payment_id
-        order.razorpay_signature = signature
-        order.payment_status = True
-        order.save()
-        for item in order_items:
-            item.item_payment_status = 'Paid'
-            item.save()
-
-        return redirect('order_success', order_id=order.id)
-    return HttpResponse("Invalid Request", status=400)
+        if payment_intent.status == 'succeeded':
+            order.payment_status = True
+            order.payment_intent_id = payment_intent_id
+            order.save()
+            for item in order_items:
+                item.item_payment_status = 'Paid'
+                item.save()
+            return JsonResponse({'success': True})
+        else:
+            order.payment_status = False
+            order.save()
+            return JsonResponse({'success': False, 'error': 'Payment not succeeded'})
+    except Order.DoesNotExist:
+        logger.error(f"Order not found: {order_id}")
+        return JsonResponse({'success': False, 'error': 'Order not found'}, status=404)
+    except OrderItem.DoesNotExist:
+        logger.error(f"Order items not found for order: {order_id}")
+        return JsonResponse({'success': False, 'error': 'Order items not found'}, status=404)
+    except Exception as e:
+        logger.error(f"Callback error: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'An unexpected error occurred'}, status=400)
 
 
 @login_required
@@ -284,39 +306,67 @@ def order_detail(request, order_id):
 
 @login_required
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
-def razorpay_checkout(request, order_id):
+def stripe_checkout(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    if order.payment_status or (order.payment_method == 'RP' and order.razorpay_payment_id):
+    if order.payment_status or (order.payment_method == 'ST' and order.payment_intent_id):
         messages.error(request, "This order has already been paid for.")
         return redirect('order_detail', order_id=order.id)
 
     amount_in_paise = int(order.total_amount * 100)  # Convert to paise
     try:
-        razorpay_order = client.order.create({
-            'amount': amount_in_paise,
-            'currency': 'INR',
-            'payment_capture': 1,
-            'notes': {
-                'order_id': order.id,
-                'shipping_address': f"{order.shipping_address.full_name}, {order.shipping_address.address}",
-                'contact': str(order.shipping_address.mobile_no)
-            }
-        })
-        order.razorpay_order_id = razorpay_order['id']
-        order.save()
-    except Exception as e:
-        logger.error(f"Error creating Razorpay order: {e}")
-        messages.error(request, "Unable to create payment order. Please try again.")
-        return redirect('order_detail', order_id=order.id)
+        if order.payment_intent_id:
+            payment_intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
+            if payment_intent.status in ['succeeded', 'requires_capture']:
+                order.payment_status = True
+                order.save()
+                messages.success(request, "Payment already processed.")
+                return redirect('order_detail', order_id=order.id)
+            elif payment_intent.status == 'requires_payment_method':
+                client_secret = payment_intent.client_secret
+            else:
+                payment_intent = stripe.PaymentIntent.create(
+                    amount=amount_in_paise,
+                    currency='inr',
+                    metadata={
+                        'order_id': order.id,
+                        'user_id': request.user.user_id,
+                    },
+                    receipt_email=request.user.email,
+                    automatic_payment_methods={'enabled': True},
+                )
+                order.payment_intent_id = payment_intent.id
+                order.save()
+                client_secret = payment_intent.client_secret
+        else:
+            payment_intent = stripe.PaymentIntent.create(
+                amount=amount_in_paise,
+                currency='inr',
+                metadata={
+                    'order_id': order.id,
+                    'user_id': request.user.user_id,
+                },
+                receipt_email=request.user.email,
+                automatic_payment_methods={'enabled': True},
+            )
+            order.payment_intent_id = payment_intent.id
+            order.save()
+            client_secret = payment_intent.client_secret
 
-    data = {
-        'order': order,
-        'razorpay_order_id': razorpay_order['id'],
-        'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
-        'callback_url': request.build_absolute_uri(reverse('razorpay_callback')),
-        'amount': amount_in_paise,
-    }
-    return render(request, 'razorpay_checkout.html', data)
+        data = {
+            'order': order,
+            'publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
+            'client_secret': client_secret,
+            'amount': order.total_amount,
+        }
+        return render(request, 'stripe_checkout.html', data)
+    except stripe.error.StripeError as e:
+        logger.error(f"Error creating Stripe payment intent: {e}")
+        messages.error(request, "Unable to create payment intent. Please try again.")
+        return redirect('order_detail', order_id=order.id)
+    except Exception as e:
+        logger.error(f"Error in stripe checkout view: {e}")
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('order_detail', order_id=order.id)
 
 
 @login_required

@@ -11,7 +11,7 @@ from coupon.models import Coupon
 
 class Order(models.Model):
     PAYMENT_METHOD_CHOICES = [
-        ('RP', 'Razor Pay'),
+        ('ST', 'Stripe'),
         ('WP', 'Wallet Pay'),
         ('COD', 'Cash on Delivery'),
     ]
@@ -23,14 +23,12 @@ class Order(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(choices=PAYMENT_METHOD_CHOICES, max_length=4)
     payment_status = models.BooleanField(default=False)
+    payment_intent_id = models.CharField(max_length=255, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, related_name='shipping_orders')
     shipping_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
-    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
-    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
-    razorpay_signature = models.CharField(max_length=200, blank=True, null=True)
 
     def calculate_total(self):
         self.subtotal = sum(item.price * item.quantity for item in self.items.all())

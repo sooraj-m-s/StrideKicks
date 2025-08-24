@@ -81,7 +81,7 @@ AUTH_USER_MODEL = 'users.Users'
 AUTHENTICATION_BACKENDS = [
     'users.backends.EmailBackend',
     'social_core.backends.google.GoogleOAuth2',
-    ]
+]
 
 
 CSRF_COOKIE_HTTPONLY = True
@@ -177,12 +177,13 @@ cloudinary.config (
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
-# Razorpay configuration
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+# Stripe settings
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET')
+FRONTEND_DOMAIN = config('FRONTEND_DOMAIN')
 
 CORS_ALLOWED_ORIGINS = [
-    "https://checkout.razorpay.com",
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]

@@ -261,7 +261,7 @@ def update_order_item(request, item_id):
                 order.total_amount -= refund_amount
                 order.subtotal -= order_item.original_price
                 order.save()
-                if order.payment_method in ['RP', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
+                if order.payment_method in ['ST', 'WP'] or (order.payment_method == 'COD' and order_item.status == 'Delivered'):
                     wallet, _ = Wallet.objects.get_or_create(user=order.user)
                     wallet.balance += refund_amount
                     wallet.save()

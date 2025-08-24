@@ -28,8 +28,8 @@ def signup_view(request):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         mobile_no = request.POST.get('mobile_no')
-        password = request.POST.get('password')
-        retype_password = request.POST.get('retype_password')
+        password = request.POST.get('password').strip()
+        retype_password = request.POST.get('retype_password').strip()
 
         request.session['form_data'] = {
                 'first_name': first_name,
@@ -53,11 +53,20 @@ def signup_view(request):
         if len(mobile_no) != 10 or not re.match(r'^[6-9]\d{9}$', mobile_no):
             messages.error(request, 'Invalid mobile number, please enter a valid input.')
             return redirect('signup')
-        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$", password) or ' ' in password:
-            messages.error(request, 'Password must contain at least one letter and one number, and cannot contain spaces.')
+        if not re.search(r'[A-Z]', password):
+            messages.error(request, 'Password must contain at least one uppercase letter.')
+            return redirect('signup')
+        if not re.search(r'[a-z]', password):
+            messages.error(request, 'Password must contain at least one lowercase letter.')
+            return redirect('signup')
+        if not re.search(r'[0-9]', password):
+            messages.error(request, 'Password must contain at least one number.')
+            return redirect('signup')
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]', password):
+            messages.error(request, 'Password must contain at least one special character.')
             return redirect('signup')
 
-        #check if email of mob is already exists
+        # Check if email or mobile number is already exists
         if Users.objects.filter(email=email).exists() or Users.objects.filter(mobile_no=mobile_no).exists():
             messages.error(request, 'Email or phone number already registered.')
             return redirect('signup')
@@ -65,8 +74,8 @@ def signup_view(request):
         if password != retype_password:
             messages.error(request, 'Passwords do not match.')
             return redirect('signup')
-        
-        #create a new user
+
+        # Create a new user
         otp = random.randint(100000, 999999)
         otp_expiry = (timezone.now() + timedelta(minutes=5)).isoformat()
         request.session['user_data'] = {
@@ -381,8 +390,14 @@ def reset_password(request):
             messages.error(request, 'OTP has expired. Please request a new one.')
             return redirect('reset_password')
 
-        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$", new_password) or ' ' in new_password:
-            messages.error(request, 'Password must contain at least one letter and one number, and cannot contain spaces.')
+        if not re.search(r'[A-Z]', new_password):
+            messages.error(request, 'Password must contain at least one uppercase letter.')
+            return redirect('reset_password')
+        if not re.search(r'[a-z]', new_password):
+            messages.error(request, 'Password must contain at least one lowercase letter.')
+            return redirect('reset_password')
+        if not re.search(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]', new_password):
+            messages.error(request, 'Password must contain at least one special character.')
             return redirect('reset_password')
 
         if new_password != confirm_password:

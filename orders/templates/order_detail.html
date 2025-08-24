@@ -69,8 +69,8 @@
                                     <p class="mb-1">Order Total: ₹{{ order.total_amount }}</p>
                                     {% if order.payment_status == False %}
                                         <div class="mt-3">
-                                            <a href="{% url 'razorpay_checkout' order.id %}" class="btn btn-primary">
-                                                Pay with Razorpay
+                                            <a href="{% url 'stripe_checkout' order.id %}" class="btn btn-primary">
+                                                Pay with Stripe
                                             </a>
                                         </div>
                                     {% endif %}
