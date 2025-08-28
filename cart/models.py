@@ -56,11 +56,9 @@ class CartItem(models.Model):
         return self.variant.actual_price * self.quantity
 
     def get_subtotal(self):
-        """Get subtotal based on sale price and quantity"""
         return self.variant.sale_price * self.quantity
 
     def get_offer_discount(self):
-        """Calculate offer discount based on sale price"""
         from wallet.models import Offer
         from django.utils import timezone
         
@@ -95,13 +93,11 @@ class CartItem(models.Model):
         return 0
     
     def get_final_price(self):
-        """Calculate final price after offer discount"""
         total_sale_price = self.variant.sale_price * self.quantity
         offer_discount = self.get_offer_discount()
         return total_sale_price - offer_discount
 
     def get_offer_details(self):
-        """Get details of the applied offer"""
         from wallet.models import Offer
         from django.utils import timezone
         

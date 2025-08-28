@@ -6,7 +6,6 @@ from django.db import transaction
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from decimal import Decimal
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid, time, logging, json, stripe
 from django.views.decorators.http import require_POST
@@ -30,10 +29,11 @@ def checkout(request):
         if not cart or not cart.items.exists():
             return redirect('view_cart')
 
+        cart_items = cart.items.all().select_related('product', 'variant')
         addresses = Address.objects.filter(user_id=request.user, is_deleted=False)
         coupon = request.session.get('coupon', {})
         coupon_id = coupon.get('coupon_id')
-        discount_amount = Decimal(coupon.get('discount_amount', 0))
+        discount_amount = sum(item.get_offer_discount() for item in cart_items)
         coupon_code = None
         if coupon:
             coupon_code = Coupon.objects.get(id=coupon_id)
@@ -193,6 +193,7 @@ def checkout(request):
             'discount_amount': discount_amount,
             'total_price_after_coupon_discount': total_price_after_coupon_discount,
         }
+        
         return render(request, 'checkout.html', data)
     except Wallet.DoesNotExist:
         logger.error(f"Wallet not found for user: {request.user.user_id}")
@@ -389,17 +390,17 @@ def cancel_product(request, item_id):
         else:
             order_item.cancellation_reason = reason
 
-        # order status
+        # Update order status
         order_item.is_cancelled = True
         order_item.status = 'Cancelled'
         order_item.save()
-        
-        # qty
+
+        # Update product variant stock
         product_variant = order_item.product_variant
         product_variant.quantity += order_item.quantity
         product_variant.save()
 
-        # refund by proportion
+        # Calculate refund by proportion
         total_item_price = order_item.price * order_item.quantity
         proportion = total_item_price / (order.total_amount + order.discount)
         allocated_discount = order.discount * proportion
@@ -411,20 +412,20 @@ def cancel_product(request, item_id):
         order.subtotal -= order_item.original_price
         order.save()
 
-        if order.payment_method in ['RP', 'WP']:
+        if order.payment_method in ['ST', 'WP']:
             if order_item.item_payment_status == 'Paid':
                 wallet, _ = Wallet.objects.get_or_create(user=order.user)
                 wallet.balance += refund_amount
                 wallet.save()
                 WalletTransaction.objects.create(
-                                wallet=wallet,
-                                transaction_type="Cr",
-                                amount=refund_amount,
-                                status="Completed",
-                                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
-                            )
+                    wallet=wallet,
+                    transaction_type="Cr",
+                    amount=refund_amount,
+                    status="Completed",
+                    transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+                )
         
-        # payment status
+        # Update item payment status
         if order_item.item_payment_status == 'Paid':
             order_item.item_payment_status = 'Refunded'
         else:

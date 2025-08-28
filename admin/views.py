@@ -166,7 +166,7 @@ def handle_return_request(request, request_id, action):
             order_item.item_payment_status = 'Refunded'
             return_requests.status = 'Approved'
 
-            # refund by proportion
+            # Calculate refund by proportion
             total_item_price = order_item.price * order_item.quantity
             proportion = total_item_price / (order.total_amount + order.discount)
             allocated_discount = order.discount * proportion
@@ -178,14 +178,14 @@ def handle_return_request(request, request_id, action):
             wallet.balance += int(refund_amount)
             wallet.save()
             WalletTransaction.objects.create(
-                            wallet=wallet,
-                            transaction_type="Cr",
-                            amount=refund_amount,
-                            status="Completed",
-                            transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
-                        )
+                wallet=wallet,
+                transaction_type="Cr",
+                amount=refund_amount,
+                status="Completed",
+                transaction_id="TXN-" + str(int(time.time())) + uuid.uuid4().hex[:4].upper(),
+            )
 
-            # qty
+            # Update product variant stock
             product_variant = order_item.product_variant
             product_variant.quantity += order_item.quantity
             product_variant.save()
